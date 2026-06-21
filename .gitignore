@@ -404,3 +404,23 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+# Editor / IDE
+.idea/
+.vscode/
+
+# Betriebssystem
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+coverage/
+dist/
+
+# Umgebungsvariablen und Secrets
+.env
+.env.*
+!.env.example
+
+# Firebase lokale Dateien
+.firebase/
