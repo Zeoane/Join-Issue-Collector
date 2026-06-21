@@ -158,11 +158,98 @@ body.welcome-page-active {
     white-space: nowrap;
 }
 
+.welcome-mobile-logo,
+.welcome-signup-prompt,
+.welcome-footer {
+    display: none;
+}
+
+.welcome-screen__body {
+    display: contents;
+}
+
 @media (max-width: 768px) {
+    .welcome-screen {
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        padding-top: max(16px, env(safe-area-inset-top));
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+        overflow-y: auto;
+        min-height: 100%;
+    }
+
+    .welcome-screen__body {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        gap: 20px;
+    }
+
+    .welcome-mobile-logo {
+        display: block;
+        position: absolute;
+        top: 45px;
+        left: 41px;
+        line-height: 0;
+        z-index: 1;
+    }
+
+    .welcome-mobile-logo img {
+        display: block;
+        width: 64px;
+        height: 78px;
+    }
+
+    .welcome-signup-prompt {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        margin: 0;
+        font-family: "Open Sans", sans-serif;
+        font-weight: 400;
+        font-size: 16px;
+        line-height: 120%;
+        color: #ffffff;
+        text-align: center;
+    }
+
+    .welcome-signup-link {
+        font-family: "Open Sans", sans-serif;
+        font-weight: 400;
+        font-size: 19px;
+        line-height: 120%;
+        color: rgba(255, 255, 255, 0.88);
+        text-decoration: none;
+        cursor: pointer;
+        transition: color 100ms ease-out, opacity 100ms ease-out;
+    }
+
+    .welcome-signup-link:hover {
+        color: #ffffff;
+        opacity: 1;
+    }
+
+    .welcome-signup-link:active {
+        color: #ffffff;
+        opacity: 0.92;
+        transition: color 100ms ease-out, opacity 100ms ease-out;
+    }
+
     .welcome-card {
-        padding: 40px 24px;
-        gap: 32px;
+        width: 100%;
+        max-width: none;
+        padding: 32px 20px;
+        gap: 28px;
         min-height: auto;
+        border-radius: 20px;
     }
 
     .welcome-card__title {
@@ -174,12 +261,138 @@ body.welcome-page-active {
         font-size: 18px;
     }
 
+    .welcome-card__intro {
+        text-align: center;
+    }
+
     .welcome-card__options {
         grid-template-columns: 1fr;
+        row-gap: 28px;
+        column-gap: 0;
+        justify-items: center;
+    }
+
+    .welcome-option {
+        width: 100%;
+        align-items: center;
+        gap: 10px;
     }
 
     .welcome-option__label {
         white-space: normal;
         flex-wrap: wrap;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .welcome-option__label img[src*="work.svg"] {
+        width: 18px;
+        height: 18px;
+    }
+
+    .welcome-option__label img[src*="people.svg"] {
+        width: 22px;
+        height: 18px;
+    }
+
+    .welcome-btn--primary {
+        width: 161px;
+        min-width: 161px;
+        max-width: 161px;
+        height: 49px;
+        padding: 15px 24px;
+        border-radius: 8px;
+        background-color: #2A3647;
+        color: #ffffff;
+        font-size: 16px;
+        white-space: nowrap;
+    }
+
+    .welcome-btn--secondary {
+        width: 156px;
+        min-width: 156px;
+        max-width: 156px;
+        height: 49px;
+        padding: 15px 24px;
+        border-radius: 8px;
+        background-color: #ffffff;
+        color: #2A3647;
+        border: 1px solid #2A3647;
+        font-size: 16px;
+        white-space: nowrap;
+    }
+
+    .welcome-footer {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex-shrink: 0;
+        width: 100%;
+    }
+
+    .welcome-footer__link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: 8px;
+        font-family: "Open Sans", sans-serif;
+        font-weight: 400;
+        font-size: 16px;
+        line-height: 120%;
+        color: #ffffff;
+        text-decoration: none;
+        cursor: pointer;
+        transition: none;
+    }
+
+    .welcome-footer__link--privacy {
+        width: 116px;
+        height: 35px;
+    }
+
+    .welcome-footer__link--legal {
+        width: 108px;
+        height: 35px;
+    }
+}
+
+@media (max-width: 480px) {
+    .welcome-screen {
+        padding: 12px;
+        padding-top: max(12px, env(safe-area-inset-top));
+    }
+
+    .welcome-mobile-logo {
+        top: 45px;
+        left: 41px;
+    }
+
+    .welcome-screen__body {
+        gap: 16px;
+    }
+
+    .welcome-card {
+        padding: 24px 16px;
+        gap: 24px;
+        border-radius: 16px;
+    }
+
+    .welcome-card__title {
+        font-size: 24px;
+    }
+
+    .welcome-card__intro,
+    .welcome-option__label {
+        font-size: 16px;
+    }
+
+    .welcome-card__options {
+        row-gap: 24px;
+    }
+
+    .welcome-option {
+        gap: 10px;
     }
 }

@@ -8,10 +8,24 @@ const SPLASH_HOLD_MS = 600;
 const startScreen = document.getElementById("start-screen");
 
 /** @type {HTMLElement|null} */
-const startLogo = document.getElementById("start-logo");
+const startLogoDesktop = document.getElementById("start-logo-desktop");
+
+/** @type {HTMLElement|null} */
+const startLogoMobile = document.getElementById("start-logo-mobile");
 
 /** @type {HTMLElement|null} */
 const welcomeScreen = document.getElementById("welcome-screen");
+
+/** @type {MediaQueryList} */
+const mobileSplashQuery = window.matchMedia("(max-width: 768px)");
+
+/**
+ * Returns the splash logo element for the current viewport.
+ * @returns {HTMLElement|null}
+ */
+function getActiveStartLogo() {
+    return mobileSplashQuery.matches ? startLogoMobile : startLogoDesktop;
+}
 
 /**
  * Shows the welcome screen and hides the start splash.
@@ -37,10 +51,15 @@ function showWelcomeScreen() {
  * @returns {void}
  */
 function initStartFlow() {
-    if (!startLogo) return;
+    const activeLogo = getActiveStartLogo();
+    if (!activeLogo) return;
 
     requestAnimationFrame(() => {
-        startLogo.classList.add("is-visible");
+        if (mobileSplashQuery.matches && startScreen) {
+            startScreen.classList.add("is-dark");
+        }
+
+        activeLogo.classList.add("is-visible");
     });
 
     window.setTimeout(showWelcomeScreen, 100 + SPLASH_HOLD_MS);

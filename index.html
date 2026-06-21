@@ -17,15 +17,38 @@
         <img
             src="assets/img/emailrequest/splash-logo.svg"
             alt="Join-Issue Collector Logo"
-            class="start-logo"
-            id="start-logo"
+            class="start-logo start-logo--desktop"
+            id="start-logo-desktop"
             width="274"
             height="335"
+        >
+        <img
+            src="assets/img/emailrequest/logo-white.svg"
+            alt="Join-Issue Collector Logo"
+            class="start-logo start-logo--mobile"
+            id="start-logo-mobile"
+            width="100"
+            height="122"
         >
     </div>
 
     <div class="welcome-screen" id="welcome-screen" aria-hidden="true">
-        <section class="welcome-card" aria-labelledby="welcome-heading">
+        <a href="index.html" class="welcome-mobile-logo" aria-label="Join-Issue Collector home">
+            <img
+                src="assets/img/emailrequest/logo-white.svg"
+                alt=""
+                width="64"
+                height="78"
+            >
+        </a>
+
+        <div class="welcome-screen__body">
+            <p class="welcome-signup-prompt">
+                Not a Join user?
+                <a href="assets/index/signup.html" class="welcome-signup-link">Sign up</a>
+            </p>
+
+            <section class="welcome-card" aria-labelledby="welcome-heading">
             <header class="welcome-card__header">
                 <div class="welcome-card__title-wrap">
                     <h1 id="welcome-heading" class="welcome-card__title">Welcome</h1>
@@ -55,6 +78,12 @@
                 </div>
             </div>
         </section>
+        </div>
+
+        <footer class="welcome-footer">
+            <a href="assets/index/privacy-login.html" class="welcome-footer__link welcome-footer__link--privacy">Privacy Policy</a>
+            <a href="assets/index/legal-notice-login.html" class="welcome-footer__link welcome-footer__link--legal">Legal Notice</a>
+        </footer>
     </div>
 
     <script src="js/desktop.js"></script>
