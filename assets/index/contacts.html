@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Contacts</title>
+
+    <!-- style  -->
+    <link rel="stylesheet" href="../css/standard-css.css" />
+    <link rel="stylesheet" href="../fonts/Inter/font.css" />
+    <link rel="stylesheet" href="../css/NavHeader.css" />
+    <link rel="stylesheet" href="../css/NavHeader-responsive.css" />
+    <link rel="stylesheet" href="../css/contacts.css" />
+    <link rel="stylesheet" href="../css/contacts-overlay.css" />
+    <link rel="stylesheet" href="../css/contacts-responsive-desktop.css" />
+    <link rel="stylesheet" href="../css/contacts-responsive-mobile.css" />
+
+
+    <!-- fav-Icon -->
+    <link rel="icon" href="../img/Logo.png" type="image/x-icon" />
+  </head>
+  <body data-auth="required" onload="init()">
+    <nav>
+      <div id="linkesNavMenu" class="navContent">
+
+      </div>
+    </nav>
+    <main class="flexC">
+      <header>
+        <div id="header" class="headerContent">
+
+        </div>
+      </header>
+      <div class="content">
+        <div class="contacsList">
+          <div class="AddNew">
+            <button onclick="openNewContactForm()" class="AddNewButton">
+              <p class="AddNewText">Add new contact</p>
+              <img
+                class="AddNewImg"
+                src="../img/contacts/person_add.png"
+                alt=""
+              />
+            </button>
+          </div>
+          <div id="ownContactArea" class="ownContactArea"></div>
+          <div id="contactCardsContainer" class="contactCardsContainer"></div>
+        </div>
+        <div class="contactsContainer">
+          <div class="intoWrapper">
+          <div class="into">
+            <h1>Contacts</h1>
+            <div class="separater"></div>
+            <h2>better with a Team</h2>
+            <div class="separaterMobile"></div>
+          </div>
+          <img onclick="closeMobileDetails()" src="../img/arrow-left-line.png" alt="">
+          </div>
+          <div class="contactsDetailsContainer">
+            <div id="contactsDetails" class="contactsDetails"></div>
+          </div>
+        </div>
+      </div>
+      <div onclick="toggleOverlay()" id="overlay" class="overlay d_none">
+        <div onclick="event.stopPropagation()" class="overlayContent">
+          <div class="leftSide">
+            <div class="closeOverlayMobile">
+                <img onclick="toggleOverlay()" src="../img/close (1).png" alt="">
+            </div>
+            <div class="imgFlex">
+              <img class="joinSmall" src="../img/fav-icon.png" alt="" />
+            </div>
+            <div class="textFlex">
+              <h1>Add contact</h1>
+              <p>Tasks are better with a team!</p>
+            </div>
+            <div class="vektorFlex">
+              <div class="vektor"></div>
+            </div>
+          </div>
+          <div class="rightSide">
+            <div class="pbContainer" id="editAvatarContainer">
+              <!-- Initialen-Kreis wird hier eingefügt -->
+            </div>
+            <div class="flexCC">
+              <div onclick="toggleOverlay()" class="closeWrapper">
+                <img class="closeContact" src="../img/Close.png" alt="" />
+              </div>
+              <form id="contactForm" novalidate>
+                <div class="inputs_div">
+                  <input type="hidden" id="contactKey" />
+                   <div class="input-field flexC">
+      <input type="text" id="name" class="name_icon input" placeholder="Name" required autocomplete="name" />
+      <div class="error-text" id="name-error" aria-live="polite"></div>
+    </div>
+
+    <div class="input-field flexC">
+      <input type="email" id="email" class="mail_icon input" placeholder="Email" required autocomplete="email" />
+      <div class="error-text" id="email-error" aria-live="polite"></div>
+    </div>
+
+    <div class="input-field flexC">
+      <input type="tel" id="phone" class="phone_icon input" placeholder="Phone" required autocomplete="tel" />
+      <div class="error-text" id="phone-error" aria-live="polite"></div>
+    </div>
+
+                </div>
+
+                <div class="login-buttons">
+                  <!-- Cancel/Delete -->
+                  <button id="cancelBtn" type="button" class="cancel-button">
+                    <p id="cancelText" class="cancelText">Cancel</p>
+                    <svg
+                      id="cancelIcon"
+                      class="close2"
+                      width="24"
+                      height="25"
+                      viewBox="0 0 24 25"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12.001 12.5001L17.244 17.7431M6.758 17.7431L12.001 12.5001L6.758 17.7431ZM17.244 7.25708L12 12.5001L17.244 7.25708ZM12 12.5001L6.758 7.25708L12 12.5001Z"
+                        stroke="#2A3647"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </button>
+
+                  <!-- Create/Save -->
+                  <button id="submitBtn" type="submit" class="create-btn">
+                    <p id="submitText" class="createText">Create contact</p>
+                    <img
+                      id="submitIcon"
+                      class="check"
+                      src="../img/check.png"
+                      alt=""
+                    />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="successOverlay" class="success-overlay">
+        <div class="succesDiv">
+          <p class="succesText">Contact succesfully created</p>
+        </div>
+      </div>
+    </main>
+    <div class="mobileMenuWrapper">
+  <button id="mobileAddBtn" onclick="openNewContactForm()" class="mobileAddNew">
+    <div class="mobileCircle">
+      <img id="mobileBtnIcon" src="../img/person_add.png" alt="">
+    </div>
+  </button>
+
+  <div class="menuOverlay" id="menuOverlay" >
+  <div class="mobileMenu" id="mobileMenu">
+  <div onclick="handleEditMobile()" class="mobileEditContainer">
+    <img src="../img/edit.png" alt="">
+    <p>Edit</p>
+  </div>
+  <div onclick="handleDeleteMobile()" class="mobileDeleteContainer">
+    <img src="../img/delete (1).png" alt="">
+    <p>Delete</p>
+  </div>
+</div>
+</div>
+    
+    <!-- scripts  -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+    <script src="../../js/firebase-config.js"></script>
+    <script src="../../js/firebase-init.js"></script>
+    <script src="../../js/utils.js"></script>
+    <script src="../../js/remoteStorage.js"></script>
+    <script src="../../main.js"></script>
+    <script src="../../js/auth-service.js"></script>
+    <script src="../../js/authGuard.js"></script>
+    <script src="../../js/templates/mainTemplates.js"></script>
+    <script src="../../js/templates/contactsTemplate.js"></script>
+    <script src="../../js/tasksApi.js"></script>
+    <script src="../../js/contactService.js"></script>
+    <script src="../../js/contacts.js"></script>
+    <script src="../../js/contacts-validation.js"></script>
+  </body>
+</html>

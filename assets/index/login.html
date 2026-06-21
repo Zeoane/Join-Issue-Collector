@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join - Login</title>
+
+    <!-- fav-Icon -->
+    <link rel="icon" href="../img/Logo.png" type="image/x-icon">
+
+    <!-- styles  -->
+    <link rel="stylesheet" href="../css/standard-css.css">
+    <link rel="stylesheet" href="../css/login.css">
+    <link rel="stylesheet" href="../fonts/Inter/font.css">
+
+
+</head>
+
+<body>
+    <header>
+        <div class="headerContent">
+            <div class="logo">
+                <a href="/index.html">
+                    <img src="../img/Logo.png" alt="Join Logo">
+                </a>
+
+            </div>
+            <div class="header-desktop">
+                <span>Not a Join user?</span>
+                <a href="./signup.html">Sign up</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="login-container">
+            <h2 class="mb-30">Log in</h2>
+            <img src="../img/LogIn/Selector.png" alt="selector">
+            <form id="loginForm" novalidate>
+                <div class="inputs">
+                    <input type="email" placeholder="Email" id="email" class="mail_icon" autocomplete="off" required />
+                    <input type="password" placeholder="Password" id="password" class="lock_icon" autocomplete="off"
+                        required />
+                </div>
+                <div id="msgBox"></div>
+                <div class="login-buttons">
+                    <button class="login-btn" type="submit">Log in</button>
+                    <button class="guest-login-btn" type="button" onclick="startGuestSession()">Guest Log in</button>
+                </div>
+            </form>
+
+        </div>
+    </main>
+    <!---------Header-Mobile----------->
+    <div class="header-mobile">
+        <div class="header-mobile-div">
+            <span>Not a Join user?</span>
+            <a href="./signup.html">Sign up</a>
+        </div>
+
+    </div>
+
+    <footer>
+        <a href="./privacy-login.html">Privacy Policy</a>
+        <a href="./legal-notice-login.html">Legal notice</a>
+    </footer>
+
+    <!-- script  -->
+
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+    <script src="../../js/firebase-config.js"></script>
+    <script src="../../js/firebase-init.js"></script>
+    <script src="../../js/utils.js"></script>
+    <script src="../../js/remoteStorage.js"></script>
+    <script src="../../main.js"></script>
+    <script src="../../js/auth-service.js"></script>
+    <script src="../../js/passwordMask.js"></script>
+    <script src="../../js/tasksApi.js"></script>
+    <script src="../../js/login.js?v=force_001"></script>
+
+
+</body>
+
+</html>
