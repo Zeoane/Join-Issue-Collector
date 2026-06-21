@@ -1,8 +1,8 @@
 /**
- * JOIN – globale Konfiguration und gemeinsame UI-Funktionen.
+ * Join-Issue Collector – globale Konfiguration und gemeinsame UI-Funktionen.
  */
 
-window.BASE_URL = "https://join-475-370cd-default-rtdb.europe-west1.firebasedatabase.app/";
+window.BASE_URL = "https://join-issue-collector-70cb7-default-rtdb.europe-west1.firebasedatabase.app/";
 window.USERKEY = localStorage.getItem("loggedInUserKey");
 
 /** @type {string} */

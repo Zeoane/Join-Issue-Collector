@@ -5,7 +5,7 @@
   const config = window.FIREBASE_CONFIG;
   if (!config?.apiKey) {
     console.warn(
-      "JOIN: Firebase apiKey fehlt in js/firebase-config.js – Auth und DB-Zugriff funktionieren nicht."
+      "Join-Issue Collector: Firebase apiKey fehlt in js/firebase-config.js – Auth und DB-Zugriff funktionieren nicht."
     );
     return;
   }

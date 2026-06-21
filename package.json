@@ -1,9 +1,9 @@
 {
-  "name": "join-2",
+  "name": "join-issue-collector",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "JOIN Kanban Project Management Tool",
+  "description": "Join-Issue Collector – Kanban Project Management Tool",
   "scripts": {
     "lint": "eslint js main.js",
     "test": "vitest run",

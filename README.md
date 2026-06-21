@@ -1,6 +1,6 @@
-# JOIN – Kanban Project Management Tool
+# Join-Issue Collector
 
-JOIN ist eine statische Multi-Page-Web-App (Vanilla HTML/CSS/JS) mit Firebase Realtime Database und Firebase Authentication.
+Join-Issue Collector ist eine statische Multi-Page-Web-App (Vanilla HTML/CSS/JS) mit Firebase Realtime Database und Firebase Authentication.
 
 ## Features
 
@@ -28,7 +28,7 @@ JOIN ist eine statische Multi-Page-Web-App (Vanilla HTML/CSS/JS) mit Firebase Re
 
 ```bash
 firebase login
-firebase use join-475-370cd
+firebase use join-issue-collector-70cb7
 firebase deploy --only database
 ```
 
@@ -57,7 +57,7 @@ npm test
 ## Projektstruktur
 
 ```
-JOIN-2/
+Join-Issue Collector/
 ├── index.html              # Splash → Login
 ├── main.js                 # Globale Config & UI-Chrome
 ├── assets/index/           # HTML-Seiten
@@ -104,4 +104,3 @@ Bestehende User mit Klartext-Passwörtern in der Realtime DB sind **nicht kompat
 | Add Task | `assets/index/addTask.html` | Ja |
 | Contacts | `assets/index/contacts.html` | Ja |
 | Help | `assets/index/help.html` | Ja |
-# Join-Issue-Collector

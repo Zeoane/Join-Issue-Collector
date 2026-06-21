@@ -1,5 +1,5 @@
 /**
- * Gemeinsame Hilfsfunktionen für JOIN.
+ * Gemeinsame Hilfsfunktionen für Join-Issue Collector.
  */
 
 /**
