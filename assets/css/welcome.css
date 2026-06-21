@@ -1,0 +1,185 @@
+/* Welcome screen – Open Sans per Figma Frame 153 */
+
+.welcome-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #2A3647;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 100ms ease-in-out, visibility 100ms ease-in-out;
+    z-index: 2;
+    padding: 24px;
+}
+
+.welcome-screen.is-visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+html.welcome-page-active,
+body.welcome-page-active {
+    background-color: #2A3647;
+}
+
+.welcome-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 789px;
+    min-height: 403px;
+    margin: 0 auto;
+    padding: 56px 72px;
+    gap: 56px;
+    background: #ffffff;
+    border-radius: 30px;
+    color: #2A3647;
+    font-family: "Open Sans", sans-serif;
+}
+
+.welcome-card__header,
+.welcome-card__intro,
+.welcome-card__options {
+    width: 100%;
+    max-width: 645px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.welcome-card__header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.welcome-card__title-wrap {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.welcome-card__title {
+    font-weight: 700;
+    font-size: 32px;
+    line-height: 120%;
+    text-align: center;
+}
+
+.welcome-card__title-line {
+    display: block;
+    width: calc(100% - 1.1em);
+    height: 3px;
+    background-color: #29ABE2;
+    border-radius: 2px;
+}
+
+.welcome-card__intro {
+    font-weight: 400;
+    font-size: 23px;
+    line-height: 120%;
+    text-align: left;
+}
+
+.welcome-card__options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 64px;
+    row-gap: 32px;
+    justify-items: start;
+}
+
+.welcome-option {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+    min-width: 0;
+}
+
+.welcome-option__label {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 12px;
+    font-weight: 400;
+    font-size: 23px;
+    line-height: 120%;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.welcome-option__label img {
+    flex-shrink: 0;
+}
+
+.welcome-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 48px;
+    border-radius: 8px;
+    font-family: "Open Sans", sans-serif;
+    font-weight: 400;
+    line-height: 120%;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.welcome-btn:hover {
+    transform: scale(1.05);
+}
+
+.welcome-btn--primary {
+    width: 196px;
+    padding: 10px 18px;
+    gap: 10px;
+    background-color: #29ABE2;
+    color: #ffffff;
+    font-size: 23px;
+    border: none;
+}
+
+.welcome-btn--secondary {
+    min-width: 165px;
+    width: max-content;
+    padding: 12px 18px;
+    gap: 10px;
+    background-color: #ffffff;
+    color: #2A3647;
+    font-size: 19px;
+    border: 1px solid #2A3647;
+    white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+    .welcome-card {
+        padding: 40px 24px;
+        gap: 32px;
+        min-height: auto;
+    }
+
+    .welcome-card__title {
+        font-size: 28px;
+    }
+
+    .welcome-card__intro,
+    .welcome-option__label {
+        font-size: 18px;
+    }
+
+    .welcome-card__options {
+        grid-template-columns: 1fr;
+    }
+
+    .welcome-option__label {
+        white-space: normal;
+        flex-wrap: wrap;
+    }
+}

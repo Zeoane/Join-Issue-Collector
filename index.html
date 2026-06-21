@@ -3,14 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Join-Issue Collector - Login</title>
-     <link rel="icon" href="assets/img/Logo.png" type="image/png">
-     <link rel="stylesheet" href="assets/css/desktop.css">
-     <link rel="stylesheet" href="assets/css/standard-css.css">
+    <title>Join-Issue Collector</title>
+    <link rel="icon" href="assets/img/Logo.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/standard-css.css">
+    <link rel="stylesheet" href="assets/css/desktop.css">
+    <link rel="stylesheet" href="assets/css/welcome.css">
 </head>
 <body>
-        <img src="./assets/img/Logo.png" alt="Join-Issue Collector Logo" class="join-logo-desktop" id="join-logo">
-        <img src="./assets/img/SignUp/Logo-Responsive.png" alt="Join-Issue Collector Logo" class="join-logo-mobile" id="join-logo-response">
-   <script src="./js/desktop.js"></script>
+    <div class="start-screen" id="start-screen" aria-hidden="false">
+        <img
+            src="assets/img/Bord/Capa 1.svg"
+            alt="Join-Issue Collector Logo"
+            class="start-logo"
+            id="start-logo"
+            width="274"
+            height="335"
+        >
+    </div>
+
+    <div class="welcome-screen" id="welcome-screen" aria-hidden="true">
+        <section class="welcome-card" aria-labelledby="welcome-heading">
+            <header class="welcome-card__header">
+                <div class="welcome-card__title-wrap">
+                    <h1 id="welcome-heading" class="welcome-card__title">Welcome</h1>
+                    <span class="welcome-card__title-line" aria-hidden="true"></span>
+                </div>
+            </header>
+
+            <p class="welcome-card__intro">
+                Pick the option that suits your role: create a request as a stakeholder or log in if you&rsquo;re part of the team.
+            </p>
+
+            <div class="welcome-card__options">
+                <div class="welcome-option">
+                    <div class="welcome-option__label">
+                        <img src="assets/img/Bord/work.svg" alt="" width="24" height="24">
+                        <span>Are you a stakeholder?</span>
+                    </div>
+                    <a href="assets/index/stakeholder.html" class="welcome-btn welcome-btn--primary">Create request</a>
+                </div>
+
+                <div class="welcome-option">
+                    <div class="welcome-option__label">
+                        <img src="assets/img/Bord/people.svg" alt="" width="25" height="20">
+                        <span>Are you a team member?</span>
+                    </div>
+                    <a href="assets/index/login.html" class="welcome-btn welcome-btn--secondary">Member log in</a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="js/desktop.js"></script>
 </body>
 </html>

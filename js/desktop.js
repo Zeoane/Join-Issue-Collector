@@ -1,97 +1,49 @@
 /**
- * Desktop logo element used in the splash animation.
- * @type {HTMLElement|null}
+ * Splash duration before showing the welcome screen (ms).
+ * @type {number}
  */
-const desktopLogo = document.getElementById("join-logo");
+const SPLASH_HOLD_MS = 600;
+
+/** @type {HTMLElement|null} */
+const startScreen = document.getElementById("start-screen");
+
+/** @type {HTMLElement|null} */
+const startLogo = document.getElementById("start-logo");
+
+/** @type {HTMLElement|null} */
+const welcomeScreen = document.getElementById("welcome-screen");
 
 /**
- * Mobile logo element used in the splash animation.
- * @type {HTMLElement|null}
+ * Shows the welcome screen and hides the start splash.
+ * @returns {void}
  */
-const mobileLogo = document.getElementById("join-logo-response");
+function showWelcomeScreen() {
+    if (startScreen) {
+        startScreen.classList.add("is-hidden");
+        startScreen.setAttribute("aria-hidden", "true");
+    }
 
-/**
- * Returns the currently active logo depending on viewport width.
- * @returns {HTMLElement|null}
- */
-function getActiveLogo() {
-    return window.matchMedia("(max-width: 768px)").matches
-        ? mobileLogo
-        : desktopLogo;
+    if (welcomeScreen) {
+        welcomeScreen.classList.add("is-visible");
+        welcomeScreen.setAttribute("aria-hidden", "false");
+    }
+
+    document.documentElement.classList.add("welcome-page-active");
+    document.body.classList.add("welcome-page-active");
 }
 
 /**
- * Resets logos and makes only the active logo visible.
- * Keeps inline styles minimal to let media queries work.
+ * Runs the 100ms ease-in-out logo fade-in, then reveals welcome.
  * @returns {void}
  */
-function updateLogo() {
-    if (!desktopLogo || !mobileLogo) return;
+function initStartFlow() {
+    if (!startLogo) return;
 
-    // Alle Logos zurücksetzen
-    [desktopLogo, mobileLogo].forEach(logo => {
-        logo.classList.remove("visible", "moved", "start");
-        logo.style.left = ""; // zurücksetzen für Media Query
+    requestAnimationFrame(() => {
+        startLogo.classList.add("is-visible");
     });
 
-    // Nur aktives Logo sichtbar machen
-    getActiveLogo().classList.add("visible");
+    window.setTimeout(showWelcomeScreen, 100 + SPLASH_HOLD_MS);
 }
 
-/**
- * Adds the "start" class after a short delay to trigger animation.
- * @param {HTMLElement} logo
- */
-function startLogoAnimation(logo) {
-    setTimeout(() => {
-        logo.classList.add("start");
-    }, 100);
-}
-
-/**
- * Handles a single transitionend event for a logo.
- * Adds "moved" on opacity end; navigates on top end.
- * @param {HTMLElement} logo
- * @param {TransitionEvent} event
- */
-function handleLogoTransition(logo, event) {
-    if (event.propertyName === "opacity" && logo.classList.contains("visible")) {
-        logo.classList.add("moved");
-    }
-    if (event.propertyName === "top" && logo.classList.contains("moved")) {
-        navigateToLogin();
-    }
-}
-
-/**
- * Wires the transitionend handler for a given logo element.
- * @param {HTMLElement|null} logo
- */
-function attachTransitionHandler(logo) {
-    if (!logo) return;
-    logo.addEventListener("transitionend", (event) => handleLogoTransition(logo, event));
-}
-
-/** Navigates to the login page after the splash animation. */
-function navigateToLogin() {
-    window.location.href = "assets/index/login.html";
-}
-
-/**
- * Initializes the splash animation: visibility, start, and handlers.
- * @returns {void}
- */
-function init() {
-    updateLogo();
-
-    const activeLogo = getActiveLogo();
-    if (!activeLogo) return;
-
-    startLogoAnimation(activeLogo);
-
-    // Transition-Ende für beide Logos
-    [desktopLogo, mobileLogo].forEach(attachTransitionHandler);
-}
-
-window.addEventListener("load", init);
-window.addEventListener("resize", updateLogo);
+window.addEventListener("load", initStartFlow);
