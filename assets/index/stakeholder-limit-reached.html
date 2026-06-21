@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join-Issue Collector - Stakeholder Limit Reached</title>
+    <link rel="icon" href="../img/Logo.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@500&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/standard-css.css">
+    <link rel="stylesheet" href="../css/stakeholder.css">
+</head>
+<body class="stakeholder-page stakeholder-page--limit-reached">
+    <header class="stakeholder-header">
+        <a href="../../index.html" class="stakeholder-header__logo-link" aria-label="Join-Issue Collector home">
+            <img src="../img/emailrequest/logo.svg" alt="" class="stakeholder-header__logo" width="46" height="56">
+        </a>
+    </header>
+
+    <main class="stakeholder-main">
+        <div class="stakeholder-content">
+            <div class="stakeholder-toolbar">
+                <a href="./stakeholder.html" class="stakeholder-back" aria-label="Back to Stakeholder">
+                    <img src="../img/emailrequest/arrow-left-line.svg" alt="" width="37" height="37">
+                </a>
+                <p class="stakeholder-limit stakeholder-limit--reached" id="stakeholder-limit">
+                    <strong>10</strong> of <strong>10</strong> requests used today
+                </p>
+            </div>
+
+            <div class="stakeholder-wrap">
+                <h1 class="stakeholder-title">Welcome</h1>
+
+                <section class="stakeholder-panel stakeholder-panel--limit" aria-labelledby="stakeholder-title">
+                    <div class="stakeholder-panel__grid stakeholder-panel__grid--limit">
+                        <div class="stakeholder-copy stakeholder-copy--limit">
+                            <h2 class="stakeholder-alert">
+                                The daily 10-request limit has been reached!
+                            </h2>
+
+                            <p class="stakeholder-limit-text">
+                                Need more? No worries — you can still send emails, but our team will review them
+                                manually instead of using AI to create tickets.
+                            </p>
+
+                            <a
+                                href="mailto:join-issue-collector@Projekt.de?subject=Feature%20Request"
+                                class="stakeholder-btn stakeholder-btn--email"
+                            >
+                                Send an email
+                                <img src="../img/emailrequest/check.svg" alt="" width="24" height="24">
+                            </a>
+                        </div>
+
+                        <figure class="stakeholder-visual">
+                            <img
+                                src="../img/emailrequest/stakeholder-limit.svg"
+                                alt="Illustration of manual email review after the daily request limit"
+                                width="416"
+                                height="280"
+                            >
+                        </figure>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer class="stakeholder-footer">
+        <a href="./privacy-login.html">Privacy Policy</a>
+        <a href="./legal-notice-login.html">Legal notice</a>
+    </footer>
+</body>
+</html>
