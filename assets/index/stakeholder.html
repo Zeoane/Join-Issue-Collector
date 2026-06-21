@@ -9,73 +9,74 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/standard-css.css">
-    <link rel="stylesheet" href="../css/welcome.css">
-    <style>
-        body {
-            min-height: 100vh;
-            background: #2A3647;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 120px 24px 48px;
-            font-family: "Open Sans", sans-serif;
-            color: #ffffff;
-        }
-
-        .stakeholder-logo {
-            position: absolute;
-            top: 40px;
-            left: 40px;
-            width: 100px;
-            height: auto;
-        }
-
-        .stakeholder-card {
-            max-width: 789px;
-            width: 100%;
-            padding: 56px 72px;
-            border-radius: 30px;
-            background: #ffffff;
-            color: #2A3647;
-            text-align: center;
-        }
-
-        .stakeholder-card h1 {
-            font-size: 32px;
-            font-weight: 700;
-            line-height: 120%;
-            margin-bottom: 24px;
-        }
-
-        .stakeholder-card p {
-            font-size: 23px;
-            line-height: 120%;
-            margin-bottom: 32px;
-        }
-
-        .stakeholder-back {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            height: 48px;
-            padding: 10px 18px;
-            border-radius: 8px;
-            background: #29ABE2;
-            color: #ffffff;
-            font-size: 23px;
-            text-decoration: none;
-        }
-    </style>
+    <link rel="stylesheet" href="../css/stakeholder.css">
 </head>
-<body>
-    <a href="../../index.html">
-        <img src="../img/Bord/Capa 1.svg" alt="Join-Issue Collector Logo" class="stakeholder-logo" width="274" height="335">
-    </a>
+<body class="stakeholder-page">
+    <header class="stakeholder-header">
+        <a href="../../index.html" class="stakeholder-header__logo-link" aria-label="Join-Issue Collector home">
+            <img src="../img/emailrequest/logo.svg" alt="" class="stakeholder-header__logo" width="46" height="56">
+        </a>
+    </header>
 
-    <main class="stakeholder-card">
-        <h1>Stakeholder</h1>
-        <p>Submit your feature request by email. The full stakeholder page will be added here next.</p>
-        <a href="../../index.html" class="stakeholder-back">Back to Welcome</a>
+    <main class="stakeholder-main">
+        <div class="stakeholder-content">
+            <div class="stakeholder-toolbar">
+                <a href="../../index.html" class="stakeholder-back" aria-label="Back to Welcome">
+                    <img src="../img/emailrequest/arrow-left-line.svg" alt="" width="37" height="37">
+                </a>
+                <p class="stakeholder-limit" id="stakeholder-limit">
+                    <strong>0</strong> of <strong>10</strong> requests used today
+                </p>
+            </div>
+
+            <div class="stakeholder-wrap">
+                <h1 class="stakeholder-title">Welcome</h1>
+
+                <section class="stakeholder-panel" aria-labelledby="stakeholder-title">
+                    <div class="stakeholder-panel__grid">
+                        <div class="stakeholder-copy">
+                            <h2 class="stakeholder-headline">
+                                Easily create a ticket by sending an<br>
+                                email — no extra steps needed.
+                            </h2>
+
+                            <div class="stakeholder-body">
+                                <p>
+                                    On this platform, you can submit your feature requests via email. Our AI system will
+                                    automatically generate a ticket with a deadline and priority level.
+                                </p>
+                                <p>
+                                    A total of 10 requests can be created per day. After this limit, emails can still be
+                                    sent, but they will be manually reviewed by our team instead of generating AI tickets.
+                                </p>
+                            </div>
+
+                            <a
+                                href="mailto:join-issue-collector@Projekt.de?subject=Feature%20Request"
+                                class="stakeholder-btn"
+                            >
+                                Create Email Request
+                                <img src="../img/emailrequest/check.svg" alt="" width="24" height="24">
+                            </a>
+                        </div>
+
+                        <figure class="stakeholder-visual">
+                            <img
+                                src="../img/emailrequest/stakeholder-welcome.svg"
+                                alt="Illustration of a stakeholder submitting a request to a Kanban board"
+                                width="416"
+                                height="280"
+                            >
+                        </figure>
+                    </div>
+                </section>
+            </div>
+        </div>
     </main>
+
+    <footer class="stakeholder-footer">
+        <a href="./privacy-login.html">Privacy Policy</a>
+        <a href="./legal-notice-login.html">Legal notice</a>
+    </footer>
 </body>
 </html>

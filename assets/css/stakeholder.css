@@ -1,0 +1,235 @@
+/* Stakeholder page – email request flow */
+
+.stakeholder-page {
+    min-height: 100vh;
+    background-color: #F6F7F8;
+    font-family: "Open Sans", sans-serif;
+    color: #2A3647;
+    display: flex;
+    flex-direction: column;
+    max-width: none;
+    max-height: none;
+}
+
+.stakeholder-header {
+    padding: 29px 0 0 40px;
+}
+
+.stakeholder-header__logo {
+    display: block;
+    width: 45.93px;
+    height: 56px;
+}
+
+.stakeholder-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 24px 48px;
+}
+
+.stakeholder-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.stakeholder-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: min(100%, 1121px);
+    height: 37px;
+    margin-inline: auto;
+    margin-bottom: 24px;
+}
+
+.stakeholder-limit {
+    font-weight: 400;
+    font-size: 19px;
+    line-height: 120%;
+    color: #29ABE2;
+    text-align: right;
+    margin: 0;
+}
+
+.stakeholder-limit strong {
+    font-weight: 700;
+}
+
+.stakeholder-back {
+    display: inline-flex;
+    align-items: center;
+    line-height: 0;
+    flex-shrink: 0;
+}
+
+.stakeholder-back img {
+    width: 37px;
+    height: 37px;
+}
+
+.stakeholder-wrap {
+    width: min(100%, 964px);
+    margin-inline: auto;
+}
+
+.stakeholder-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 77px;
+    margin-bottom: 32px;
+    font-weight: 700;
+    font-size: 64px;
+    line-height: 120%;
+    color: #2A3647;
+    text-align: center;
+}
+
+.stakeholder-panel {
+    width: 100%;
+    max-width: 964px;
+    min-height: 505px;
+}
+
+.stakeholder-panel__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 502px) minmax(0, 416px);
+    justify-content: center;
+    align-items: start;
+    column-gap: 46px;
+}
+
+.stakeholder-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    max-width: 502px;
+    min-height: 266px;
+}
+
+.stakeholder-headline {
+    font-weight: 400;
+    font-size: 28px;
+    line-height: 120%;
+    color: #42526E;
+}
+
+.stakeholder-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.stakeholder-body p {
+    font-weight: 400;
+    font-size: 19px;
+    line-height: 120%;
+    color: #42526E;
+}
+
+.stakeholder-visual {
+    width: 416px;
+    height: 280px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.stakeholder-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.stakeholder-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 293px;
+    height: 60px;
+    padding: 16px 18px;
+    border: none;
+    border-radius: 10px;
+    background-color: #29ABE2;
+    color: #ffffff;
+    font-family: "Open Sans", sans-serif;
+    font-weight: 400;
+    font-size: 19px;
+    line-height: 120%;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.stakeholder-btn:hover {
+    transform: scale(1.05);
+}
+
+.stakeholder-btn img {
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.stakeholder-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 32px;
+    padding: 24px;
+}
+
+.stakeholder-footer a {
+    font-family: "Open Sans", sans-serif;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 120%;
+    color: #A8A8A8;
+    text-decoration: none;
+}
+
+.stakeholder-footer a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 1024px) {
+    .stakeholder-panel__grid {
+        grid-template-columns: 1fr;
+        justify-items: center;
+    }
+
+    .stakeholder-visual {
+        width: 100%;
+        max-width: 416px;
+        height: auto;
+        aspect-ratio: 416 / 280;
+    }
+}
+
+@media (max-width: 768px) {
+    .stakeholder-header {
+        padding: 24px 0 0 24px;
+    }
+
+    .stakeholder-toolbar {
+        margin-bottom: 16px;
+    }
+
+    .stakeholder-title {
+        font-size: 40px;
+        min-height: auto;
+    }
+
+    .stakeholder-headline {
+        font-size: 22px;
+    }
+
+    .stakeholder-btn {
+        width: 100%;
+        max-width: 293px;
+    }
+}
