@@ -1,0 +1,45 @@
+@font-face {
+    font-family: "Join Open Sans SemiBold";
+    font-style: normal;
+    font-weight: 600;
+    font-display: block;
+    src: url("../fonts/open-sans/OpenSans-SemiBold.woff2") format("woff2");
+}
+
+@font-face {
+    font-family: "Join Inter Medium";
+    font-style: normal;
+    font-weight: 500;
+    font-display: block;
+    src: url("https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuI6fMZg.ttf") format("truetype");
+}
+
+@media (max-width: 768px) {
+    body.stakeholder-page--limit-reached {
+        font-family: "Open Sans", sans-serif;
+    }
+
+    body.stakeholder-page--limit-reached h2.stakeholder-alert,
+    body.stakeholder-page--limit-reached h2.stakeholder-alert.stakeholder-alert--limit-mobile {
+        font-family: "Join Open Sans SemiBold", sans-serif !important;
+        font-weight: 600 !important;
+        font-size: 16px !important;
+        line-height: 120% !important;
+        letter-spacing: 0 !important;
+        text-align: center !important;
+        font-synthesis: none !important;
+        font-variation-settings: normal !important;
+    }
+
+    body.stakeholder-page:not(.stakeholder-page--limit-reached) h2.stakeholder-headline,
+    body.stakeholder-page:not(.stakeholder-page--limit-reached) h2.stakeholder-headline.stakeholder-headline--welcome {
+        font-family: "Join Inter Medium", sans-serif !important;
+        font-weight: 500 !important;
+        font-size: 22px !important;
+        line-height: 120% !important;
+        text-align: left !important;
+        color: #42526E !important;
+        font-synthesis: none !important;
+        font-variation-settings: normal !important;
+    }
+}

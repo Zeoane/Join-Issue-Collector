@@ -140,16 +140,15 @@
 
 .stakeholder-headline {
     margin: 0;
-    font-weight: 400;
-    font-size: 22px;
     line-height: 120%;
     color: #42526E;
-    font-family: "Open Sans", sans-serif;
     text-align: left;
 }
 
 @media (min-width: 769px) {
     .stakeholder-headline {
+        font-family: "Open Sans", sans-serif;
+        font-weight: 400;
         font-size: 28px;
     }
 }
@@ -263,24 +262,55 @@
     justify-content: center;
 }
 
-.stakeholder-alert {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    width: 100%;
-    max-width: 502px;
-    min-height: 56px;
-    margin: 0;
-    padding: 16px 24px;
-    border-radius: 8px;
-    background-color: rgba(255, 210, 210, 0.52);
-    font-family: Inter, sans-serif;
-    font-weight: 500;
-    font-size: 20px;
-    line-height: 120%;
-    color: #2A3647;
-    text-align: center;
+@media (max-width: 768px) {
+    .stakeholder-page--limit-reached h2.stakeholder-alert {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: none;
+        min-height: auto;
+        margin: 0 0 16px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        background-color: rgba(255, 210, 210, 0.52);
+        color: #2A3647;
+    }
+}
+
+@media (min-width: 769px) {
+    .stakeholder-alert {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: 502px;
+        min-height: 56px;
+        margin: 0;
+        padding: 16px 24px;
+        border-radius: 8px;
+        background-color: rgba(255, 210, 210, 0.52);
+        font-family: Inter, sans-serif;
+        font-weight: 500;
+        font-size: 20px;
+        line-height: 120%;
+        color: #2A3647;
+        text-align: center;
+    }
+
+    .stakeholder-page--limit-reached h2.stakeholder-alert {
+        max-width: 502px;
+        min-height: 56px;
+        margin: 0;
+        padding: 16px 24px;
+        font-family: Inter, sans-serif;
+        font-weight: 500;
+        font-size: 20px;
+        letter-spacing: normal;
+        text-align: center;
+    }
 }
 
 .stakeholder-limit-text {
@@ -467,16 +497,10 @@
         display: contents;
     }
 
-    .stakeholder-page h2.stakeholder-headline {
+    .stakeholder-page:not(.stakeholder-page--limit-reached) h2.stakeholder-headline {
         order: 1;
         width: 100%;
         margin: 0 0 24px;
-        font-family: "Open Sans", sans-serif;
-        font-weight: 400;
-        font-size: 22px;
-        line-height: 120%;
-        color: #42526E;
-        text-align: left;
     }
 
     .stakeholder-visual {
@@ -538,7 +562,7 @@
     }
 
     .stakeholder-page--limit-reached .stakeholder-mobile-intro {
-        margin-bottom: 8px;
+        margin-bottom: 16px;
     }
 
     .stakeholder-page--limit-reached .stakeholder-limit--below-title {
@@ -558,16 +582,6 @@
 
     .stakeholder-page--limit-reached .stakeholder-alert {
         order: 1;
-        width: 100%;
-        max-width: none;
-        min-height: auto;
-        margin: 0 0 8px;
-        padding: 12px 16px;
-        font-family: Inter, sans-serif;
-        font-weight: 500;
-        font-size: 16px;
-        line-height: 120%;
-        text-align: left;
     }
 
     .stakeholder-page--limit-reached .stakeholder-visual--limit {
@@ -599,6 +613,7 @@
     .stakeholder-page--limit-reached .stakeholder-btn--limit-mobile {
         order: 4;
         transition: transform 0.2s ease;
+        font-family: "Open Sans", sans-serif;
     }
 
     .stakeholder-page--limit-reached .stakeholder-btn--limit-mobile:active {
@@ -641,10 +656,6 @@
         margin-top: 56px;
     }
 
-    .stakeholder-page h2.stakeholder-headline {
-        font-size: 22px;
-    }
-
     .stakeholder-visual {
         width: min(100%, 292px);
         height: auto;
@@ -655,11 +666,6 @@
         width: min(100%, 292px);
         height: auto;
         aspect-ratio: 292 / 215;
-    }
-
-    .stakeholder-page--limit-reached .stakeholder-alert {
-        font-size: 16px;
-        padding: 12px 16px;
     }
 
     .stakeholder-btn--email {
