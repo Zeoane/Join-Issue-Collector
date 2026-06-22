@@ -7,7 +7,7 @@
     <link rel="icon" href="../img/Logo.png" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../css/standard-css.css">
     <link rel="stylesheet" href="../css/stakeholder.css">
 </head>
@@ -21,23 +21,32 @@
     <main class="stakeholder-main">
         <div class="stakeholder-content">
             <div class="stakeholder-toolbar">
-                <a href="../../index.html" class="stakeholder-back" aria-label="Back to Welcome">
+                <a href="../../index.html" class="stakeholder-back stakeholder-back--desktop" aria-label="Back to Welcome">
                     <img src="../img/emailrequest/arrow-left-line.svg" alt="" width="37" height="37">
                 </a>
-                <p class="stakeholder-limit" id="stakeholder-limit">
-                    <strong>0</strong> of <strong>10</strong> requests used today
+                <p class="stakeholder-limit stakeholder-limit--toolbar">
+                    <strong>0</strong> of <strong>10</strong> requests used
                 </p>
             </div>
 
             <div class="stakeholder-wrap">
-                <h1 class="stakeholder-title">Welcome</h1>
+                <div class="stakeholder-mobile-intro">
+                    <div class="stakeholder-title-row">
+                        <h1 class="stakeholder-title">Welcome</h1>
+                        <a href="../../index.html" class="stakeholder-back stakeholder-back--mobile" aria-label="Back to Welcome">
+                            <img src="../img/emailrequest/arrow-left-line-mobile.svg" alt="" width="32" height="32">
+                        </a>
+                    </div>
+                    <p class="stakeholder-limit stakeholder-limit--below-title" id="stakeholder-limit">
+                        <strong>0</strong> of <strong>10</strong> requests used
+                    </p>
+                </div>
 
                 <section class="stakeholder-panel" aria-labelledby="stakeholder-title">
                     <div class="stakeholder-panel__grid">
                         <div class="stakeholder-copy">
                             <h2 class="stakeholder-headline">
-                                Easily create a ticket by sending an<br>
-                                email — no extra steps needed.
+                                Easily create a ticket by sending an email — no extra steps needed.
                             </h2>
 
                             <div class="stakeholder-body">
@@ -53,10 +62,17 @@
 
                             <a
                                 href="mailto:join-issue-collector@Projekt.de?subject=Feature%20Request"
-                                class="stakeholder-btn"
+                                class="stakeholder-btn stakeholder-btn--desktop"
                             >
                                 Create Email Request
                                 <img src="../img/emailrequest/check.svg" alt="" width="24" height="24">
+                            </a>
+
+                            <a
+                                href="./stakeholder-limit-reached.html"
+                                class="stakeholder-btn stakeholder-btn--mobile"
+                            >
+                                Create request
                             </a>
                         </div>
 
