@@ -24,6 +24,8 @@ Join-Issue Collector ist eine statische Multi-Page-Web-App (Vanilla HTML/CSS/JS)
 2. `js/firebase-config.example.js` nach `js/firebase-config.js` kopieren (falls noch nicht vorhanden).
 3. Web-App-Konfiguration aus Firebase Console eintragen (`apiKey`, `messagingSenderId`, `appId`).
 
+**Wichtig:** `js/firebase-config.js` ist in `.gitignore` und darf **nicht** ins Repository committed werden. Liegt ein API-Key bereits in GitHub, in der [Google Cloud Console](https://console.cloud.google.com/apis/credentials) den betroffenen Key **rotieren/revoken**, lokal `js/firebase-config.js` mit dem neuen Key aktualisieren und den GitHub-Secret-Alert als „revoked“ schließen.
+
 ### 2. Security Rules deployen
 
 ```bash
@@ -63,7 +65,8 @@ Join-Issue Collector/
 ├── assets/index/           # HTML-Seiten
 ├── assets/css/             # Stylesheets
 ├── js/
-│   ├── firebase-config.js  # Firebase Web-Config (apiKey eintragen!)
+│   ├── firebase-config.example.js  # Vorlage (committen)
+│   ├── firebase-config.js          # Lokal, gitignored – apiKey eintragen
 │   ├── firebase-init.js    # Firebase SDK Init
 │   ├── auth-service.js     # Login, Signup, Guest, Logout
 │   ├── authGuard.js        # Zentraler Seiten-Schutz
