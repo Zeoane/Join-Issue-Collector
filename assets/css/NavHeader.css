@@ -149,15 +149,16 @@ header h3 {
   gap: 8px;
   padding: 8px 56px;
   cursor: pointer;
+  transition: background-color 0.2s ease;
 }
 
 .menuOption:hover {
   background-color: #2a3d59;
 }
 
-.menuOption:hover img,
-.menuOption:hover p {
-  transform: translateY(-1px);
+.menuOption img,
+.menuOption p {
+  transform: none;
 }
 
 .menuOption p {
@@ -174,9 +175,8 @@ header h3 {
   background-color: #091932;
   cursor: default !important;
   color: white !important;
-  transform: none !important;
-  font-weight: 100 !important;
 }
+
 .aktiveNav:hover img,
 .aktiveNav:hover p {
   transform: none;

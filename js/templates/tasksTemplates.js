@@ -80,7 +80,12 @@ function taskEditTemplate(task) {
             </div>
             <div class="gap-8 width-100 flexC">
                 <label class="width-100" for="editedTaskDueDate">Due date<span class="highlight">*</span></label>
-                <input class="inputs change-onfoucus requierd-input" value="${task.dueDate ? task.dueDate.split('T')[0] : ''}" type="date" id="editedTaskDueDate" name="taskDueDate" min="" onfocus="this.min=new Date().toISOString().split('T')[0]">
+                <div class="date-input-wrapper width-100">
+                    <input class="inputs change-onfoucus requierd-input" value="${task.dueDate ? task.dueDate.split('T')[0] : ''}" type="date" id="editedTaskDueDate" name="taskDueDate" min="" onfocus="this.min=new Date().toISOString().split('T')[0]">
+                    <button type="button" class="date-input-icon-btn" onclick="openDatePicker('editedTaskDueDate', event)" aria-label="Choose date">
+                        <img class="date-input-icon" src="../img/calender.svg" alt="" aria-hidden="true">
+                    </button>
+                </div>
                 <span class="required-span width-100 display-none">This field is required</span>
             </div>
             <div class="gap-8 width-100 flexC">

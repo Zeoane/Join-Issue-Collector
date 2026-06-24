@@ -31,7 +31,12 @@ function addTaskOverlayForm(columnId, cancelLabel = 'Cancel') {
 
                         <div class="gap-8 width-100 flexC">
                             <label class="width-100" for="taskDueDate">Due date<span class="highlight">*</span></label>
-                            <input class="inputs requierd-input change-onfoucus" oninput="hideValidationErrors()" type="date" id="taskDueDate" name="taskDueDate" min="" onfocus="this.min=new Date().toISOString().split('T')[0]">
+                            <div class="date-input-wrapper width-100">
+                                <input class="inputs requierd-input change-onfoucus" oninput="hideValidationErrors()" type="date" id="taskDueDate" name="taskDueDate" min="" onfocus="this.min=new Date().toISOString().split('T')[0]">
+                                <button type="button" class="date-input-icon-btn" onclick="openDatePicker('taskDueDate', event)" aria-label="Choose date">
+                                    <img class="date-input-icon" src="../img/calender.svg" alt="" aria-hidden="true">
+                                </button>
+                            </div>
                             <span class="required-span width-100 display-none">This field is required</span>
                         </div>
                     </div>

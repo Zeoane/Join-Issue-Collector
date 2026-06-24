@@ -26,25 +26,16 @@
  * @property {number} done
  */
 
-const userKey = window.USERKEY || localStorage.getItem("loggedInUserKey");
-
-(function guard() {
-  if (!protectPageAccess("../../index.html")) return;
-  if (window.firebaseAuth) ensureAuthenticated("../../index.html");
-})();
+const userKey = () => window.USERKEY;
 
 window.addEventListener("DOMContentLoaded", async () => {
+  const ok = await ensureAuthenticated("../../index.html");
+  if (!ok) return;
+
   try {
     mobileOverlayFadeOut();
-    addHeader();
-    linkesNavMenuVersion();
-    showHideHelpAndUser();
-
-    // Ensure user name/initials are set before potentially longer task fetches
-    await setUserInitials();
     await init();
-
-    // Load task counts only after the user name is displayed and seeding is ensured
+    await initSummaryPage();
     await loadAndRenderTaskCounts();
   } catch (err) {
     console.error('Initialization error:', err);
@@ -59,7 +50,7 @@ window.addEventListener("DOMContentLoaded", async () => {
  * @returns {Promise<Object>} User object (empty object if not found)
  */
 async function loadUserData() {
-  const user = await loadData(`users/${userKey}`);
+  const user = await loadData(`users/${userKey()}`);
   return user || {};
 }
 
@@ -67,7 +58,7 @@ async function loadUserData() {
  * Initializes the dashboard with the user's formatted name and greeting.
  * @returns {Promise<void>}
  */
-async function init() {
+async function initSummaryPage() {
   const user = await loadUserData();
   const formattedName = user.guest ? "" : formatName(user?.name || "Unknown User");
 
@@ -153,7 +144,7 @@ async function loadAndRenderTaskCounts() {
  * @returns {Promise<Task[]>} Array of tasks (empty array if none)
  */
 async function fetchTasks() {
-  const data = await loadData(`users/${userKey}/tasks`);
+  const data = await loadData(`users/${userKey()}/tasks`);
   return Object.values(data || {});
 }
 

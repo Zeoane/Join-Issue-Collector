@@ -18,8 +18,8 @@ function handlePriority(priority) {
  */
 function taskOverlay(taskId) {
     authFetchUrl(getUserTasksUrl())
-        .then(response => response.json())
-        .then(data => {
+        .then((response) => parseJsonResponse(response))
+        .then((data) => {
             const taskEntry = Object.entries(data || {}).find(([key]) => key === taskId);
 
             if (taskEntry) {
@@ -90,7 +90,8 @@ async function toggleSubtask(taskId, subtaskValue) {
 
 /** Fetches all tasks JSON for the current user. */
 async function fetchUserTasks(){
-    const res = await authFetchUrl(getUserTasksUrl()); return res.json();
+    const res = await authFetchUrl(getUserTasksUrl());
+    return parseJsonResponse(res);
 }
 
 /** Finds the [key,task] pair for a given id in tasks JSON. */
@@ -130,8 +131,8 @@ function toggleSubtaskDisplayOnly(subtaskValue) {
  */
 function deleteTask(taskId) {
     authFetchUrl(getUserTasksUrl())
-        .then(response => response.json())
-        .then(data => {
+        .then((response) => parseJsonResponse(response))
+        .then((data) => {
             const taskEntry = Object.entries(data || {}).find(([key]) => key === taskId);
             if (taskEntry) {
                 const [firebaseKey] = taskEntry;
@@ -174,8 +175,8 @@ function showEditTaskOverlay(task) {
  */
 function editTask(taskId) {
     authFetchUrl(getUserTasksUrl())
-        .then(response => response.json())
-        .then(data => {
+        .then((response) => parseJsonResponse(response))
+        .then((data) => {
             const taskEntry = Object.entries(data || {}).find(([key]) => key === taskId);
             if (taskEntry) {
                 const [firebaseKey, task] = taskEntry;
@@ -221,7 +222,7 @@ async function updateTaskInFirebase(taskId, updatedTaskData) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedTaskData)
         });
-        return await response.json();
+        return parseJsonResponse(response);
     } catch (error) {
         console.error('Error updating task:', error);
         throw error;

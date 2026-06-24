@@ -1,4 +1,26 @@
-document.addEventListener("DOMContentLoaded", initLogin);
+document.addEventListener("DOMContentLoaded", async () => {
+  await prepareLoginSession();
+  initLogin();
+});
+
+/**
+ * Bereinigt alte Sessions und leitet eingeloggte User weiter.
+ * @returns {Promise<void>}
+ */
+async function prepareLoginSession() {
+  if (!window.firebaseAuth) {
+    clearSessionStorage();
+    return;
+  }
+
+  const user = await waitForAuthUser();
+  if (user) {
+    await signOutUser();
+    return;
+  }
+
+  clearSessionStorage();
+}
 
 /**
  * @returns {void}
@@ -6,7 +28,6 @@ document.addEventListener("DOMContentLoaded", initLogin);
 function initLogin() {
   const elements = getLoginElements();
   setupLiveFeedback(elements);
-  applyStarMaskToPassword(elements.passwordInput, elements.msgBox);
   bindLoginHandler(elements);
 }
 
@@ -54,15 +75,21 @@ async function onSubmitLogin(e, { emailInput, passwordInput, loginButton, msgBox
   e.preventDefault();
   clearMessage(msgBox);
   const email = emailInput.value.trim();
-  const password = passwordInput.getRealPassword();
-  if (!email || !password) return showMessage("Check your input. Please try again.", msgBox);
+  const password =
+    typeof passwordInput.getRealPassword === "function"
+      ? passwordInput.getRealPassword()
+      : passwordInput.value;
+  if (!email || !password) {
+    return showMessage("Bitte E-Mail und Passwort eingeben.", msgBox);
+  }
   disableButton(loginButton);
   const result = await signInWithEmail(email, password);
   if (result.success) {
+    await ensureUserContactsIfEmpty();
     sessionStorage.setItem("showMobileGreeting", "1");
     window.location.href = "../index/summary.html";
   } else {
-    showMessage("Check your input. Please try again.", msgBox);
+    showMessage(result.message || getAuthErrorMessage(result.error, "login"), msgBox);
     enableButton(loginButton);
   }
 }
@@ -121,7 +148,7 @@ async function startGuestSession() {
     window.location.href = "../index/summary.html";
   } catch (err) {
     console.error("Guest-Login fehlgeschlagen:", err);
-    alert("Guest login failed. Please try again.");
+    alert("Gast-Login fehlgeschlagen. Bitte erneut versuchen.");
   }
 }
 

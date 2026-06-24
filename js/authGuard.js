@@ -3,11 +3,20 @@
  */
 
 /**
- * Prüft synchron, ob ein Session-Key vorhanden ist (Schnell-Check).
+ * Schnell-Check: nur gültig, wenn Firebase bereits einen User hat.
  * @param {string} [redirectUrl="../../index.html"]
  * @returns {boolean}
  */
 function protectPageAccess(redirectUrl = "../../index.html") {
+  if (window.firebaseAuth?.currentUser) {
+    syncSessionFromUser(window.firebaseAuth.currentUser);
+    return true;
+  }
+
+  if (window.firebaseAuth) {
+    return false;
+  }
+
   const userKey = window.USERKEY || localStorage.getItem("loggedInUserKey");
   if (!userKey) {
     window.location.href = redirectUrl;
@@ -23,11 +32,14 @@ function protectPageAccess(redirectUrl = "../../index.html") {
  */
 function ensureAuthenticated(redirectUrl = "../../index.html") {
   if (!window.firebaseAuth) {
-    return Promise.resolve(protectPageAccess(redirectUrl));
+    clearSessionStorage();
+    window.location.href = redirectUrl;
+    return Promise.resolve(false);
   }
 
   return waitForAuthUser().then((user) => {
     if (!user) {
+      clearSessionStorage();
       window.location.href = redirectUrl;
       return false;
     }
@@ -47,10 +59,5 @@ window.ensureAuthenticated = ensureAuthenticated;
   if (!body || body.dataset.auth !== "required") return;
 
   const redirect = body.dataset.authRedirect || "../../index.html";
-
-  if (!protectPageAccess(redirect)) return;
-
-  if (window.firebaseAuth) {
-    ensureAuthenticated(redirect);
-  }
+  ensureAuthenticated(redirect);
 })();

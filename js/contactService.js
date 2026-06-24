@@ -198,8 +198,7 @@ function applyMobileDetailsSetup(key) {
  * @param {boolean} [closeOverlay=false] - Whether to close the overlay afterward.
  */
 async function deleteContact(key, closeOverlay = false) {
-  await deleteData(`users/${USERKEY}/contacts/${key}`);
-  document.getElementById("contactsDetails").innerHTML = "";
+  await deleteData(`${getContactsBasePath()}/${key}`);  document.getElementById("contactsDetails").innerHTML = "";
   document.getElementById("contactsDetails").classList.remove("showDetails");
   await loadDataAfterSave();
   if (closeOverlay) {
@@ -214,19 +213,17 @@ async function deleteContact(key, closeOverlay = false) {
  * Reloads contacts from Firebase and re-renders the list.
  */
 async function loadDataAfterSave() {
-  const newContacts = await loadData(`users/${USERKEY}/contacts`);
-  contactsData = newContacts;
-  renderContacts(newContacts);
+  const newContacts = await loadData(getContactsBasePath());
+  contactsData = newContacts || {};
+  renderContacts(contactsData);
 }
-
 
 /**
  * Mobile edit handler.
  */
 function handleEditMobile() {
   if (editingOwnContact === true) {
-    loadData(`users/${USERKEY}`).then((ownContact) => {
-      editOwnContact(ownContact);
+    loadData(`users/${window.USERKEY}`).then((ownContact) => {      editOwnContact(ownContact);
     });
     toggleMobileMenu();
     return;

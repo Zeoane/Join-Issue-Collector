@@ -2,10 +2,40 @@
  * Fetches contacts for the current user from Firebase.
  * @returns {Promise<Array<[string, {name:string}]>>} Filtered entries with names
  */
+async function ensureAuthReadyForAssignees() {
+  if (window.firebaseAuth?.currentUser && window.USERKEY) return;
+  const user = await waitForAuthUser();
+  if (user) syncSessionFromUser(user);
+  if (!window.USERKEY) throw new Error("Not authenticated");
+}
+
+/**
+ * @returns {Promise<Array<[string, {name:string,email?:string,color?:string}]>>}
+ */
 async function fetchContactsData() {
-  const data = await loadData(`users/${USERKEY}/contacts`);
+  await ensureAuthReadyForAssignees();
+  await ensureUserContactsIfEmpty();
+
+  const [contactsData, ownUser] = await Promise.all([
+    loadData(`users/${window.USERKEY}/contacts`),
+    loadData(`users/${window.USERKEY}`),
+  ]);
   await loadAllContactColors();
-  return Object.entries(data || {}).filter(([, contact]) => contact?.name);
+
+  const entries = Object.entries(contactsData || {}).filter(([, contact]) => contact?.name);
+
+  if (ownUser?.name && !entries.some(([, contact]) => contact.name === ownUser.name)) {
+    entries.unshift([
+      "__self__",
+      {
+        name: ownUser.name,
+        email: ownUser.email || "",
+        color: ownUser.color || "#2A3647",
+      },
+    ]);
+  }
+
+  return entries;
 }
 
 /**

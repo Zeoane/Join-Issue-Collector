@@ -242,7 +242,11 @@ footer a:hover {
     }
 
     .login-container {
-        margin: 0 20px;
+        width: 90%;
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 32px 16px;
+        box-sizing: border-box;
     }
 
     .login-container img {
@@ -261,14 +265,9 @@ footer a:hover {
 
     button {
         margin-top: 0;
-        width: 120%;
+        width: 100%;
+        max-width: 100%;
         font-size: 16px;
-    }
-
-    .login-container {
-        width: 90%;
-        margin: 0 8px;
-        padding: 32px 16px;
     }
 
     .login-btn {
@@ -278,6 +277,8 @@ footer a:hover {
     .login-buttons {
         flex-direction: column;
         gap: 21px;
+        width: 100%;
+        max-width: 280px;
     }
 
     .header-desktop {
@@ -298,18 +299,42 @@ footer a:hover {
         width: 35px;
         margin: 24px 0 0 24px;
     }
+
     .login-container h2 {
         padding-bottom: 12px;
         font-size: 40px;
     }
+
+    .inputs {
+        width: 100%;
+        max-width: 280px;
+    }
+
     .inputs input::placeholder {
         font-size: 16px;
         text-align: left;
     }
+
     .inputs input {
         padding: 8px;
+        width: 100%;
+        box-sizing: border-box;
     }
+
+    .header-mobile-div {
+        flex-direction: column;
+        gap: 12px;
+        padding: 0 16px;
+    }
+
     .header-mobile span {
-    font-size: 16px;
+        font-size: 16px;
+    }
+
+    footer {
+        height: auto;
+        padding: 24px 16px;
+        flex-wrap: wrap;
+        gap: 8px;
     }
 }

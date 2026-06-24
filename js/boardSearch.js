@@ -26,7 +26,7 @@ function handleSearch(inputId = "searchInput") {
 /** Fetches tasks from Firebase and filters them by search query. */
 function fetchFilteredTasks(query) {
   authFetchUrl(getUserTasksUrl())
-    .then((r) => r.json())
+    .then((r) => parseJsonResponse(r))
     .then((data) => {
       const tasks = Object.entries(data || {}).map(([id, t]) => ({ ...t, id }));
       const result = tasks.filter(
@@ -127,7 +127,7 @@ function clearSearchInput() {
 /** Fetches all tasks from Firebase and updates the board columns. */
 function fetchAllTasks() {
   authFetchUrl(getUserTasksUrl())
-    .then((r) => r.json())
+    .then((r) => parseJsonResponse(r))
     .then((data) => {
       const tasks = Object.entries(data || {}).map(([id, t]) => ({ ...t, id }));
       window.updateColumns?.(tasks);

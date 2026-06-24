@@ -2,6 +2,68 @@
  * Firebase Authentication – Login, Signup, Guest, Logout.
  */
 
+/** @type {Record<string, { signup?: string, login?: string, default?: string }>} */
+const AUTH_ERROR_MESSAGES = {
+  "auth/email-already-in-use": {
+    signup:
+      "Diese E-Mail ist bereits registriert. Bitte melde dich an oder nutze eine andere Adresse.",
+    login: "Diese E-Mail ist bereits registriert. Bitte melde dich an.",
+  },
+  "auth/invalid-email": {
+    default: "Bitte gib eine gültige E-Mail-Adresse ein.",
+  },
+  "auth/weak-password": {
+    signup: "Das Passwort ist zu schwach. Bitte mindestens 6 Zeichen verwenden.",
+  },
+  "auth/user-not-found": {
+    login: "Es existiert kein Konto mit dieser E-Mail. Bitte registriere dich zuerst.",
+  },
+  "auth/wrong-password": {
+    login: "E-Mail oder Passwort ist falsch. Bitte erneut versuchen.",
+  },
+  "auth/invalid-credential": {
+    login: "E-Mail oder Passwort ist falsch. Bitte erneut versuchen.",
+  },
+  "auth/too-many-requests": {
+    default: "Zu viele Versuche. Bitte warte kurz und versuche es erneut.",
+  },
+  "auth/network-request-failed": {
+    default: "Keine Verbindung zu Firebase. Bitte Internetverbindung prüfen.",
+  },
+  "auth/operation-not-allowed": {
+    signup:
+      "E-Mail-Registrierung ist in Firebase noch nicht aktiviert. Bitte den Admin informieren.",
+    login: "E-Mail-Anmeldung ist in Firebase noch nicht aktiviert. Bitte den Admin informieren.",
+  },
+  "firebase-not-configured": {
+    default: "Firebase ist nicht konfiguriert. Bitte js/firebase-config.js prüfen.",
+  },
+};
+
+/**
+ * Entfernt lokale Session-Daten.
+ * @returns {void}
+ */
+function clearSessionStorage() {
+  window.USERKEY = null;
+  localStorage.removeItem("loggedInUserKey");
+  localStorage.removeItem("guestMode");
+}
+
+/**
+ * @param {string} [code]
+ * @param {"signup"|"login"} [flow="login"]
+ * @returns {string}
+ */
+function getAuthErrorMessage(code, flow = "login") {
+  const entry = code ? AUTH_ERROR_MESSAGES[code] : null;
+  if (entry?.[flow]) return entry[flow];
+  if (entry?.default) return entry.default;
+  return flow === "signup"
+    ? "Registrierung fehlgeschlagen. Bitte versuche es erneut."
+    : "Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prüfen.";
+}
+
 /**
  * @returns {Promise<firebase.User|null>}
  */
@@ -29,18 +91,25 @@ window.syncSessionFromUser = syncSessionFromUser;
 /**
  * @param {string} email
  * @param {string} password
- * @returns {Promise<{success:boolean,error?:string}>}
+ * @returns {Promise<{success:boolean,error?:string,message?:string}>}
  */
 async function signInWithEmail(email, password) {
   try {
-    if (!window.firebaseAuth) return { success: false, error: "firebase-not-configured" };
+    if (!window.firebaseAuth) {
+      return {
+        success: false,
+        error: "firebase-not-configured",
+        message: getAuthErrorMessage("firebase-not-configured", "login"),
+      };
+    }
     localStorage.removeItem("guestMode");
     const credential = await window.firebaseAuth.signInWithEmailAndPassword(email, password);
     syncSessionFromUser(credential.user);
     return { success: true };
   } catch (err) {
     console.error("Login-Fehler:", err);
-    return { success: false, error: err.code || "auth-error" };
+    const error = err.code || "auth-error";
+    return { success: false, error, message: getAuthErrorMessage(error, "login") };
   }
 }
 
@@ -48,11 +117,17 @@ async function signInWithEmail(email, password) {
  * @param {string} name
  * @param {string} email
  * @param {string} password
- * @returns {Promise<{success:boolean,error?:string}>}
+ * @returns {Promise<{success:boolean,error?:string,message?:string}>}
  */
 async function signUpWithEmail(name, email, password) {
   try {
-    if (!window.firebaseAuth) return { success: false, error: "firebase-not-configured" };
+    if (!window.firebaseAuth) {
+      return {
+        success: false,
+        error: "firebase-not-configured",
+        message: getAuthErrorMessage("firebase-not-configured", "signup"),
+      };
+    }
     localStorage.removeItem("guestMode");
     const credential = await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
     const uid = credential.user.uid;
@@ -61,7 +136,8 @@ async function signUpWithEmail(name, email, password) {
     return { success: true };
   } catch (err) {
     console.error("Signup-Fehler:", err);
-    return { success: false, error: err.code || "auth-error" };
+    const error = err.code || "auth-error";
+    return { success: false, error, message: getAuthErrorMessage(error, "signup") };
   }
 }
 
@@ -106,6 +182,8 @@ async function signOutUser() {
   window.USERKEY = null;
 }
 
+window.getAuthErrorMessage = getAuthErrorMessage;
+window.clearSessionStorage = clearSessionStorage;
 window.signInWithEmail = signInWithEmail;
 window.signUpWithEmail = signUpWithEmail;
 window.signInAsGuest = signInAsGuest;

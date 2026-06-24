@@ -61,6 +61,10 @@
         padding: 8px;
     }
 
+    .date-input-wrapper input[type="date"] {
+        padding-right: 44px;
+    }
+
     .add-cancel-btns {
         right: 4px !important;
         gap: 2px !important;

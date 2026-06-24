@@ -44,7 +44,7 @@ function handleOverlayClicks(event) {
  */
 function showAddedTaskNotification() {
     const addedToBoardMessage = document.getElementById('addedToBoardMessage');
-    addedToBoardMessage.classList.remove('display-none');
+    addedToBoardMessage?.classList.remove('display-none');
 }
 
 /**
@@ -91,10 +91,13 @@ function addTask(event, columnId) {
     }
 
     pushTaskToDatabase(columnId)
-        .then(() => {
-            updateBoard();
+        .then(async () => {
+            await updateBoard();
             showAddedTaskNotification();
-            // Delegate post-add behavior to helper (overlay vs standalone page)
             handlePostAddTaskBehavior(900);
+        })
+        .catch((error) => {
+            console.error("Error adding task:", error);
+            alert("Task konnte nicht gespeichert werden. Bitte erneut versuchen.");
         });
 }

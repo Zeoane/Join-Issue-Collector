@@ -74,13 +74,9 @@ function validateAndSaveTaskData(columnId) {
 async function pushTaskToDatabase(columnId) {
     const taskData = validateAndSaveTaskData(columnId);
     if (!taskData) return Promise.reject('No task data');
+    if (!window.USERKEY) return Promise.reject('Not authenticated');
 
-    // store per-user so each user has their own copy
-    return authFetchUrl(getUserTasksUrl(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(taskData)
-    });
+    return postData(getUserTasksUrl(), taskData);
 }
 
 
@@ -168,15 +164,19 @@ async function updateColumns(tasks) {
  * @returns {Promise<Array<Object>>} Promise that resolves to array of task objects with IDs
  */
 async function fetchBoardData() {
-    // Ensure starter tasks exist for new users
-    await seedUserTasksIfEmpty();
+    if (!window.USERKEY) {
+        throw new Error('Not authenticated');
+    }
 
-    const [tasksResponse] = await Promise.all([
-        authFetchUrl(getUserTasksUrl()),
+    await seedUserTasksIfEmpty();
+    await ensureUserContactsIfEmpty();
+
+    const [tasksData] = await Promise.all([
+        loadData(getUserTasksUrl()),
         loadAllContactColors()
     ]);
 
-    return Object.entries((await tasksResponse.json()) || {}).map(([firebaseKey, task]) => ({
+    return Object.entries(tasksData || {}).map(([firebaseKey, task]) => ({
         ...task,
         id: firebaseKey
     }));
@@ -191,11 +191,28 @@ async function updateBoard() {
     try {
         const tasks = await fetchBoardData();
         await updateColumns(tasks);
-    if (typeof checkEmptyColumn === 'function') checkEmptyColumn();
+        if (typeof checkEmptyColumn === 'function') checkEmptyColumn();
     } catch (error) {
         console.error('Error updating board:', error);
     }
 }
+
+/**
+ * Initialisiert die Board-Seite erst nach Firebase-Auth.
+ * @returns {Promise<void>}
+ */
+async function initBoardPage() {
+    await init();
+    const user = await waitForAuthUser();
+    if (!user) return;
+    syncSessionFromUser(user);
+    await setUserInitials();
+    await updateBoard();
+}
+
+window.updateBoard = updateBoard;
+window.updateColumns = updateColumns;
+window.initBoardPage = initBoardPage;
 
 /* Tasks-Design in Board functions */
 
@@ -211,7 +228,7 @@ let contactColorMap = new Map();
  * @returns {Promise<Object>} Promise that resolves to the contacts object from Firebase
  */
 async function loadAllContactColors() {
-    const result = await loadData(`users/${USERKEY}/contacts`);
+    const result = await loadData(`users/${window.USERKEY}/contacts`);
 
     // Erstelle Color Map für schnellen Zugriff
     contactColorMap.clear();

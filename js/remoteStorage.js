@@ -17,10 +17,31 @@ async function getAuthToken() {
  * @returns {Promise<Response>}
  */
 async function authFetch(path, options = {}) {
-  const url = BASE_URL + path + ".json";
+  const url = path.startsWith("http")
+    ? path
+    : BASE_URL + path + ".json";
   const token = await getAuthToken();
-  const authUrl = token ? `${url}?auth=${encodeURIComponent(token)}` : url;
+  if (!token) {
+    return new Response(null, { status: 401, statusText: "Unauthorized" });
+  }
+  const authUrl = `${url}?auth=${encodeURIComponent(token)}`;
   return fetch(authUrl, options);
+}
+
+/**
+ * @param {Response} response
+ * @returns {Promise<any>}
+ */
+async function parseJsonResponse(response) {
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Firebase request failed (${response.status}): ${errorText || response.statusText}`
+    );
+  }
+  const text = await response.text();
+  if (!text) return null;
+  return JSON.parse(text);
 }
 
 /**
@@ -30,7 +51,7 @@ async function authFetch(path, options = {}) {
  */
 async function loadData(path = "") {
   const response = await authFetch(path);
-  return response.json();
+  return parseJsonResponse(response);
 }
 
 /**
@@ -45,7 +66,7 @@ async function postData(path = "", data = {}) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return response.json();
+  return parseJsonResponse(response);
 }
 
 /**
@@ -60,7 +81,7 @@ async function putData(path = "", data = {}) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  return response.json();
+  return parseJsonResponse(response);
 }
 
 /**
@@ -70,8 +91,10 @@ async function putData(path = "", data = {}) {
  */
 async function deleteData(path = "") {
   const response = await authFetch(path, { method: "DELETE" });
-  return response.json();
+  return parseJsonResponse(response);
 }
+
+window.parseJsonResponse = parseJsonResponse;
 
 window.authFetch = authFetch;
 window.authFetchUrl = authFetch;

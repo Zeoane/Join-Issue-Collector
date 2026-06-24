@@ -23,7 +23,13 @@
       localStorage.setItem("loggedInUserKey", user.uid);
       if (user.isAnonymous) {
         localStorage.setItem("guestMode", "true");
+      } else {
+        localStorage.removeItem("guestMode");
       }
+    } else {
+      window.USERKEY = null;
+      localStorage.removeItem("loggedInUserKey");
+      localStorage.removeItem("guestMode");
     }
     window.dispatchEvent(new CustomEvent("join-auth-ready", { detail: { user } }));
   });

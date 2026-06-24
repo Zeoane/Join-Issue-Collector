@@ -10,20 +10,40 @@ header img,
 }
 
 @media (max-width: 768px) {
+  body.flexC {
+    min-height: 100vh;
+    max-height: none;
+  }
+
+  main {
+    width: 100%;
+    padding: 0 16px;
+    box-sizing: border-box;
+  }
+
   .login-container {
-    padding: 32px 0;
+    padding: 32px 16px;
     width: 90%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .login-btn {
     padding: 8px;
     font-size: 16px;
-    width: 72%;
+    width: 100%;
+    max-width: 272px;
+  }
+
+  .login-buttons {
+    width: 100%;
+    max-width: 272px;
   }
 
   form#signUpForm {
     padding-top: 16px;
-    max-width: 300px;
+    max-width: 100%;
+    width: 100%;
   }
 
   .arrow-left-line {

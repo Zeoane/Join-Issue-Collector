@@ -100,18 +100,51 @@ function getTrimedValue(id) { return getTrimmedValue(id); }
 
 
 /**
+ * Zeigt eine Fehlermeldung im Signup-Formular an.
+ * @param {string} message
+ */
+function showSignupGlobalError(message) {
+  const globalError = document.getElementById("globalError");
+  if (!globalError) return;
+  globalError.textContent = message;
+  globalError.classList.remove("is-hidden");
+}
+
+/**
+ * Entfernt die globale Signup-Fehlermeldung.
+ */
+function clearSignupGlobalError() {
+  const globalError = document.getElementById("globalError");
+  if (!globalError) return;
+  globalError.textContent = "";
+  globalError.classList.add("is-hidden");
+}
+
+/**
  * Orchestrates the sign-up flow: validation, user creation, preload, and redirect.
  */
 async function signUp() {
-  console.log('signUp startet');
   resetPasswordError();
+  clearSignupGlobalError();
   const { name, email, password1, password2, acceptChecked } = readSignUpFormValues();
   if (!checkSignupPreconditions(password1, password2, acceptChecked)) return;
+
+  const signUpBtn = document.getElementById("signUpBtn");
+  if (signUpBtn) signUpBtn.disabled = true;
+
   try {
-    await performSignupFlow(name, email, password1);
+    const result = await signUpWithEmail(name, email, password1);
+    if (!result.success) {
+      showSignupGlobalError(result.message || getAuthErrorMessage(result.error, "signup"));
+      return;
+    }
+    await preloadAndSeed(window.USERKEY);
+    showSignUpSuccessOverlay();
   } catch (err) {
-    console.error('SignUp error:', err);
-    alert('Es ist ein Fehler aufgetreten.');
+    console.error("SignUp error:", err);
+    showSignupGlobalError("Registrierung fehlgeschlagen. Bitte versuche es erneut.");
+  } finally {
+    if (signUpBtn) signUpBtn.disabled = false;
   }
 }
 
@@ -134,13 +167,6 @@ function checkSignupPreconditions(password1, password2, acceptChecked) {
  * @param {string} email
  * @param {string} password
  */
-async function performSignupFlow(name, email, password) {
-  const result = await signUpWithEmail(name, email, password);
-  if (!result.success) throw new Error(result.error || "signup-failed");
-  await preloadAndSeed(window.USERKEY);
-  showSignUpSuccessOverlay();
-}
-
 /**
  * Reads current values from the sign-up form controls.
  * @returns {{name:string,email:string,password1:string,password2:string,acceptChecked:boolean}}
@@ -366,3 +392,9 @@ function updateCursorPosition(inputEl, isVisible) {
     inputEl.setSelectionRange(pos, pos);
   });
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+  ["name", "email", "password", "password2"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("input", clearSignupGlobalError);
+  });
+});

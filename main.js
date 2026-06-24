@@ -3,12 +3,10 @@
  */
 
 window.BASE_URL = "https://join-issue-collector-70cb7-default-rtdb.europe-west1.firebasedatabase.app/";
-window.USERKEY = localStorage.getItem("loggedInUserKey");
+window.USERKEY = null;
 
 /** @type {string} */
 const BASE_URL = window.BASE_URL;
-/** @type {string|null} */
-const USERKEY = window.USERKEY;
 
 /**
  * @type {Array<{ name: string, email: string, phone: string, color: string }>}
@@ -95,8 +93,10 @@ function showHideHelpAndUser() {
  * @returns {void}
  */
 function addHeader() {
-  const header = document.getElementById("header");
-  if (header) header.innerHTML = header();
+  const headerEl = document.getElementById("header");
+  if (headerEl && typeof renderHeaderContent === "function") {
+    headerEl.innerHTML = renderHeaderContent();
+  }
 }
 
 /**
@@ -114,10 +114,22 @@ async function init() {
  */
 async function setUserInitials() {
   const initialsEl = document.getElementById("userInitials");
-  if (!initialsEl || !USERKEY) return;
+  if (!initialsEl) return;
+
+  if (!window.USERKEY && typeof waitForAuthUser === "function") {
+    const authUser = await waitForAuthUser();
+    if (authUser && typeof syncSessionFromUser === "function") {
+      syncSessionFromUser(authUser);
+    }
+  }
+
+  if (!window.USERKEY) {
+    initialsEl.innerText = "?";
+    return;
+  }
 
   try {
-    const user = await loadData(`users/${USERKEY}`);
+    const user = await loadData(`users/${window.USERKEY}`);
     if (user?.name) {
       initialsEl.innerText = contactIconSpan(user.name);
     } else {
@@ -129,14 +141,31 @@ async function setUserInitials() {
   }
 }
 
+window.setUserInitials = setUserInitials;
+
+window.addEventListener("join-auth-ready", (event) => {
+  if (!event.detail?.user || !document.getElementById("userInitials")) return;
+  if (typeof syncSessionFromUser === "function") {
+    syncSessionFromUser(event.detail.user);
+  }
+  setUserInitials();
+});
+
 /**
+ * @param {MouseEvent} [event]
  * @returns {Promise<void>}
  */
-async function logout() {
-  if (typeof signOutUser === "function") {
-    await signOutUser();
-  } else {
-    localStorage.clear();
+async function logout(event) {
+  event?.preventDefault();
+  try {
+    if (typeof signOutUser === "function") {
+      await signOutUser();
+    } else {
+      localStorage.clear();
+      window.USERKEY = null;
+    }
+  } catch (err) {
+    console.error("Logout fehlgeschlagen:", err);
   }
   window.location.href = "../../index.html";
 }

@@ -41,6 +41,10 @@
     padding: 8px !important;
   }
 
+  .date-input-wrapper input[type="date"] {
+    padding-right: 44px !important;
+  }
+
   #taskAssignee,
   #taskCategory,
   #editedTaskAssignee {

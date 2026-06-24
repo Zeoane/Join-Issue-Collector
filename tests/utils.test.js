@@ -58,11 +58,14 @@ describe("getInitials", () => {
 
 describe("protectPageAccess", () => {
   beforeEach(() => {
-    global.window = { location: { href: "" } };
+    global.window = { location: { href: "" }, USERKEY: null };
     global.localStorage = {
       store: {},
       getItem(key) {
         return this.store[key] ?? null;
+      },
+      removeItem(key) {
+        delete this.store[key];
       },
       clear() {
         this.store = {};
@@ -70,8 +73,10 @@ describe("protectPageAccess", () => {
     };
   });
 
-  it("leitet um wenn kein User-Key vorhanden", () => {
+  it("leitet um wenn kein Firebase-User und kein Key vorhanden", () => {
     function protectPageAccess(redirectUrl = "../../index.html") {
+      if (global.window.firebaseAuth?.currentUser) return true;
+      if (global.window.firebaseAuth) return false;
       const userKey = global.window.USERKEY || global.localStorage.getItem("loggedInUserKey");
       if (!userKey) {
         global.window.location.href = redirectUrl;
@@ -84,17 +89,13 @@ describe("protectPageAccess", () => {
     expect(global.window.location.href).toBe("../../index.html");
   });
 
-  it("erlaubt Zugriff mit gültigem Key", () => {
-    function protectPageAccess(redirectUrl = "../../index.html") {
-      const userKey = global.window.USERKEY || global.localStorage.getItem("loggedInUserKey");
-      if (!userKey) {
-        global.window.location.href = redirectUrl;
-        return false;
-      }
-      return true;
+  it("erlaubt Zugriff mit aktivem Firebase-User", () => {
+    function protectPageAccess() {
+      if (global.window.firebaseAuth?.currentUser) return true;
+      return false;
     }
 
-    global.localStorage.store.loggedInUserKey = "uid-123";
+    global.window.firebaseAuth = { currentUser: { uid: "uid-123" } };
     expect(protectPageAccess()).toBe(true);
   });
 });

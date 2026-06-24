@@ -57,7 +57,7 @@ body {
   background-color: #f6f7f8;
   justify-content: center;
   max-width: 1920px;
-  max-height: 1024px;
+  min-height: 100vh;
 }
 
 header {

@@ -66,12 +66,13 @@ function handleOutsideClick(event) {
  * Opens the add-task overlay and initializes its content.
  * @param {string} columnId - Board column id for the new task.
  */
-function addTaskOverlay(columnId) {
+async function addTaskOverlay(columnId) {
   renderAddTaskOverlayContent(columnId);
-  // Provided by addTaskOverlay.assignees.js
-  if (typeof loadAndRenderContacts === 'function') loadAndRenderContacts();
   showOverlay();
   activateOverlayAnimation();
+  if (typeof loadAndRenderContacts === "function") {
+    await loadAndRenderContacts();
+  }
 }
 
 /**
@@ -150,15 +151,60 @@ function selectCategory(category) {
 document.addEventListener('click', handleOutsideClick);
 
 /** Injects the Add Task form into the dedicated page container. */
-function addTaskForm() {
+async function addTaskForm() {
   const form = document.getElementById("addTaskSeite");
   form.innerHTML = addTaskOverlayForm("todoColumn", 'Clear');
 
   const closeBtn = document.getElementById("closeOverlayBtn");
   if (closeBtn) closeBtn.classList.add("display-none");
-  // Provided by addTaskOverlay.assignees.js
-  if (typeof loadAndRenderContacts === 'function') loadAndRenderContacts();
+  if (typeof loadAndRenderContacts === "function") {
+    await loadAndRenderContacts();
+  }
 }
+
+/**
+ * Initialisiert die Add-Task-Seite inkl. Header-Initialen.
+ * @returns {Promise<void>}
+ */
+async function initAddTaskPage() {
+  await init();
+  const user = await waitForAuthUser();
+  if (!user) return;
+  syncSessionFromUser(user);
+  await setUserInitials();
+  await addTaskForm();
+}
+
+window.initAddTaskPage = initAddTaskPage;
+
+/**
+ * Opens the native date picker for a date input (triggered by the calendar icon).
+ * @param {string} inputId
+ * @param {Event} [event]
+ */
+function openDatePicker(inputId, event) {
+  event?.preventDefault();
+  event?.stopPropagation();
+
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  input.min = new Date().toISOString().split("T")[0];
+  input.focus();
+
+  try {
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+      return;
+    }
+  } catch (_) {
+    /* showPicker may throw outside a user gesture in some browsers */
+  }
+
+  input.click();
+}
+
+window.openDatePicker = openDatePicker;
 
 /**
  * Adds a subtask when pressing Enter on the target input.
@@ -175,16 +221,22 @@ function onEnterAddSubTask(event, inputId) {
 /**
  * Saves an edited subtask when pressing Enter or wires an input to Enter-save.
  * @param {KeyboardEvent|HTMLInputElement} eventOrInput - Keydown event or direct input element.
+ * @param {HTMLInputElement} [inputEl] - Optional input from inline handlers.
  */
-function onEnterEditSubTask(eventOrInput) {
-  if (eventOrInput && eventOrInput.target && eventOrInput.key === 'Enter') {
+function onEnterEditSubTask(eventOrInput, inputEl) {
+  if (eventOrInput?.key === "Enter") {
     eventOrInput.preventDefault();
     finalEditditSubtask(eventOrInput.target);
     return;
   }
-  const input = eventOrInput;
-  input?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
+
+  const input = inputEl || eventOrInput;
+  if (!input || typeof input.addEventListener !== "function") return;
+  if (input.dataset.enterBound === "1") return;
+
+  input.dataset.enterBound = "1";
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
       e.preventDefault();
       finalEditditSubtask(input);
     }

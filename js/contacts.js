@@ -1,8 +1,12 @@
 
-const basePath = `users/${USERKEY}/contacts`;
+/**
+ * @returns {string}
+ */
+function getContactsBasePath() {
+  return `users/${window.USERKEY}/contacts`;
+}
 
-let editingOwnContact = false;
-let contactsData = {};
+let editingOwnContact = false;let contactsData = {};
 let currentMode = "create";
 let currentEditKey = null;
 let activeContactKey = null;
@@ -11,14 +15,26 @@ let activeContactKey = null;
  * Loads contacts and the signed-in user's own contact, then renders UI.
  * Initializes global `contactsData` and triggers initial render.
  */
-document.addEventListener("DOMContentLoaded", async () => {
-  const contacts = await loadData(`users/${USERKEY}/contacts`);
-  const ownContact = await loadData(`users/${USERKEY}`);
-  contactsData = contacts;
-  renderContacts(contacts);
-  renderOwnContact(ownContact);
-});
+async function initContactsPage() {
+  await init();
+  const user = await waitForAuthUser();
+  if (!user) return;
+  syncSessionFromUser(user);
+  await setUserInitials();
 
+  try {
+    await ensureUserContactsIfEmpty();
+    const contacts = await loadData(getContactsBasePath());
+    const ownContact = await loadData(`users/${window.USERKEY}`);
+    contactsData = contacts || {};
+    renderContacts(contactsData);
+    if (ownContact) renderOwnContact(ownContact);
+  } catch (error) {
+    console.error("Error loading contacts page:", error);
+  }
+}
+
+window.initContactsPage = initContactsPage;
 /**
  * Reads current form fields and returns trimmed values.
  * @returns {{name:string,email:string,phone:string,contactKey:string}}
@@ -101,10 +117,9 @@ async function submitContact(event) {
  */
 async function updateOwnUserContact(formData) {
   const { name, email, phone } = formData;
-  const existingUserData = await loadData(`users/${USERKEY}`);
+  const existingUserData = await loadData(`users/${window.USERKEY}`);
   const updatedUser = { ...existingUserData, name, email, phone };
-  await putData(`users/${USERKEY}`, updatedUser);
-  renderOwnContact(updatedUser);
+  await putData(`users/${window.USERKEY}`, updatedUser);  renderOwnContact(updatedUser);
   showOwnContactCardDetails(updatedUser);
   activateContactCard("ownContact");
   toggleOverlay();
@@ -137,8 +152,7 @@ async function saveOrUpdateContact(formData) {
 async function updateContact(name, email, phone, contactKey) {
   const existingContact = contactsData[contactKey] || {};
   const updatedContact = { ...existingContact, name, email, phone };
-  await putData(`${basePath}/${contactKey}`, updatedContact);
-  // update tasks that reference the old contact name
+  await putData(`${getContactsBasePath()}/${contactKey}`, updatedContact);  // update tasks that reference the old contact name
   await updateTasksAssigneeOnContactChange(existingContact.name, name);
   await loadDataAfterSave();
   showcontactCardDetails(contactKey);
@@ -157,9 +171,9 @@ async function updateTasksAssigneeOnContactChange(oldName, newName) {
    * Compact updater: uses helpers if defined, otherwise falls back to BASE_URL paths.
    */
   if (!oldName || oldName === newName) return;
-  const tasksUrl = (typeof getUserTasksUrl === 'function') ? getUserTasksUrl() : `${window.BASE_URL}users/${USERKEY}/tasks.json`;
-  const taskItem = id => (typeof getUserTaskItemUrl === 'function') ? getUserTaskItemUrl(id) : `${window.BASE_URL}users/${USERKEY}/tasks/${id}.json`;
-  const tasks = await authFetchUrl(tasksUrl).then(r => r.json());
+  const tasksUrl = (typeof getUserTasksUrl === "function") ? getUserTasksUrl() : `users/${window.USERKEY}/tasks`;
+  const taskItem = id => (typeof getUserTaskItemUrl === "function") ? getUserTaskItemUrl(id) : `users/${window.USERKEY}/tasks/${id}`;
+  const tasks = await authFetchUrl(tasksUrl).then(r => parseJsonResponse(r));
   const ops = Object.entries(tasks || {}).filter(([,t]) => Array.isArray(t.assignee) && t.assignee.includes(oldName))
     .map(([k,t]) => authFetchUrl(taskItem(k), { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ assignee: t.assignee.map(n => n === oldName ? newName : n) }) }));
   await Promise.all(ops);
@@ -176,8 +190,7 @@ async function updateTasksAssigneeOnContactChange(oldName, newName) {
 async function createNewContact(name, email, phone) {
   const color = getRandomColor();
   const newContact = { name, email, phone, color };
-  const result = await postData(basePath, newContact);
-  const newKey = result.name;
+  const result = await postData(getContactsBasePath(), newContact);  const newKey = result.name;
   await loadDataAfterSave();
   showcontactCardDetails(newKey);
   activateContactCard(newKey);
@@ -222,7 +235,7 @@ function showOwnContactCardDetails(contact) {
 function renderContacts(data) {
   const container = document.getElementById("contactCardsContainer");
   container.innerHTML = "";
-  const sortedEntries = sortContactsByName(data);
+  if (!data || !Object.keys(data).length) return;  const sortedEntries = sortContactsByName(data);
   let currentLetter = null;
   for (const [key, contact] of sortedEntries) {
     const firstLetter = contact.name[0].toUpperCase();
