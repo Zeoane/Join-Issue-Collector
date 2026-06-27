@@ -7,8 +7,9 @@
  * @returns {string}
  */
 function getOwnContactCardHtml(contact, initials) {
+    const color = contact.color || "#2A3647";
     return `
-    <div class="ownContactCircle" border: 2px solid black;">
+    <div class="contactCircle" style="background-color: ${escapeHtml(color)};">
       ${escapeHtml(initials)}
     </div>
     <div>
@@ -27,9 +28,10 @@ function getOwnContactCardDetailsHtml(contact) {
       .map((w) => w[0].toUpperCase())
       .join("")
       .substring(0, 2);
+    const color = contact.color || "#2A3647";
     return `
     <div class="displayFlex">
-      <div class="ownBigContactCircle">
+      <div class="BigContactCircle" style="background-color: ${escapeHtml(color)};">
         ${escapeHtml(initials)}
       </div>
       <div class="displayColumn">

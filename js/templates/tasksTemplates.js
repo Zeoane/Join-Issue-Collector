@@ -1,5 +1,57 @@
 
 /**
+ * Renders the creator row in the task overlay (member vs stakeholder layout).
+ *
+ * @param {Object} task
+ * @returns {string}
+ */
+function renderTaskCreatorRow(task) {
+    if (!taskHasCreator(task)) return "";
+
+    if (isInternalCreatorTask(task)) {
+        return `
+                <div class="task-creator-row task-creator-row--member width-100 flexR ${getVisibilityClass(true)}">
+                    <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
+                    <img
+                        src="../img/Member-Taskcard.svg"
+                        alt=""
+                        class="task-creator-row__member-icon"
+                        width="93"
+                        height="22"
+                    >
+                    <span class="task-creator-row__name">${escapeHtml(getCreatorMemberDisplayName(task))}</span>
+                    <img
+                        src="../img/Profile-Taskcard.svg"
+                        alt=""
+                        class="task-creator-row__profile-badge"
+                        width="63"
+                        height="24"
+                    >
+                </div>`;
+    }
+
+    return `
+                <div class="task-creator-row task-creator-row--external width-100 flexR ${getVisibilityClass(true)}">
+                    <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
+                    <img
+                        src="../img/Extern-Taskcard.svg"
+                        alt=""
+                        class="task-creator-row__type-icon"
+                        width="75"
+                        height="22"
+                    >
+                    <span class="task-creator-row__name">${escapeHtml(getCreatorDisplayName(task))}</span>
+                    <img
+                        src="../img/Email-Taskcard.svg"
+                        alt=""
+                        class="task-creator-row__email-badge"
+                        width="76"
+                        height="24"
+                    >
+                </div>`;
+}
+
+/**
  * Builds the task details overlay content including actions and edit form.
  *
  * @param {Object} task - Task object including id, title, description, dueDate, priority, assignee, subtasks.
@@ -7,17 +59,29 @@
  */
 function taskOverlayTemplate(task){
     const safeId = escapeJsString(task.id);
+    const description = getTaskDescriptionForDisplay(task);
+    const showAiNotice = isAiGeneratedTask(task);
     return `
         <div class="flexC gap-24 task-overlay-content width-100" id="taskOverlayContent" data-task-id="${escapeHtml(task.id)}">
             <div class="space-between flexR">
-                <span class="task-category" id="${convertToCamelCase(task.category)}">${escapeHtml(task.category)}</span>
+                <div class="task-category-row flexR">
+                    <span class="task-category" id="${convertToCamelCase(task.category)}">${escapeHtml(task.category)}</span>
+                    <img
+                        src="../img/Note%20_%20KI%20generiert.svg"
+                        alt=""
+                        class="task-ai-badge ${getVisibilityClass(showAiNotice)}"
+                        width="177"
+                        height="22"
+                    >
+                </div>
                 <button class="overlay-button" onclick="closeOverlay()">
                     ${CLOSE_CANCEL_SVG}
                 </button>
             </div>
             <div class="task-overlay-header gap-24 flexC">
                 <h2>${escapeHtml(task.title)}</h2>
-                <p class="${getVisibilityClass(task.description)}" id="taskOverlayDescription">${escapeHtml(task.description || '')}</p>
+                <p class="${getVisibilityClass(description)}" id="taskOverlayDescription">${escapeHtml(description)}</p>
+                ${renderTaskCreatorRow(task)}
                 <div class="gap-25 flexR">
                     <p class="task-overlay-headdings">Due Date:</p>
                     ${formatDate(task.dueDate)}
@@ -76,7 +140,7 @@ function taskEditTemplate(task) {
             </div>
             <div class="gap-8 width-100 flexC">
                 <label class="width-100" for="editedTaskDescription">Description</label>
-                <textarea class="inputs change-onfoucus" id="editedTaskDescription" name="taskDescription" placeholder="Enter Task description">${escapeHtml(task.description || '')}</textarea>
+                <textarea class="inputs change-onfoucus" id="editedTaskDescription" name="taskDescription" placeholder="Enter Task description">${escapeHtml(getTaskDescriptionForDisplay(task))}</textarea>
             </div>
             <div class="gap-8 width-100 flexC">
                 <label class="width-100" for="editedTaskDueDate">Due date<span class="highlight">*</span></label>

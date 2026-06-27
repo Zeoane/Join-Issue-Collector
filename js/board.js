@@ -47,7 +47,8 @@ function collectTaskData(columnId) {
         assignee: getAssignedContacts(),
         priority: getSelectedPriority(),
         subtasks: getFormSubtasks(),
-        column: columnId
+        column: columnId,
+        ...getTaskCreatorFields(),
     };
 }
 
@@ -76,7 +77,8 @@ async function pushTaskToDatabase(columnId) {
     if (!taskData) return Promise.reject('No task data');
     if (!window.USERKEY) return Promise.reject('Not authenticated');
 
-    return postData(getUserTasksUrl(), taskData);
+    const payload = await resolveCreatorNameForSave(taskData);
+    return postData(getUserTasksUrl(), payload);
 }
 
 
@@ -85,6 +87,7 @@ async function pushTaskToDatabase(columnId) {
  * @function groupAndSortTasks
  * @param {Array<Object>} tasks - Array of task objects
  * @returns {Object} Object with tasks grouped by column and sorted
+ * @property {Array} triageColumn - Tasks in triage column
  * @property {Array} todoColumn - Tasks in todo column
  * @property {Array} inProgressColumn - Tasks in progress column
  * @property {Array} awaitFeedbackColumn - Tasks awaiting feedback
@@ -92,7 +95,7 @@ async function pushTaskToDatabase(columnId) {
  */
 function groupAndSortTasks(tasks) {
     const tasksByColumn = {
-        todoColumn: [], inProgressColumn: [],
+        triageColumn: [], todoColumn: [], inProgressColumn: [],
         awaitFeedbackColumn: [], doneColumn: []
     };
     // Gruppiere Tasks nach Spalten
@@ -116,8 +119,8 @@ function groupAndSortTasks(tasks) {
  * @property {string} tasksHTML - HTML string of all tasks in the column
  */
 function generateColumnData(tasksByColumn) {
-    const columns = ['todoColumn', 'inProgressColumn', 'awaitFeedbackColumn', 'doneColumn'];
-    const dragAreas = ['toDoDragArea', 'inProgressDragArea', 'awaitingFeedbackDragArea', 'doneDragArea'];
+    const columns = ['triageColumn', 'todoColumn', 'inProgressColumn', 'awaitFeedbackColumn', 'doneColumn'];
+    const dragAreas = ['triageDragArea', 'toDoDragArea', 'inProgressDragArea', 'awaitingFeedbackDragArea', 'doneDragArea'];
 
     return columns.map((col, i) => {
         const tasksHTML = tasksByColumn[col].map(taskCardTemplate).join('');
@@ -228,15 +231,22 @@ let contactColorMap = new Map();
  * @returns {Promise<Object>} Promise that resolves to the contacts object from Firebase
  */
 async function loadAllContactColors() {
-    const result = await loadData(`users/${window.USERKEY}/contacts`);
+    const [result, ownUser] = await Promise.all([
+        loadData(`users/${window.USERKEY}/contacts`),
+        loadData(`users/${window.USERKEY}`),
+    ]);
 
-    // Erstelle Color Map für schnellen Zugriff
     contactColorMap.clear();
     Object.values(result || {}).forEach(contact => {
         if (contact.name && contact.color) {
             contactColorMap.set(contact.name, contact.color);
         }
     });
+
+    if (ownUser?.name) {
+        const color = await ensureUserColor(ownUser);
+        contactColorMap.set(ownUser.name, color);
+    }
 
     return result;
 }

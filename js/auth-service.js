@@ -131,7 +131,7 @@ async function signUpWithEmail(name, email, password) {
     localStorage.removeItem("guestMode");
     const credential = await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
     const uid = credential.user.uid;
-    await putData(`users/${uid}`, { name, email, guest: false });
+    await putData(`users/${uid}`, { name, email, guest: false, color: getRandomColor() });
     syncSessionFromUser(credential.user);
     return { success: true };
   } catch (err) {
@@ -152,6 +152,7 @@ async function signInAsGuest() {
     name: "Guest",
     email: "",
     guest: true,
+    color: getRandomColor(),
   });
   localStorage.setItem("guestMode", "true");
   syncSessionFromUser(credential.user);

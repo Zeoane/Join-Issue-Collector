@@ -1,16 +1,15 @@
 @media (max-width: 1279px) {
 
 .h1-div {
-  margin: 56px 0 24px 0;
-  padding: 0 32px;
+  margin: clamp(48px, 6vw, 56px) 0 clamp(20px, 3vw, 24px);
 }
 
 h1 {
-  font-size: 48px;
+  font-size: clamp(42px, 4.5vw, 48px);
 }
 
 .search-addTask {
-  gap: 24px;
+  gap: clamp(16px, 2vw, 24px);
 }
 
 #searchInput::placeholder {
@@ -30,19 +29,7 @@ h1 {
   font-size: 18px;
 }
 
-.board-titles {
-  padding: 0 48px;
-}
-
-.board-title p {
-  font-size: 16px;
-}
-
-.board-bottom {
-  padding: 8px 48px;
-}
-
-.no-task-item p{
+.no-task-item p {
   font-size: 16px;
 }
 
@@ -67,16 +54,7 @@ h1 {
 @media (max-width: 1023px) {
 
 .h1-div {
-  margin: 48px 0 16px 0;
-  padding: 0 32px;
-}
-
-.board-titles {
-  padding: 0 32px;
-}
-
-.board-bottom {
-  padding: 8px 32px;
+  margin: clamp(40px, 5vw, 48px) 0 clamp(12px, 2vw, 16px);
 }
 
 .task-card {
@@ -89,19 +67,15 @@ h1 {
 }
 
 @media (max-width: 1000px) {
-  
-.h1-div {
-  padding: 0 16px;
-  margin: 48px 0 24px 0;
-}
 
 h1 {
-  font-size: 47px;
+  font-size: clamp(36px, 5vw, 47px);
 }
 
 .search-addTask {
   gap: 8px;
 }
+
 #searchInput {
   width: 100%;
 }
@@ -128,23 +102,6 @@ h1 {
   font-size: 16px;
 }
 
-.board-titles {
-  padding: 0 8px;
-}
-
-.board-title {
-  padding: 0 0px;
-}
-
-.board-title p {
-  font-size: 16px;
-}
-
-.board-bottom {
-  padding: 8px 16px;
-  gap: 12px;
-}
-
 .task-card {
   gap: 8px;
 }
@@ -166,53 +123,109 @@ h1 {
   left: 60px;
 }
 }
-@media (max-width: 800px) {
+
+@media (max-width: 1080px) {
+  :root {
+    --board-gutter: 16px;
+    --board-col-gap: 12px;
+    --board-triage-col: 100%;
+  }
+
+  .board-column--triage {
+    width: 100%;
+    max-width: none;
+  }
+
+  .board-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 8px;
+    padding: 8px 0 16px var(--board-gutter);
+    gap: 24px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .board-column {
+    width: 100%;
+    min-width: 0;
+    gap: 12px;
+  }
+
   .board-title {
-    padding: 0 16px;
+    min-height: 40px;
+    height: 40px;
+    padding: 0 var(--board-gutter) 0 0;
   }
+
+  .board-title--triage {
+    padding: 0 var(--board-gutter) 0 0;
+  }
+
+  .board-title__label,
+  .board-title p {
+    font-size: 27px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
   .no-task-item {
-    margin-right: 16px;
-    
+    margin-right: var(--board-gutter);
   }
+
   .background {
     max-height: calc(100vh - 160px);
   }
-  .add-task-button span{
+
+  .add-task-button span {
     display: none;
   }
+
   .add-task-button {
     padding: 3px;
   }
+
   .add-task-button svg {
     margin: 0;
   }
-  .search-input{
+
+  .search-input {
     display: none;
   }
+
   .search-input-mobile {
     display: flex;
     width: 95%;
     margin-bottom: 16px;
   }
-  .board-bottom {
-    flex-direction: column;
-    margin-bottom: 8px;
-    padding: 8px 0 8px 16px;
-  }
-  .board-title p{
-    font-size: 27px;
-  }
+
   .task-card {
     width: 252px;
     min-width: 252px;
+    max-width: 252px;
     flex-shrink: 0;
-    margin: 6px;
+    margin: 0 6px 0 0;
   }
+
   .board-column-bottom {
     flex-direction: row;
+    align-items: stretch;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
     touch-action: pan-x;
+    gap: 12px;
+    padding-bottom: 4px;
+    padding-right: var(--board-gutter);
+    box-sizing: border-box;
+  }
+
+  .board-column-bottom > .task-card,
+  .board-column-bottom > .no-task-item {
+    width: 252px;
+    min-width: 252px;
+    max-width: 252px;
   }
 }

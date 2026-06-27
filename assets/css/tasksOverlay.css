@@ -61,6 +61,89 @@
   font-size: 20px;
 }
 
+.task-ai-notice {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #eef6fb;
+  color: #2a3647;
+  font-size: 16px;
+  line-height: 120%;
+}
+
+.task-category-row {
+  align-items: center;
+  gap: 8px;
+}
+
+.task-ai-badge {
+  flex: 0 0 auto;
+  width: 177px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.task-creator-row {
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 24px;
+}
+
+.task-creator-row__label {
+  flex: 0 0 auto;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.task-creator-row__member-icon {
+  flex: 0 0 auto;
+  width: 93px;
+  height: 22px;
+  padding: 0 4px;
+  object-fit: contain;
+}
+
+.task-creator-row__type-icon {
+  flex: 0 0 auto;
+  width: 75px;
+  height: 22px;
+  padding: 0 4px;
+  object-fit: contain;
+}
+
+.task-creator-row__name {
+  flex: 0 0 111px;
+  width: 111px;
+  height: 23px;
+  font-family: "Open Sans", sans-serif;
+  font-size: 19px;
+  font-weight: 400;
+  line-height: 120%;
+  color: #2a3647;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-creator-row__profile-badge {
+  flex: 0 0 auto;
+  width: 63px;
+  height: 24px;
+  padding: 0 3px;
+  margin-left: auto;
+  object-fit: contain;
+}
+
+.task-creator-row__email-badge {
+  flex: 0 0 auto;
+  width: 76px;
+  height: 24px;
+  padding: 0 3px;
+  margin-left: auto;
+  object-fit: contain;
+}
+
 .assignee-container,
 .subtasks-overlay {
   align-items: flex-start;
@@ -159,7 +242,7 @@
   .task-overlay {
     padding: 32px ;
   }
-  .task-overlay-headdings, #taskOverlayDescription, .overlay-priority, .member-name-text{
+  .task-overlay-headdings, #taskOverlayDescription, .overlay-priority, .member-name-text, .task-ai-notice, .task-creator-row__name{
     font-size: 16px;
   }
   .task-overlay-header {

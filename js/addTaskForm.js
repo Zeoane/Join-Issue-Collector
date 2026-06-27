@@ -153,7 +153,7 @@ document.addEventListener('click', handleOutsideClick);
 /** Injects the Add Task form into the dedicated page container. */
 async function addTaskForm() {
   const form = document.getElementById("addTaskSeite");
-  form.innerHTML = addTaskOverlayForm("todoColumn", 'Clear');
+  form.innerHTML = addTaskOverlayForm("triageColumn", 'Clear');
 
   const closeBtn = document.getElementById("closeOverlayBtn");
   if (closeBtn) closeBtn.classList.add("display-none");

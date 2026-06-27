@@ -42,6 +42,7 @@ function fetchFilteredTasks(query) {
 /** Renders filtered search results into their respective board columns. */
 function renderSearchResults(tasks) {
   const columns = [
+    { id: 'triageColumn', dragAreaId: 'triageDragArea' },
     { id: 'todoColumn', dragAreaId: 'toDoDragArea' },
     { id: 'inProgressColumn', dragAreaId: 'inProgressDragArea' },
     { id: 'awaitFeedbackColumn', dragAreaId: 'awaitingFeedbackDragArea' },
@@ -75,12 +76,14 @@ function renderSearchResults(tasks) {
 /** Checks if columns are empty after filtering and updates display. */
 function checkEmptyFiltered(tasks) {
   const cols = [
+    "triageColumn",
     "todoColumn",
     "inProgressColumn",
     "awaitFeedbackColumn",
     "doneColumn",
   ];
   const ids = [
+    "triageDragArea",
     "toDoDragArea",
     "inProgressDragArea",
     "awaitingFeedbackDragArea",

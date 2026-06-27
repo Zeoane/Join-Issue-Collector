@@ -32,6 +32,7 @@ export default [
         predefinedColors: "readonly",
         getInitials: "readonly",
         getRandomColor: "readonly",
+        ensureUserColor: "readonly",
         contactIconSpan: "readonly",
       },
     },

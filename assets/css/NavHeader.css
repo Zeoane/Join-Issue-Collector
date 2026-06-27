@@ -239,6 +239,20 @@ span {
   border-radius: 50px;
 }
 
+.initials-button .contact-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  font-size: 20px !important;
+  font-weight: bold;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
 .initials-button img {
   width: 56px;
   height: 56px;

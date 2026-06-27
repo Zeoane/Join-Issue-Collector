@@ -130,19 +130,20 @@ input{
   border-color: #29ABE2 !important;
 }
 
-@media (max-width: 1400px) {
-  main{
-    padding-left: 188px;
+@media (max-width: 1399px) {
+  main {
+    padding-left: 186px;
   }
 }
 
-@media (max-width: 1100px) {
-  main{
-    padding-left: 168px;
+@media (max-width: 1099px) {
+  main {
+    padding-left: 167px;
   }
 }
+
 @media (max-width: 800px) {
-  main{
+  main {
     padding-left: 0;
   }
 }

@@ -30,7 +30,7 @@ function setupColumnEventHandlers(column, columnId, dragAreaId) {
  * @returns {void}
  */
 function checkEmptyColumn() {
-    const boardColumns = document.querySelectorAll('#todoColumn, #inProgressColumn, #awaitFeedbackColumn, #doneColumn');
+    const boardColumns = document.querySelectorAll('#triageColumn, #todoColumn, #inProgressColumn, #awaitFeedbackColumn, #doneColumn');
     boardColumns.forEach(column => {
         const existingNoTask = column.querySelector('.no-task-item');
         const dragArea = column.querySelector('.drag-area');
@@ -95,7 +95,7 @@ function moveTo(column) {
     if (!element) return;
 
     element.classList.remove('dragging');
-    ['toDoDragArea', 'inProgressDragArea', 'awaitingFeedbackDragArea', 'doneDragArea'].forEach(removeHighlight);
+    ['triageDragArea', 'toDoDragArea', 'inProgressDragArea', 'awaitingFeedbackDragArea', 'doneDragArea'].forEach(removeHighlight);
 
     if (column === originalColumn) { currentDraggedElement = null; originalColumn = null; return; }
 

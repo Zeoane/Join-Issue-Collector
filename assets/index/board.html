@@ -20,6 +20,9 @@
 
     <!-- fav-Icon -->
     <link rel="icon" href="../img/Logo.png" type="image/x-icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap" rel="stylesheet">
 
 </head>
 
@@ -60,7 +63,7 @@
                                     </svg>
                                 </button>
                             </div>
-                            <button onclick="addTaskOverlay('todoColumn')" class="add-task-button flexR">
+                            <button onclick="addTaskOverlay('triageColumn')" class="add-task-button flexR">
                                 <span>Add Task</span>
                                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"
                                     xmlns="http://www.w3.org/2000/svg">
@@ -88,45 +91,39 @@
                         </button>
                     </div>
                 </div>
-                <div class="board-bottom width-100 space-between flexR">
-                    <div class="board-column width-100 flexC">
-                        <div class="board-title width-100 space-between flexR">
-                            <p>To Do</p>
-                            <button class="add-button flexR" onclick="addTaskOverlay('todoColumn')">
-                                <span class="plus"></span>
-                                <span class="plus-90"></span>
-                            </button>
+                <div class="board-bottom width-100">
+                    <div class="board-column board-column--triage">
+                        <div class="board-title board-title--triage">
+                            <p class="board-title__label">Triage</p>
                         </div>
-                        <div class="board-column-bottom width-100 flexC" column-name="to do" id="todoColumn"></div>
+                        <div class="board-column-bottom" column-name="triage" id="triageColumn"></div>
                     </div>
-                    <div class="board-column width-100 flexC">
-                        <div class="board-title width-100 space-between flexR">
-                            <p>In Progress</p>
-                            <button class="add-button flexR" onclick="addTaskOverlay('inProgressColumn')">
-                                <span class="plus"></span>
-                                <span class="plus-90"></span>
-                            </button>
+                    <div class="board-column">
+                        <div class="board-title">
+                            <p class="board-title__label">To Do</p>
                         </div>
-                        <div class="board-column-bottom width-100 flexC" column-name="in progress"
+                        <div class="board-column-bottom" column-name="to do" id="todoColumn"></div>
+                    </div>
+                    <div class="board-column">
+                        <div class="board-title">
+                            <p class="board-title__label">In Progress</p>
+                        </div>
+                        <div class="board-column-bottom" column-name="in progress"
                             id="inProgressColumn"></div>
                     </div>
-                    <div class="board-column width-100 flexC">
-                        <div class="board-title width-100 space-between flexR">
-                            <p>Awaiting Feedback</p>
-                            <button class="add-button flexR" onclick="addTaskOverlay('awaitFeedbackColumn')">
-                                <span class="plus"></span>
-                                <span class="plus-90"></span>
-                            </button>
+                    <div class="board-column">
+                        <div class="board-title">
+                            <p class="board-title__label">Await feedback</p>
                         </div>
-                        <div class="board-column-bottom width-100 flexC" column-name="awaiting feedback"
+                        <div class="board-column-bottom" column-name="awaiting feedback"
                             id="awaitFeedbackColumn">
                         </div>
                     </div>
-                    <div class="board-column width-100 flexC">
-                        <div class="board-title width-100 space-between flexR">
-                            <p>Done</p>
+                    <div class="board-column">
+                        <div class="board-title">
+                            <p class="board-title__label">Done</p>
                         </div>
-                        <div class="board-column-bottom width-100 flexC" column-name="done" id="doneColumn"></div>
+                        <div class="board-column-bottom" column-name="done" id="doneColumn"></div>
                     </div>
                 </div>
             </div>

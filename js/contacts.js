@@ -28,7 +28,10 @@ async function initContactsPage() {
     const ownContact = await loadData(`users/${window.USERKEY}`);
     contactsData = contacts || {};
     renderContacts(contactsData);
-    if (ownContact) renderOwnContact(ownContact);
+    if (ownContact) {
+      ownContact.color = await ensureUserColor(ownContact);
+      renderOwnContact(ownContact);
+    }
   } catch (error) {
     console.error("Error loading contacts page:", error);
   }

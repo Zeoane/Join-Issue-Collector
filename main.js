@@ -125,19 +125,28 @@ async function setUserInitials() {
 
   if (!window.USERKEY) {
     initialsEl.innerText = "?";
+    initialsEl.style.backgroundColor = "";
+    initialsEl.classList.remove("contact-icon", "flexR");
     return;
   }
 
   try {
     const user = await loadData(`users/${window.USERKEY}`);
     if (user?.name) {
+      const color = await ensureUserColor(user);
       initialsEl.innerText = contactIconSpan(user.name);
+      initialsEl.style.backgroundColor = color;
+      initialsEl.classList.add("contact-icon", "flexR");
     } else {
       initialsEl.innerText = "?";
+      initialsEl.style.backgroundColor = "";
+      initialsEl.classList.remove("contact-icon", "flexR");
     }
   } catch (error) {
     console.error("Fehler beim Laden der Userdaten:", error);
     initialsEl.innerText = "?";
+    initialsEl.style.backgroundColor = "";
+    initialsEl.classList.remove("contact-icon", "flexR");
   }
 }
 

@@ -58,8 +58,7 @@ function renderHeaderContent() {
                 <img class="help" src="../img/SummaryUser/help.png" alt="" />
             </a>
             <button onclick="toggleMenu()" id="userProfile" class="initials-button">
-                <img src="../img/Ellipse 3.png" alt="">
-                <span id="userInitials" class="initials-text"></span>
+                <span id="userInitials" class="contact-icon flexR"></span>
             </button>
             <div class="flexC not-visible" id="menu">
                 <a class="helpMobileLink" href="help.html">Help</a>
@@ -208,9 +207,9 @@ function taskCardTemplate(task) {
               draggable="true" ondragstart="startDragging(event, '${safeId}')"
               ondragend="stopDragging(event, '${safeId}')"
               ontouchstart="this._startX=event.touches[0].clientX; this._startY=event.touches[0].clientY; this._hasMoved=false; this._lpt=setTimeout(()=>{ window.__mobileDragging=true; try{ startDragging({dataTransfer:{setDragImage:()=>{}}}, '${safeId}'); }catch(e){ currentDraggedElement='${safeId}'; this.classList.add('dragging'); } }, 250)"
-              ontouchmove="const t=event.touches[0]; const deltaX=Math.abs(t.clientX-this._startX); const deltaY=Math.abs(t.clientY-this._startY); this._hasMoved=true; if(window.__mobileDragging){ const el=document.elementFromPoint(t.clientX,t.clientY); const col=el && el.closest('.board-column-bottom'); const map={todoColumn:'toDoDragArea', inProgressColumn:'inProgressDragArea', awaitFeedbackColumn:'awaitingFeedbackDragArea', doneColumn:'doneDragArea'}; Object.keys(map).forEach(k=>{ if(!col || k!==col.id) removeHighlight(map[k]); }); if(col && map[col.id]){ highlight(map[col.id]); } if(event.cancelable) event.preventDefault(); } else if(deltaX > deltaY && deltaX > 10) { clearTimeout(this._lpt); }"
-              ontouchend="clearTimeout(this._lpt); if(window.__mobileDragging){ const t=(event.changedTouches && event.changedTouches[0]) || (event.touches && event.touches[0]); if(t){ const el=document.elementFromPoint(t.clientX,t.clientY); const col=el && el.closest('.board-column-bottom'); if(col && col.id){ moveTo(col.id); } else { stopDragging(); ['toDoDragArea','inProgressDragArea','awaitingFeedbackDragArea','doneDragArea'].forEach(id=>removeHighlight(id)); } } if(event.cancelable) event.preventDefault(); setTimeout(()=>{window.__mobileDragging=false;}, 250); }"
-              ontouchcancel="clearTimeout(this._lpt); if(window.__mobileDragging){ stopDragging(); ['toDoDragArea','inProgressDragArea','awaitingFeedbackDragArea','doneDragArea'].forEach(id=>removeHighlight(id)); setTimeout(()=>{window.__mobileDragging=false;}, 250); }">
+              ontouchmove="const t=event.touches[0]; const deltaX=Math.abs(t.clientX-this._startX); const deltaY=Math.abs(t.clientY-this._startY); this._hasMoved=true; if(window.__mobileDragging){ const el=document.elementFromPoint(t.clientX,t.clientY); const col=el && el.closest('.board-column-bottom'); const map={triageColumn:'triageDragArea', todoColumn:'toDoDragArea', inProgressColumn:'inProgressDragArea', awaitFeedbackColumn:'awaitingFeedbackDragArea', doneColumn:'doneDragArea'}; Object.keys(map).forEach(k=>{ if(!col || k!==col.id) removeHighlight(map[k]); }); if(col && map[col.id]){ highlight(map[col.id]); } if(event.cancelable) event.preventDefault(); } else if(deltaX > deltaY && deltaX > 10) { clearTimeout(this._lpt); }"
+              ontouchend="clearTimeout(this._lpt); if(window.__mobileDragging){ const t=(event.changedTouches && event.changedTouches[0]) || (event.touches && event.touches[0]); if(t){ const el=document.elementFromPoint(t.clientX,t.clientY); const col=el && el.closest('.board-column-bottom'); if(col && col.id){ moveTo(col.id); } else { stopDragging(); ['triageDragArea','toDoDragArea','inProgressDragArea','awaitingFeedbackDragArea','doneDragArea'].forEach(id=>removeHighlight(id)); } } if(event.cancelable) event.preventDefault(); setTimeout(()=>{window.__mobileDragging=false;}, 250); }"
+              ontouchcancel="clearTimeout(this._lpt); if(window.__mobileDragging){ stopDragging(); ['triageDragArea','toDoDragArea','inProgressDragArea','awaitingFeedbackDragArea','doneDragArea'].forEach(id=>removeHighlight(id)); setTimeout(()=>{window.__mobileDragging=false;}, 250); }">
             <div class="task-card-header width-100 flexR">
                 <span id="${convertToCamelCase(task.category)}">${escapeHtml(task.category)}</span>
             </div>
