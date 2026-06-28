@@ -22,6 +22,7 @@ database-debug.log
 pubsub-debug.log
 *-firebase-adminsdk-*.json
 serviceAccount*.json
+firebase-service-account.json
 secrets/
 
 # Legacy client config (copy from js/firebase-config.example.js)

@@ -2,6 +2,10 @@
   "database": {
     "rules": "database.rules.json"
   },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
+  },
   "hosting": {
     "public": ".",
     "ignore": [
@@ -10,9 +14,16 @@
       "**/node_modules/**",
       ".github/**",
       "backend/**",
+      "functions/**",
       "frontend/**",
       "tests/**",
       "coverage/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/internal/n8n/tasks",
+        "function": "internalN8nTasks"
+      }
     ]
   }
 }
