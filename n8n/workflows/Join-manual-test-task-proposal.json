@@ -1,0 +1,157 @@
+{
+  "name": "Join-manual-test-task-proposal",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d3c9530d-5cac-47c8-a654-5e4ca8ad7b06",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e9416a04-840f-45b8-a3fa-bc2381992e15",
+              "name": "title",
+              "value": "Test ticket from n8n",
+              "type": "string"
+            },
+            {
+              "id": "d32bfaf9-f14d-45d6-9dc1-77552b049535",
+              "name": "description",
+              "value": "Stakeholder request: Add export to PDF.",
+              "type": "string"
+            },
+            {
+              "id": "4ac07d33-dd2f-42d7-a06a-08285ba15d9a",
+              "name": "category",
+              "value": "User Story",
+              "type": "string"
+            },
+            {
+              "id": "8bebad0f-a0ec-418f-a113-53b473d91cfd",
+              "name": "priority",
+              "value": "MidPriority",
+              "type": "string"
+            },
+            {
+              "id": "d107f9e7-305e-43b6-a9c6-a63d25d51199",
+              "name": "dueDate",
+              "value": "2026-07-15",
+              "type": "string"
+            },
+            {
+              "id": "f55dde8c-cf0e-4d6c-a7bf-07b7f27cdee9",
+              "name": "column",
+              "value": "triageColumn",
+              "type": "string"
+            },
+            {
+              "id": "2b234c80-e036-488c-aa75-710d08afbbd8",
+              "name": "creatorEmail",
+              "value": "stakeholder@example.com",
+              "type": "string"
+            },
+            {
+              "id": "6828318a-1a71-4eb7-b2c9-9c5859e3ea9f",
+              "name": "creatorType",
+              "value": "external",
+              "type": "string"
+            },
+            {
+              "id": "3b517acd-3510-42ac-afbc-73842fc0485e",
+              "name": "aiGenerated",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b61d3b6d-6b03-406f-a1a6-a8eda3d8655f",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "C:\\Users\\gabri\\OneDrive\\Dokumente\\DA_Projekte\\Join-Issue Collector\\https:\\join-issue-collector-70cb7.web.app\\internal\\n8n\\tasks",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-N8N-Secret",
+              "value": "={{ $credentials.httpHeaderAuth.value }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"title\":\"Test Cloud\",\"creatorEmail\":\"stakeholder@example.com\",\"column\":\"triageColumn\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "41d7abb9-478e-49bd-acfc-c8f5224afb97",
+      "name": "HTTP Request",
+      "notes": "Send to Join Backend"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f5349235-17fa-48dd-8dba-33510141b15a",
+  "meta": {
+    "instanceId": "178e2aea3414a8776196d1eaa659ed3e085989989f4a0edffb60f4038b9bcd3b"
+  },
+  "nodeGroups": [],
+  "id": "obyjXxeKhdSU2thW",
+  "tags": []
+}
