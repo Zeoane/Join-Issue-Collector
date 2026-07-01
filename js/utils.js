@@ -161,14 +161,25 @@ function getCreatorTypeLabel(creatorType) {
 }
 
 /**
+ * Display name for task creator rows (never shows an email address).
+ * @param {Object|null|undefined} task
+ * @returns {string}
+ */
+function getCreatorPersonDisplayName(task) {
+  if (!task) return "Unknown";
+  if (task.creatorName) return task.creatorName;
+  if (task.creatorType !== "external") {
+    return isGuestUser() ? "Guest" : "Member";
+  }
+  return "Stakeholder";
+}
+
+/**
  * @param {Object|null|undefined} task
  * @returns {string}
  */
 function getCreatorDisplayName(task) {
-  if (!task) return "";
-  if (task.creatorEmail) return task.creatorEmail;
-  if (task.creatorName) return task.creatorName;
-  return "Unknown";
+  return getCreatorPersonDisplayName(task);
 }
 
 /**
@@ -176,12 +187,7 @@ function getCreatorDisplayName(task) {
  * @returns {string}
  */
 function getCreatorMemberDisplayName(task) {
-  if (!task) return "Unknown";
-  if (task.creatorName) return task.creatorName;
-  if (task.creatorType === "internal") {
-    return isGuestUser() ? "Guest" : "Member";
-  }
-  return getCreatorDisplayName(task);
+  return getCreatorPersonDisplayName(task);
 }
 
 /**
@@ -252,6 +258,7 @@ window.AI_GENERATED_NOTICE = AI_GENERATED_NOTICE;
 window.getTaskCreatorFields = getTaskCreatorFields;
 window.taskHasCreator = taskHasCreator;
 window.getCreatorTypeLabel = getCreatorTypeLabel;
+window.getCreatorPersonDisplayName = getCreatorPersonDisplayName;
 window.getCreatorDisplayName = getCreatorDisplayName;
 window.getCreatorMemberDisplayName = getCreatorMemberDisplayName;
 window.resolveCreatorNameForSave = resolveCreatorNameForSave;

@@ -113,14 +113,18 @@
 }
 
 .task-creator-row__name {
-  flex: 0 0 111px;
-  width: 111px;
-  height: 23px;
   font-family: "Open Sans", sans-serif;
   font-size: 19px;
   font-weight: 400;
   line-height: 120%;
   color: #2a3647;
+}
+
+.task-creator-row--member .task-creator-row__name,
+.task-creator-row--external .task-creator-row__name {
+  flex: 0 0 111px;
+  width: 111px;
+  height: 23px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

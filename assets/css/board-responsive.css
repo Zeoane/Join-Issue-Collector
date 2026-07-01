@@ -128,12 +128,6 @@ h1 {
   :root {
     --board-gutter: 16px;
     --board-col-gap: 12px;
-    --board-triage-col: 100%;
-  }
-
-  .board-column--triage {
-    width: 100%;
-    max-width: none;
   }
 
   .board-bottom {

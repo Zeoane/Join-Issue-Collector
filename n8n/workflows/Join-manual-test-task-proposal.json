@@ -59,6 +59,12 @@
               "type": "string"
             },
             {
+              "id": "a1b2c3d4-creator-name",
+              "name": "creatorName",
+              "value": "Anna Stakeholder",
+              "type": "string"
+            },
+            {
               "id": "6828318a-1a71-4eb7-b2c9-9c5859e3ea9f",
               "name": "creatorType",
               "value": "external",

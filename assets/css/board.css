@@ -1,7 +1,7 @@
 :root {
   --board-gutter: clamp(20px, 4vw, 64px);
   --board-col-gap: clamp(10px, 1.1vw, 16px);
-  --board-triage-col: clamp(170px, 14vw, 230px);
+  --board-col-template: repeat(5, minmax(0, 1fr));
 }
 
 .content {
@@ -113,11 +113,14 @@ h1 {
 .board-titles {
   padding: 0 var(--board-gutter);
   margin-bottom: 4px;
+  display: grid;
+  grid-template-columns: var(--board-col-template);
+  gap: var(--board-col-gap);
 }
 
 .board-bottom {
   display: grid;
-  grid-template-columns: var(--board-triage-col) repeat(4, minmax(0, 1fr));
+  grid-template-columns: var(--board-col-template);
   align-items: stretch;
   flex: 1;
   width: 100%;
@@ -137,15 +140,6 @@ h1 {
   min-width: 0;
   height: auto;
   gap: var(--board-col-gap);
-}
-
-.board-column--triage {
-  width: auto;
-  max-width: none;
-}
-
-.board-bottom .board-column:not(.board-column--triage) {
-  min-width: 0;
 }
 
 .board-title {

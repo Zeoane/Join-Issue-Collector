@@ -19,7 +19,7 @@ function renderTaskCreatorRow(task) {
                         width="93"
                         height="22"
                     >
-                    <span class="task-creator-row__name">${escapeHtml(getCreatorMemberDisplayName(task))}</span>
+                    <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
                     <img
                         src="../img/Profile-Taskcard.svg"
                         alt=""
@@ -40,7 +40,7 @@ function renderTaskCreatorRow(task) {
                         width="75"
                         height="22"
                     >
-                    <span class="task-creator-row__name">${escapeHtml(getCreatorDisplayName(task))}</span>
+                    <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
                     <img
                         src="../img/Email-Taskcard.svg"
                         alt=""
