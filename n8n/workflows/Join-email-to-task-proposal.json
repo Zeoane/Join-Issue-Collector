@@ -3,11 +3,14 @@
   "nodes": [
     {
       "parameters": {},
-      "id": "a1b2c3d4-0001-4000-8000-000000000001",
+      "id": "27b5be80-5e20-4993-ad31-6196b6ce131d",
       "name": "When clicking 'Execute workflow'",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [0, 320]
+      "position": [
+        0,
+        320
+      ]
     },
     {
       "parameters": {
@@ -35,37 +38,33 @@
         },
         "options": {}
       },
-      "id": "a1b2c3d4-0002-4000-8000-000000000002",
+      "id": "36d3eee5-5d97-48fb-a479-ac540d84ea1e",
       "name": "Sample stakeholder email",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [240, 320]
+      "position": [
+        240,
+        320
+      ]
     },
     {
       "parameters": {
         "options": {}
       },
-      "id": "a1b2c3d4-0003-4000-8000-000000000003",
+      "id": "a88c35c8-1c97-4f52-9a49-c19414395fbb",
       "name": "Email Trigger (IMAP)",
       "type": "n8n-nodes-base.emailReadImap",
       "typeVersion": 2,
-      "position": [0, 0],
+      "position": [
+        208,
+        -32
+      ],
       "credentials": {
         "imap": {
-          "name": "Join stakeholder inbox (IMAP)"
+          "id": "16PaMA7I5E4Kn51O",
+          "name": "IMAP account"
         }
       }
-    },
-    {
-      "parameters": {
-        "html": "={{ $json.textHtml || '' }}",
-        "options": {}
-      },
-      "id": "a1b2c3d4-0004-4000-8000-000000000004",
-      "name": "HTML to text",
-      "type": "n8n-nodes-base.markdown",
-      "typeVersion": 1,
-      "position": [240, 0]
     },
     {
       "parameters": {
@@ -86,30 +85,35 @@
             {
               "id": "imap-body",
               "name": "body",
-              "value": "={{ $json.text || $('Email Trigger (IMAP)').item.json.textPlain || '' }}",
+              "value": "={{ $('Email Trigger (IMAP)').item.json.textPlain || $('Email Trigger (IMAP)').item.json.text || $('Email Trigger (IMAP)').item.json.textHtml || '' }}",
               "type": "string"
             }
           ]
         },
         "options": {}
       },
-      "id": "a1b2c3d4-0005-4000-8000-000000000005",
+      "id": "d0bc3b92-3dd8-49f1-827b-8085a4e84fe5",
       "name": "Normalize IMAP email",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [480, 0]
+      "position": [
+        512,
+        -32
+      ]
     },
     {
       "parameters": {
         "promptType": "define",
-        "text": "=You parse stakeholder emails into Kanban ticket fields for Join-Issue Collector.\n\nReturn ONLY valid JSON with these keys:\n- title (string, max 80 chars)\n- description (string)\n- category: exactly \"User Story\" or \"Technical Task\"\n- priority: exactly \"HighPriority\", \"MidPriority\", or \"LowPriority\"\n- dueDate: \"YYYY-MM-DD\" or empty string\n\nEmail from: {{ $json.from }}\nSubject: {{ $json.subject }}\nBody:\n{{ $json.body }}",
-        "options": {}
+        "text": "=You parse stakeholder emails into Kanban ticket fields for Join-Issue Collector.\n\nReturn ONLY valid JSON with these keys:\n- title (string, max 80 chars)\n- description (string)\n- category: exactly \"User Story\" or \"Technical Task\"\n- priority: exactly \"HighPriority\", \"MidPriority\", or \"LowPriority\"\n- dueDate: \"YYYY-MM-DD\" or empty string\n\nEmail from: {{ $json.from }}\nSubject: {{ $json.subject }}\nBody:\n{{ $json.body }}"
       },
-      "id": "a1b2c3d4-0006-4000-8000-000000000006",
+      "id": "e5fdade0-3d39-4a03-8ace-f04f125d0b04",
       "name": "Parse ticket with AI",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.5,
-      "position": [760, 160]
+      "position": [
+        768,
+        160
+      ]
     },
     {
       "parameters": {
@@ -122,14 +126,18 @@
           "temperature": 0.2
         }
       },
-      "id": "a1b2c3d4-0007-4000-8000-000000000007",
+      "id": "a8fb2078-aaaf-442b-8510-8cbe04332bd0",
       "name": "OpenAI Chat Model",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
-      "position": [760, 380],
+      "position": [
+        768,
+        384
+      ],
       "credentials": {
         "openAiApi": {
-          "name": "OpenAI Join"
+          "id": "imnsTqSbHou6ZypR",
+          "name": "OpenAI account"
         }
       }
     },
@@ -137,11 +145,14 @@
       "parameters": {
         "jsCode": "const aiItem = $input.first().json;\nconst sourceNames = ['Normalize IMAP email', 'Sample stakeholder email'];\n\nlet email = null;\nfor (const name of sourceNames) {\n  try {\n    const candidate = $(name).first().json;\n    if (candidate?.from) {\n      email = candidate;\n      break;\n    }\n  } catch (_) {}\n}\n\nif (!email) {\n  throw new Error('No stakeholder email context found.');\n}\n\nlet aiText = aiItem.text ?? aiItem.response ?? aiItem.output ?? '';\nif (typeof aiText !== 'string') {\n  aiText = JSON.stringify(aiText);\n}\naiText = aiText.replace(/```json\\s*/gi, '').replace(/```\\s*/g, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(aiText);\n} catch (_) {\n  parsed = {\n    title: email.subject || 'Stakeholder request',\n    description: email.body || '',\n    category: 'User Story',\n    priority: 'MidPriority',\n    dueDate: '',\n  };\n}\n\nconst validCategories = new Set(['User Story', 'Technical Task']);\nconst validPriorities = new Set(['HighPriority', 'MidPriority', 'LowPriority']);\n\nconst fromRaw = String(email.from || '');\nconst creatorEmail = fromRaw.match(/<([^>]+)>/)?.[1] || fromRaw.trim();\n\nreturn [{\n  json: {\n    title: String(parsed.title || email.subject || 'Stakeholder request').trim(),\n    description: String(parsed.description || email.body || '').trim(),\n    category: validCategories.has(parsed.category) ? parsed.category : 'User Story',\n    priority: validPriorities.has(parsed.priority) ? parsed.priority : 'MidPriority',\n    dueDate: typeof parsed.dueDate === 'string' ? parsed.dueDate.trim() : '',\n    column: 'triageColumn',\n    creatorEmail,\n    creatorType: 'external',\n    aiGenerated: true,\n  },\n}];"
       },
-      "id": "a1b2c3d4-0008-4000-8000-000000000008",
+      "id": "e464b967-5b16-4364-8c22-19ebbff4c5e4",
       "name": "Build Join payload",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1020, 160]
+      "position": [
+        1024,
+        160
+      ]
     },
     {
       "parameters": {
@@ -163,19 +174,24 @@
         "jsonBody": "={{ JSON.stringify($json) }}",
         "options": {}
       },
-      "id": "a1b2c3d4-0009-4000-8000-000000000009",
+      "id": "3566950c-5739-463b-8470-e9582418a802",
       "name": "Create task in Triage",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1260, 160],
+      "position": [
+        1264,
+        160
+      ],
       "credentials": {
         "httpHeaderAuth": {
-          "name": "Join X-N8N-Secret"
+          "id": "HjH4uC7k7UHF6k0F",
+          "name": "Header Auth account"
         }
       },
       "notes": "POST to Firebase Cloud Function via Hosting rewrite"
     }
   ],
+  "pinData": {},
   "connections": {
     "When clicking 'Execute workflow'": {
       "main": [
@@ -200,17 +216,6 @@
       ]
     },
     "Email Trigger (IMAP)": {
-      "main": [
-        [
-          {
-            "node": "HTML to text",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "HTML to text": {
       "main": [
         [
           {
@@ -268,10 +273,16 @@
   },
   "active": false,
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
   },
+  "versionId": "18cbe502-18f9-4154-9d83-b4f610c632a3",
   "meta": {
-    "templateCredsSetupCompleted": false
+    "templateCredsSetupCompleted": true,
+    "instanceId": "178e2aea3414a8776196d1eaa659ed3e085989989f4a0edffb60f4038b9bcd3b"
   },
+  "nodeGroups": [],
+  "id": "72o6mAWOtSNcLNjJ",
   "tags": []
 }
