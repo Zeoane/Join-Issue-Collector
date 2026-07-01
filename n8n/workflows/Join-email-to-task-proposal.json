@@ -2,54 +2,12 @@
   "name": "Join-email-to-task-proposal",
   "nodes": [
     {
-      "parameters": {},
-      "id": "27b5be80-5e20-4993-ad31-6196b6ce131d",
-      "name": "When clicking 'Execute workflow'",
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [
-        0,
-        320
-      ]
-    },
-    {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "sample-from",
-              "name": "from",
-              "value": "Anna Stakeholder <stakeholder@example.com>",
-              "type": "string"
-            },
-            {
-              "id": "sample-subject",
-              "name": "subject",
-              "value": "Feature request: PDF export for board",
-              "type": "string"
-            },
-            {
-              "id": "sample-body",
-              "name": "body",
-              "value": "Hi team,\n\nplease add an export to PDF for the kanban board. This is important for our weekly reports.\nPriority is medium, deadline ideally end of July 2026.\n\nThanks,\nAnna",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "36d3eee5-5d97-48fb-a479-ac540d84ea1e",
-      "name": "Sample stakeholder email",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        240,
-        320
-      ]
-    },
-    {
-      "parameters": {
-        "options": {}
+        "postProcessAction": "read",
+        "options": {
+          "customEmailConfig": "[\"UNSEEN\"]",
+          "forceReconnect": 15
+        }
       },
       "id": "a88c35c8-1c97-4f52-9a49-c19414395fbb",
       "name": "Email Trigger (IMAP)",
@@ -64,7 +22,74 @@
           "id": "16PaMA7I5E4Kn51O",
           "name": "IMAP account"
         }
-      }
+      },
+      "notes": "Realtime IMAP listener. Force reconnect is in minutes (Options), not seconds."
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "f1e2d3c4-b5a6-4789-9012-3456789abcde",
+      "name": "Schedule Trigger (every 5 min)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        208,
+        128
+      ],
+      "notes": "Backup poll every 5 minutes for unread inbox emails."
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 10,
+        "filters": {
+          "readStatus": "unread",
+          "labelIds": [
+            "INBOX"
+          ]
+        },
+        "options": {
+          "simplify": false
+        }
+      },
+      "id": "a2b3c4d5-e6f7-4890-a123-456789bcdef0",
+      "name": "Fetch unread emails (Gmail)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        128
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      },
+      "notes": "Built-in Gmail node for n8n Cloud. Requires Google OAuth2 credential for joincollector@gmail.com."
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\r\n\r\nfunction formatAddress(entry) {\r\n  if (!entry) return '';\r\n  if (typeof entry === 'string') return entry;\r\n  if (entry.text) return entry.text;\r\n  if (entry.value) return entry.value;\r\n  if (entry.address) {\r\n    return entry.name ? `${entry.name} <${entry.address}>` : entry.address;\r\n  }\r\n  return '';\r\n}\r\n\r\nfunction extractFrom(item) {\r\n  if (typeof item.from === 'string' && item.from) return item.from;\r\n  if (item.from) return formatAddress(item.from);\r\n  if (item.From) return formatAddress(item.From);\r\n  const fromList = item.envelope?.from;\r\n  if (Array.isArray(fromList) && fromList.length) return formatAddress(fromList[0]);\r\n  if (item.headers?.from) {\r\n    return Array.isArray(item.headers.from) ? item.headers.from[0] : item.headers.from;\r\n  }\r\n  return '';\r\n}\r\n\r\nfunction extractSubject(item) {\r\n  return item.subject || item.Subject || item.envelope?.subject || item.headers?.subject?.[0] || item.headers?.subject || '';\r\n}\r\n\r\nfunction stripHtml(value) {\r\n  return String(value || '')\r\n    .replace(/<br\\s*\\/?>/gi, '\\n')\r\n    .replace(/<\\/p>/gi, '\\n')\r\n    .replace(/<[^>]+>/g, ' ')\r\n    .replace(/\\u00a0/g, ' ')\r\n    .replace(/\\r/g, '')\r\n    .trim();\r\n}\r\n\r\nfunction extractBody(item) {\r\n  const candidates = [\r\n    item.textPlain,\r\n    item.text,\r\n    item.textContent,\r\n    item.textAsHtml,\r\n    item.textHtml,\r\n    item.htmlContent,\r\n  ];\r\n\r\n  for (const candidate of candidates) {\r\n    if (typeof candidate === 'string' && candidate.trim()) {\r\n      return candidate.includes('<') ? stripHtml(candidate) : candidate.trim();\r\n    }\r\n  }\r\n\r\n  return item.snippet ? String(item.snippet).trim() : '';\r\n}\r\n\r\nreturn [\r\n  {\r\n    json: {\r\n      from: extractFrom(data),\r\n      subject: String(extractSubject(data)).trim(),\r\n      body: extractBody(data),\r\n      messageId: data.id || data.messageId || '',\r\n    },\r\n  },\r\n];\r\n"
+      },
+      "id": "b3c4d5e6-f7a8-4901-b234-567890cdef01",
+      "name": "Normalize scheduled email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        128
+      ]
     },
     {
       "parameters": {
@@ -73,19 +98,19 @@
             {
               "id": "imap-from",
               "name": "from",
-              "value": "={{ $('Email Trigger (IMAP)').item.json.from }}",
+              "value": "={{ $json.from }}",
               "type": "string"
             },
             {
               "id": "imap-subject",
               "name": "subject",
-              "value": "={{ $('Email Trigger (IMAP)').item.json.subject }}",
+              "value": "={{ $json.subject }}",
               "type": "string"
             },
             {
               "id": "imap-body",
               "name": "body",
-              "value": "={{ $('Email Trigger (IMAP)').item.json.textPlain || $('Email Trigger (IMAP)').item.json.text || $('Email Trigger (IMAP)').item.json.textHtml || '' }}",
+              "value": "={{ $json.textPlain || $json.text || $json.textHtml || '' }}",
               "type": "string"
             }
           ]
@@ -104,7 +129,7 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=You parse stakeholder emails into Kanban ticket fields for Join-Issue Collector.\n\nReturn ONLY valid JSON with these keys:\n- title (string, max 80 chars)\n- description (string)\n- category: exactly \"User Story\" or \"Technical Task\"\n- priority: exactly \"HighPriority\", \"MidPriority\", or \"LowPriority\"\n- dueDate: \"YYYY-MM-DD\" or empty string\n- creatorName (string: first and last name from the email signature or sender display name, never an email address)\n\nEmail from: {{ $json.from }}\nSubject: {{ $json.subject }}\nBody:\n{{ $json.body }}"
+        "text": "=You parse stakeholder emails into Kanban ticket fields for Join-Issue Collector.\n\nReturn ONLY valid JSON with these keys:\n- title (string, max 80 chars)\n- description (string)\n- category: exactly \"User Story\" or \"Technical Task\"\n- priority: exactly \"HighPriority\", \"MidPriority\", or \"LowPriority\"\n- dueDate: \"YYYY-MM-DD\" or empty string\n- creatorName (string: first and last name from the email signature at the end of the body, or from the sender display name; never an email address; never the word \"Stakeholder\")\n\nEmail from: {{ $json.from }}\nSubject: {{ $json.subject }}\nBody:\n{{ $json.body }}"
       },
       "id": "e5fdade0-3d39-4a03-8ace-f04f125d0b04",
       "name": "Parse ticket with AI",
@@ -143,7 +168,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const aiItem = $input.first().json;\nconst sourceNames = ['Normalize IMAP email', 'Sample stakeholder email'];\n\nlet email = null;\nfor (const name of sourceNames) {\n  try {\n    const candidate = $(name).first().json;\n    if (candidate?.from) {\n      email = candidate;\n      break;\n    }\n  } catch (_) {}\n}\n\nif (!email) {\n  throw new Error('No stakeholder email context found.');\n}\n\nlet aiText = aiItem.text ?? aiItem.response ?? aiItem.output ?? '';\nif (typeof aiText !== 'string') {\n  aiText = JSON.stringify(aiText);\n}\naiText = aiText.replace(/```json\\s*/gi, '').replace(/```\\s*/g, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(aiText);\n} catch (_) {\n  parsed = {\n    title: email.subject || 'Stakeholder request',\n    description: email.body || '',\n    category: 'User Story',\n    priority: 'MidPriority',\n    dueDate: '',\n    creatorName: '',\n  };\n}\n\nconst validCategories = new Set(['User Story', 'Technical Task']);\nconst validPriorities = new Set(['HighPriority', 'MidPriority', 'LowPriority']);\n\nconst fromRaw = String(email.from || '');\nconst creatorEmail = fromRaw.match(/<([^>]+)>/)?.[1] || fromRaw.trim();\n\nfunction parseFromDisplayName(fromValue) {\n  const trimmed = String(fromValue || '').trim();\n  const match = trimmed.match(/^([^<]+)</);\n  if (!match) return '';\n  const name = match[1].trim().replace(/^[\"']|[\"']$/g, '');\n  return name && !name.includes('@') ? name : '';\n}\n\nfunction normalizeCreatorName(value) {\n  const name = String(value || '').trim().replace(/\\s+/g, ' ');\n  if (!name || name.includes('@')) return '';\n  return name;\n}\n\nconst creatorName =\n  normalizeCreatorName(parsed.creatorName) ||\n  parseFromDisplayName(fromRaw) ||\n  'Stakeholder';\n\nreturn [{\n  json: {\n    title: String(parsed.title || email.subject || 'Stakeholder request').trim(),\n    description: String(parsed.description || email.body || '').trim(),\n    category: validCategories.has(parsed.category) ? parsed.category : 'User Story',\n    priority: validPriorities.has(parsed.priority) ? parsed.priority : 'MidPriority',\n    dueDate: typeof parsed.dueDate === 'string' ? parsed.dueDate.trim() : '',\n    column: 'triageColumn',\n    creatorName,\n    creatorEmail,\n    creatorType: 'external',\n    aiGenerated: true,\n  },\n}];"
+        "jsCode": "const aiItem = $input.item.json;\nconst sourceNames = ['Normalize scheduled email', 'Normalize IMAP email'];\n\nlet email = null;\nfor (const name of sourceNames) {\n  try {\n    const candidate = $(name).item.json;\n    if (candidate?.from) {\n      email = candidate;\n      break;\n    }\n  } catch (_) {}\n}\n\nif (!email) {\n  throw new Error('No stakeholder email context found.');\n}\n\nlet aiText = aiItem.text ?? aiItem.response ?? aiItem.output ?? '';\nif (typeof aiText !== 'string') {\n  aiText = JSON.stringify(aiText);\n}\naiText = aiText.replace(/```json\\s*/gi, '').replace(/```\\s*/g, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(aiText);\n} catch (_) {\n  parsed = {\n    title: email.subject || 'Stakeholder request',\n    description: email.body || '',\n    category: 'User Story',\n    priority: 'MidPriority',\n    dueDate: '',\n    creatorName: '',\n  };\n}\n\nconst validCategories = new Set(['User Story', 'Technical Task']);\nconst validPriorities = new Set(['HighPriority', 'MidPriority', 'LowPriority']);\n\nconst fromRaw = String(email.from || '');\nconst creatorEmail = fromRaw.match(/<([^>]+)>/)?.[1] || fromRaw.trim();\n\nfunction parseFromDisplayName(fromValue) {\n  const trimmed = String(fromValue || '').trim();\n  const match = trimmed.match(/^([^<]+)</);\n  if (!match) return '';\n  const name = match[1].trim().replace(/^[\"']|[\"']$/g, '');\n  return name && !name.includes('@') ? name : '';\n}\n\nfunction isGenericCreatorName(value) {\n  return /^(stakeholder|unknown|guest|n/a|na)$/i.test(String(value || '').trim());\n}\n\nfunction normalizeCreatorName(value) {\n  const name = String(value || '').trim().replace(/s+/g, ' ');\n  if (!name || name.includes('@') || isGenericCreatorName(name)) return '';\n  return name;\n}\n\nfunction looksLikeContactLine(line) {\n  return /@|https?://|+?d[ds().-]{7,}|(?:tel|phone|mobil|fax).?|(?:straße|str.|gmbh| ag\b|gbr|ug\b)/i.test(\n    line\n  );\n}\n\nfunction isLikelyPersonName(line) {\n  if (looksLikeContactLine(line)) return false;\n  const parts = line.trim().split(/s+/);\n  if (parts.length < 2 || parts.length > 5) return false;\n  return parts.every((part) => /^[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ.'-]*$/.test(part));\n}\n\nfunction stripHtml(value) {\n  return String(value || '')\n    .replace(/<brs*/?>/gi, '\n')\n    .replace(/</p>/gi, '\n')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/ /g, ' ')\n    .replace(/\r/g, '')\n    .trim();\n}\n\nfunction extractNameFromSignature(body) {\n  const plainBody = stripHtml(body);\n  const lines = plainBody.split('\n').map((line) => line.trim()).filter(Boolean);\n  const closings =\n    /^(mit (freundlichen )?grüßen|freundliche grüße|best regards|kind regards|many thanks|thanks|thank you|viele grüße|liebe grüße|herzliche grüße|lg|grüße|mfg|regards|cheers)$/i;\n\n  for (let i = lines.length - 1; i >= 0; i -= 1) {\n    if (!closings.test(lines[i])) continue;\n    for (let j = i + 1; j < Math.min(i + 4, lines.length); j += 1) {\n      const candidate = normalizeCreatorName(lines[j]);\n      if (candidate && isLikelyPersonName(lines[j])) return candidate;\n    }\n  }\n\n  for (let i = lines.length - 1; i >= Math.max(0, lines.length - 5); i -= 1) {\n    const candidate = normalizeCreatorName(lines[i]);\n    if (candidate && isLikelyPersonName(lines[i])) return candidate;\n  }\n\n  return '';\n}\n\nconst creatorName =\n  normalizeCreatorName(parsed.creatorName) ||\n  extractNameFromSignature(email.body) ||\n  parseFromDisplayName(fromRaw) ||\n  '';\n\nreturn [\n  {\n    json: {\n      title: String(parsed.title || email.subject || 'Stakeholder request').trim(),\n      description: String(parsed.description || email.body || '').trim(),\n      category: validCategories.has(parsed.category) ? parsed.category : 'User Story',\n      priority: validPriorities.has(parsed.priority) ? parsed.priority : 'MidPriority',\n      dueDate: typeof parsed.dueDate === 'string' ? parsed.dueDate.trim() : '',\n      column: 'triageColumn',\n      creatorName,\n      creatorEmail,\n      creatorType: 'external',\n      aiGenerated: true,\n    },\n  },\n];"
       },
       "id": "e464b967-5b16-4364-8c22-19ebbff4c5e4",
       "name": "Build Join payload",
@@ -193,33 +218,44 @@
   ],
   "pinData": {},
   "connections": {
-    "When clicking 'Execute workflow'": {
-      "main": [
-        [
-          {
-            "node": "Sample stakeholder email",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Sample stakeholder email": {
-      "main": [
-        [
-          {
-            "node": "Parse ticket with AI",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Email Trigger (IMAP)": {
       "main": [
         [
           {
             "node": "Normalize IMAP email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger (every 5 min)": {
+      "main": [
+        [
+          {
+            "node": "Fetch unread emails (Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch unread emails (Gmail)": {
+      "main": [
+        [
+          {
+            "node": "Normalize scheduled email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize scheduled email": {
+      "main": [
+        [
+          {
+            "node": "Parse ticket with AI",
             "type": "main",
             "index": 0
           }

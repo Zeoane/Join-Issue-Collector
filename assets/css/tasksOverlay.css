@@ -120,14 +120,27 @@
   color: #2a3647;
 }
 
-.task-creator-row--member .task-creator-row__name,
-.task-creator-row--external .task-creator-row__name {
+.task-creator-row--member .task-creator-row__name {
   flex: 0 0 111px;
   width: 111px;
   height: 23px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.task-creator-row--external .task-creator-row__name {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  height: 23px;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.task-creator-row--external .task-creator-row__email-badge {
+  margin-left: 12px;
 }
 
 .task-creator-row__profile-badge {
