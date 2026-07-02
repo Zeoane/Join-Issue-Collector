@@ -1,6 +1,6 @@
 import { createTaskForUser } from "./taskRepository.js";
 import { sendJson } from "./responseHelpers.js";
-import { validateN8nTaskPayload } from "./taskValidation.js";
+import { readStringField, validateN8nTaskPayload } from "./taskValidation.js";
 
 /**
  * Persists a validated n8n payload as a triage task for the demo user.
@@ -14,11 +14,30 @@ export async function processN8nTaskBody(req, res, demoUid) {
     sendJson(res, 400, { error: validation.error });
     return;
   }
+
+  const sourceMessageId = readStringField(
+    /** @type {Record<string, unknown>} */ (req.body),
+    "sourceMessageId"
+  );
+
   try {
-    const result = await createTaskForUser(demoUid, validation.task);
+    const result = await createTaskForUser(
+      demoUid,
+      validation.task,
+      sourceMessageId
+    );
+    if (result.duplicate) {
+      sendJson(res, 200, {
+        duplicate: true,
+        id: result.id,
+        task: result.task,
+      });
+      return;
+    }
     sendJson(res, 201, result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Internal server error";
+    const message =
+      error instanceof Error ? error.message : "Internal server error";
     sendJson(res, 500, { error: message });
   }
 }

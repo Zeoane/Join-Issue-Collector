@@ -27,7 +27,26 @@ internalRoutes.post("/tasks", async (req, res, next) => {
       return;
     }
 
-    const result = await createTaskForUser(targetUid, validation.task);
+    const sourceMessageId =
+      typeof req.body?.sourceMessageId === "string"
+        ? req.body.sourceMessageId.trim()
+        : "";
+
+    const result = await createTaskForUser(
+      targetUid,
+      validation.task,
+      sourceMessageId
+    );
+
+    if (result.duplicate) {
+      res.status(200).json({
+        duplicate: true,
+        id: result.id,
+        task: result.task,
+      });
+      return;
+    }
+
     res.status(201).json(result);
   } catch (error) {
     next(error);

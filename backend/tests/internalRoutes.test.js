@@ -3,10 +3,20 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 
 vi.mock("../src/services/n8nTaskService.js", () => ({
-  createTaskForUser: vi.fn(async (_uid, task) => ({
-    id: "task-123",
-    task,
-  })),
+  createTaskForUser: vi.fn(async (_uid, task, sourceMessageId) => {
+    if (sourceMessageId === "duplicate-id") {
+      return {
+        duplicate: true,
+        id: "task-existing",
+        task: { title: "Existing task" },
+      };
+    }
+    return {
+      duplicate: false,
+      id: "task-123",
+      task,
+    };
+  }),
 }));
 
 describe("POST /internal/n8n/tasks", () => {
@@ -44,5 +54,20 @@ describe("POST /internal/n8n/tasks", () => {
     expect(res.status).toBe(201);
     expect(res.body.id).toBe("task-123");
     expect(res.body.task.title).toBe("Test ticket from n8n");
+  });
+
+  it("returns 200 when sourceMessageId was already processed", async () => {
+    const app = createApp();
+    const res = await request(app)
+      .post("/internal/n8n/tasks")
+      .set("X-N8N-Secret", "test-secret")
+      .send({
+        title: "Duplicate ticket",
+        sourceMessageId: "duplicate-id",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.duplicate).toBe(true);
+    expect(res.body.id).toBe("task-existing");
   });
 });
