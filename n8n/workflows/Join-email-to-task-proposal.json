@@ -62,8 +62,7 @@
       "parameters": {
         "resource": "message",
         "operation": "getAll",
-        "returnAll": false,
-        "limit": 10,
+        "returnAll": true,
         "filters": {
           "readStatus": "unread",
           "labelIds": [
@@ -211,7 +210,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const aiItem = $input.item.json;\nconst sourceNames = ['Normalize scheduled email', 'Normalize IMAP email', 'Sample stakeholder email'];\n\nlet email = null;\nfor (const name of sourceNames) {\n  try {\n    const candidate = $(name).item.json;\n    if (candidate?.from) {\n      email = candidate;\n      break;\n    }\n  } catch (_) {}\n}\n\nif (!email) {\n  throw new Error('No stakeholder email context found.');\n}\n\nlet aiText = aiItem.text ?? aiItem.response ?? aiItem.output ?? '';\nif (typeof aiText !== 'string') aiText = JSON.stringify(aiText);\naiText = aiText.replace(/```json\\s*/gi, '').replace(/```\\s*/g, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(aiText);\n} catch (_) {\n  parsed = {\n    title: email.subject || 'Stakeholder request',\n    description: email.body || '',\n    category: 'User Story',\n    priority: 'MidPriority',\n    dueDate: '',\n    creatorName: '',\n  };\n}\n\nconst validCategories = new Set(['User Story', 'Technical Task']);\nconst validPriorities = new Set(['HighPriority', 'MidPriority', 'LowPriority']);\nconst fromRaw = String(email.from || '');\nconst creatorEmail = fromRaw.match(/<([^>]+)>/)?.[1] || fromRaw.trim();\n\nfunction parseFromDisplayName(fromValue) {\n  const trimmed = String(fromValue || '').trim();\n  const match = trimmed.match(/^([^<]+)</);\n  if (!match) return '';\n  const name = match[1].trim().replace(/^[\"']|[\"']$/g, '');\n  return name && !name.includes('@') ? name : '';\n}\n\nfunction normalizeCreatorName(value) {\n  const name = String(value || '').trim().replace(/\\s+/g, ' ');\n  if (!name || name.includes('@') || /^(stakeholder|unknown|guest|n\\/a|na)$/i.test(name)) return '';\n  return name;\n}\n\nconst creatorName = normalizeCreatorName(parsed.creatorName) || parseFromDisplayName(fromRaw) || '';\n\nreturn [{\n  json: {\n    title: String(parsed.title || email.subject || 'Stakeholder request').trim(),\n    description: String(parsed.description || email.body || '').trim(),\n    category: validCategories.has(parsed.category) ? parsed.category : 'User Story',\n    priority: validPriorities.has(parsed.priority) ? parsed.priority : 'MidPriority',\n    dueDate: typeof parsed.dueDate === 'string' ? parsed.dueDate.trim() : '',\n    column: 'triageColumn',\n    creatorName,\n    creatorEmail,\n    creatorType: 'external',\n    aiGenerated: true,\n    sourceMessageId: String(email.messageId || '').trim(),\n    emailSource: String(email.emailSource || 'unknown').trim(),\n    gmailId: String(email.gmailId || '').trim(),\n  },\n}];"
+        "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst aiItem = $input.item.json;\nconst email = readNodeJson(\n  [\n    'Normalize scheduled email',\n    'Normalize IMAP email',\n    'Sample stakeholder email',\n    'Format for OpenAI chat',\n  ],\n  (candidate) => Boolean(candidate?.from || candidate?.subject || candidate?.body)\n);\n\nif (!email) {\n  throw new Error(\n    'No stakeholder email context found. Expected output from Normalize scheduled email, Normalize IMAP email, or Sample stakeholder email.'\n  );\n}\n\nlet aiText = aiItem.text ?? aiItem.response ?? aiItem.output ?? '';\nif (typeof aiText !== 'string') aiText = JSON.stringify(aiText);\naiText = aiText.replace(/```json\\s*/gi, '').replace(/```\\s*/g, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(aiText);\n} catch (_) {\n  parsed = {\n    title: email.subject || 'Stakeholder request',\n    description: email.body || '',\n    category: 'User Story',\n    priority: 'MidPriority',\n    dueDate: '',\n    creatorName: '',\n  };\n}\n\nconst validCategories = new Set(['User Story', 'Technical Task']);\nconst validPriorities = new Set(['HighPriority', 'MidPriority', 'LowPriority']);\nconst fromRaw = String(email.from || '');\nconst creatorEmail = fromRaw.match(/<([^>]+)>/)?.[1] || fromRaw.trim();\n\nfunction parseFromDisplayName(fromValue) {\n  const trimmed = String(fromValue || '').trim();\n  const match = trimmed.match(/^([^<]+)</);\n  if (!match) return '';\n  const name = match[1].trim().replace(/^[\"']|[\"']$/g, '');\n  return name && !name.includes('@') ? name : '';\n}\n\nfunction normalizeCreatorName(value) {\n  const name = String(value || '').trim().replace(/\\s+/g, ' ');\n  if (!name || name.includes('@') || /^(stakeholder|unknown|guest|n\\/a|na)$/i.test(name)) return '';\n  return name;\n}\n\nconst creatorName = normalizeCreatorName(parsed.creatorName) || parseFromDisplayName(fromRaw) || '';\n\nreturn [{\n  json: {\n    title: String(parsed.title || email.subject || 'Stakeholder request').trim(),\n    description: String(parsed.description || email.body || '').trim(),\n    category: validCategories.has(parsed.category) ? parsed.category : 'User Story',\n    priority: validPriorities.has(parsed.priority) ? parsed.priority : 'MidPriority',\n    dueDate: typeof parsed.dueDate === 'string' ? parsed.dueDate.trim() : '',\n    column: 'triageColumn',\n    creatorName,\n    creatorEmail,\n    creatorType: 'external',\n    aiGenerated: true,\n    sourceMessageId: String(email.messageId || '').trim(),\n    emailSource: String(email.emailSource || 'unknown').trim(),\n    gmailId: String(email.gmailId || '').trim(),\n  },\n}];"
       },
       "id": "n-build",
       "name": "Build Join payload",
@@ -220,6 +219,54 @@
       "position": [
         1000,
         208
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const CAP = 10;\nconst items = $input.all();\n\nreturn items.map((item, index) => {\n  const source = String(item.json.emailSource || '').trim().toLowerCase();\n  const isManual = source === 'manual';\n  const skipTaskCreation = !isManual && index >= CAP;\n\n  return {\n    json: {\n      ...item.json,\n      autoCap: CAP,\n      batchIndex: index + 1,\n      batchCount: items.length,\n      skipTaskCreation,\n      skipReason: skipTaskCreation ? 'AUTO_EMAIL_CAP_REACHED' : '',\n      capBypassedForManual: isManual,\n    },\n  };\n});"
+      },
+      "id": "n-cap-limit",
+      "name": "Apply auto email cap (max 10)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1240,
+        320
+      ],
+      "notes": "Hard cap for automated processing: after 10 auto emails, skip task creation and route to manual labeling path."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "within-cap",
+              "leftValue": "={{ $json.skipTaskCreation }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n-if-cap",
+      "name": "IF within auto cap",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1480,
+        320
       ]
     },
     {
@@ -267,7 +314,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const http = $input.item.json;\nconst payload = $('Build Join payload').item.json;\nconst statusCode = Number(http.statusCode || 0);\nlet body = http.body ?? http;\nif (typeof body === 'string') {\n  try { body = JSON.parse(body || '{}'); } catch (_) { body = {}; }\n}\nconst ok = statusCode === 201 || (statusCode === 200 && body?.duplicate === true);\n\nreturn [{\n  json: {\n    ok,\n    statusCode,\n    duplicate: Boolean(body?.duplicate),\n    sourceMessageId: payload.sourceMessageId || '',\n    gmailId: payload.gmailId || '',\n    emailSource: payload.emailSource || 'unknown',\n  },\n}];"
+        "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst http = $input.item.json;\nconst payload = readNodeJson(['Build Join payload'], (candidate) => Boolean(candidate?.title));\nif (!payload) {\n  throw new Error('Build Join payload output not found.');\n}\nconst statusCode = Number(http.statusCode || 0);\nlet body = http.body ?? http;\nif (typeof body === 'string') {\n  try { body = JSON.parse(body || '{}'); } catch (_) { body = {}; }\n}\nconst ok = statusCode === 201 || (statusCode === 200 && body?.duplicate === true);\n\nreturn [{\n  json: {\n    ok,\n    statusCode,\n    duplicate: Boolean(body?.duplicate),\n    sourceMessageId: payload.sourceMessageId || '',\n    gmailId: payload.gmailId || '',\n    emailSource: payload.emailSource || 'unknown',\n  },\n}];"
       },
       "id": "n-eval",
       "name": "Evaluate create result",
@@ -382,7 +429,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sourceNode = 'Prepare success archive';\nconst ctx = $(sourceNode).item.json;\nconst labels = $input.all().map((item) => item.json);\n\nfunction findLabelId(...names) {\n  for (const wanted of names) {\n    const hit = labels.find(\n      (label) => String(label.name || '').trim().toLowerCase() === wanted.toLowerCase()\n    );\n    if (hit?.id) return hit.id;\n  }\n  return '';\n}\n\nconst erledigtLabelId = findLabelId('Erledigt', 'erledigt');\nconst zuBearbeitenLabelId = findLabelId('zu bearbeiten', 'Zu bearbeiten');\n\nreturn [{\n  json: {\n    ...ctx,\n    erledigtLabelId,\n    zuBearbeitenLabelId,\n    labelsResolved: Boolean(erledigtLabelId && zuBearbeitenLabelId),\n  },\n}];"
+        "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst ctx = readNodeJson(['Prepare success archive'], () => true);\nif (!ctx) {\n  throw new Error('Prepare success archive output not found.');\n}\nconst labels = $input.all().map((item) => item.json);\n\nfunction findLabelId(...names) {\n  for (const wanted of names) {\n    const hit = labels.find(\n      (label) => String(label.name || '').trim().toLowerCase() === wanted.toLowerCase()\n    );\n    if (hit?.id) return hit.id;\n  }\n  return '';\n}\n\nconst erledigtLabelId = findLabelId('Erledigt', 'erledigt');\nconst zuBearbeitenLabelId = findLabelId('zu bearbeiten', 'Zu bearbeiten');\n\nreturn [{\n  json: {\n    ...ctx,\n    erledigtLabelId,\n    zuBearbeitenLabelId,\n    labelsResolved: Boolean(erledigtLabelId),\n  },\n}];"
       },
       "id": "n-resolve-labels-ok",
       "name": "Resolve Gmail label IDs",
@@ -391,7 +438,42 @@
       "position": [
         2680,
         80
-      ]
+      ],
+      "notes": "Maps Gmail label names Erledigt / zu bearbeiten to Label_… IDs."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "erledigt-label",
+              "leftValue": "={{ $('Resolve Gmail label IDs').item.json.erledigtLabelId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n-if-label-ok",
+      "name": "IF Erledigt label found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2920,
+        80
+      ],
+      "notes": "Stops archive if Gmail label Erledigt is missing."
     },
     {
       "parameters": {
@@ -422,7 +504,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2920,
+        3160,
         80
       ]
     },
@@ -430,14 +512,14 @@
       "parameters": {
         "resource": "message",
         "operation": "markAsRead",
-        "messageId": "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId || $('Pick Gmail ID for archive').item.json.archiveGmailId }}"
+        "messageId": "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId || $('Pick Gmail ID for archive').item.json.archiveGmailId || $('Prepare success archive').item.json.archiveGmailId }}"
       },
       "id": "n-mark-read",
       "name": "Mark Gmail read",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        3160,
+        3400,
         -16
       ],
       "credentials": {
@@ -449,43 +531,10 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "erledigt-label",
-              "leftValue": "={{ $json.erledigtLabelId }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "n-if-label-ok",
-      "name": "IF Erledigt label found",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        3400,
-        -16
-      ]
-    },
-    {
-      "parameters": {
         "resource": "message",
         "operation": "addLabels",
-        "messageId": "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId || $('Pick Gmail ID for archive').item.json.archiveGmailId }}",
-        "labelIds": "={{ [$('Resolve Gmail label IDs').item.json.erledigtLabelId].filter(Boolean) }}"
+        "messageId": "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId || $('Pick Gmail ID for archive').item.json.archiveGmailId || $('Prepare success archive').item.json.archiveGmailId }}",
+        "labelIds": "={{ $('Resolve Gmail label IDs').item.json.erledigtLabelId }}"
       },
       "id": "n-add-erledigt",
       "name": "Add Erledigt label",
@@ -501,13 +550,13 @@
           "name": "Gmail account"
         }
       },
-      "notes": "Requires Gmail label: Erledigt"
+      "notes": "Uses Label_… ID from Resolve Gmail label IDs (not display name Erledigt)."
     },
     {
       "parameters": {
         "resource": "message",
         "operation": "removeLabels",
-        "messageId": "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId || $('Pick Gmail ID for archive').item.json.archiveGmailId }}",
+        "messageId": "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId || $('Pick Gmail ID for archive').item.json.archiveGmailId || $('Prepare success archive').item.json.archiveGmailId }}",
         "labelIds": [
           "INBOX",
           "UNREAD"
@@ -535,7 +584,7 @@
         "returnAll": false,
         "limit": 1,
         "filters": {
-          "q": "=rfc822msgid:{{ $json.searchRfcId }}"
+          "q": "=rfc822msgid:{{ $('Resolve Gmail label IDs').item.json.searchRfcId }}"
         },
         "options": {
           "simplify": false
@@ -546,7 +595,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        3160,
+        3400,
         176
       ],
       "credentials": {
@@ -559,7 +608,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const ctx = $('Resolve Gmail label IDs').item.json;\nconst found = $input.item.json;\nconst archiveGmailId = String(found.id || '').trim();\nif (!archiveGmailId) {\n  return [{ json: { ...ctx, archiveSkipped: true, skipReason: 'Gmail message not found for archive' } }];\n}\nreturn [{ json: { ...ctx, archiveGmailId, archiveSkipped: false } }];\n"
+        "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst ctx = readNodeJson(['Resolve Gmail label IDs'], () => true);\nif (!ctx) {\n  throw new Error('Resolve Gmail label IDs output not found.');\n}\nconst found = $input.item.json;\nconst archiveGmailId = String(found.id || '').trim();\nif (!archiveGmailId) {\n  return [{ json: { ...ctx, archiveSkipped: true, skipReason: 'Gmail message not found for archive' } }];\n}\nreturn [{ json: { ...ctx, archiveGmailId, archiveSkipped: false } }];\n"
       },
       "id": "n-pick-rfc",
       "name": "Pick Gmail ID for archive",
@@ -672,7 +721,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const sourceNode = 'Prepare error archive';\nconst ctx = $(sourceNode).item.json;\nconst labels = $input.all().map((item) => item.json);\n\nfunction findLabelId(...names) {\n  for (const wanted of names) {\n    const hit = labels.find(\n      (label) => String(label.name || '').trim().toLowerCase() === wanted.toLowerCase()\n    );\n    if (hit?.id) return hit.id;\n  }\n  return '';\n}\n\nconst erledigtLabelId = findLabelId('Erledigt', 'erledigt');\nconst zuBearbeitenLabelId = findLabelId('zu bearbeiten', 'Zu bearbeiten');\n\nreturn [{\n  json: {\n    ...ctx,\n    erledigtLabelId,\n    zuBearbeitenLabelId,\n    labelsResolved: Boolean(erledigtLabelId && zuBearbeitenLabelId),\n  },\n}];"
+        "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst ctx = readNodeJson(['Prepare error archive'], () => true);\nif (!ctx) {\n  throw new Error('Prepare error archive output not found.');\n}\nconst labels = $input.all().map((item) => item.json);\n\nfunction findLabelId(...names) {\n  for (const wanted of names) {\n    const hit = labels.find(\n      (label) => String(label.name || '').trim().toLowerCase() === wanted.toLowerCase()\n    );\n    if (hit?.id) return hit.id;\n  }\n  return '';\n}\n\nconst erledigtLabelId = findLabelId('Erledigt', 'erledigt');\nconst zuBearbeitenLabelId = findLabelId('zu bearbeiten', 'Zu bearbeiten');\n\nreturn [{\n  json: {\n    ...ctx,\n    erledigtLabelId,\n    zuBearbeitenLabelId,\n    labelsResolved: Boolean(zuBearbeitenLabelId),\n  },\n}];"
       },
       "id": "n-resolve-labels-err",
       "name": "Resolve Gmail label IDs (error)",
@@ -681,7 +730,42 @@
       "position": [
         2680,
         336
-      ]
+      ],
+      "notes": "Maps Gmail label zu bearbeiten to Label_… ID."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "zb-label",
+              "leftValue": "={{ $('Resolve Gmail label IDs (error)').item.json.zuBearbeitenLabelId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n-if-label-err",
+      "name": "IF zu bearbeiten label found",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2920,
+        336
+      ],
+      "notes": "Stops error archive if Gmail label zu bearbeiten is missing."
     },
     {
       "parameters": {
@@ -712,7 +796,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2920,
+        3160,
         336
       ]
     },
@@ -720,15 +804,15 @@
       "parameters": {
         "resource": "message",
         "operation": "addLabels",
-        "messageId": "={{ $('Resolve Gmail label IDs (error)').item.json.archiveGmailId || $('Pick Gmail ID for error').item.json.archiveGmailId }}",
-        "labelIds": "={{ [$('Resolve Gmail label IDs (error)').item.json.zuBearbeitenLabelId].filter(Boolean) }}"
+        "messageId": "={{ $('Resolve Gmail label IDs (error)').item.json.archiveGmailId || $('Pick Gmail ID for error').item.json.archiveGmailId || $('Prepare error archive').item.json.archiveGmailId }}",
+        "labelIds": "={{ $('Resolve Gmail label IDs (error)').item.json.zuBearbeitenLabelId }}"
       },
       "id": "n-add-zb",
       "name": "Add zu bearbeiten label",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        3160,
+        3400,
         336
       ],
       "credentials": {
@@ -737,7 +821,7 @@
           "name": "Gmail account"
         }
       },
-      "notes": "Requires Gmail label: zu bearbeiten"
+      "notes": "Uses Label_… ID from Resolve Gmail label IDs (error)."
     },
     {
       "parameters": {
@@ -746,7 +830,7 @@
         "returnAll": false,
         "limit": 1,
         "filters": {
-          "q": "=rfc822msgid:{{ $json.searchRfcId }}"
+          "q": "=rfc822msgid:{{ $('Resolve Gmail label IDs (error)').item.json.searchRfcId }}"
         },
         "options": {
           "simplify": false
@@ -757,7 +841,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        3160,
+        3400,
         496
       ],
       "credentials": {
@@ -770,7 +854,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const ctx = $('Resolve Gmail label IDs (error)').item.json;\nconst found = $input.item.json;\nconst archiveGmailId = String(found.id || '').trim();\nif (!archiveGmailId) {\n  return [{ json: { ...ctx, archiveSkipped: true, skipReason: 'Gmail message not found for archive' } }];\n}\nreturn [{ json: { ...ctx, archiveGmailId, archiveSkipped: false } }];\n"
+        "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst ctx = readNodeJson(['Resolve Gmail label IDs (error)'], () => true);\nif (!ctx) {\n  throw new Error('Resolve Gmail label IDs (error) output not found.');\n}\nconst found = $input.item.json;\nconst archiveGmailId = String(found.id || '').trim();\nif (!archiveGmailId) {\n  return [{ json: { ...ctx, archiveSkipped: true, skipReason: 'Gmail message not found for archive' } }];\n}\nreturn [{ json: { ...ctx, archiveGmailId, archiveSkipped: false } }];\n"
       },
       "id": "n-pick-rfc-err",
       "name": "Pick Gmail ID for error",
@@ -887,7 +971,36 @@
       "main": [
         [
           {
+            "node": "Apply auto email cap (max 10)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply auto email cap (max 10)": {
+      "main": [
+        [
+          {
+            "node": "IF within auto cap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF within auto cap": {
+      "main": [
+        [
+          {
             "node": "Create task in Triage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare error archive",
             "type": "main",
             "index": 0
           }
@@ -972,11 +1085,23 @@
       "main": [
         [
           {
-            "node": "IF direct Gmail ID",
+            "node": "IF Erledigt label found",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "IF Erledigt label found": {
+      "main": [
+        [
+          {
+            "node": "IF direct Gmail ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "IF direct Gmail ID": {
@@ -1091,11 +1216,23 @@
       "main": [
         [
           {
-            "node": "IF direct Gmail ID (error)",
+            "node": "IF zu bearbeiten label found",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "IF zu bearbeiten label found": {
+      "main": [
+        [
+          {
+            "node": "IF direct Gmail ID (error)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
       ]
     },
     "IF direct Gmail ID (error)": {

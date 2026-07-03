@@ -81,22 +81,43 @@ NORMALIZE_IMAP_JS = NORMALIZE_GMAIL_JS.replace(
     "gmailId: data.id || ''", "gmailId: ''"
 )
 
-BUILD_PAYLOAD_JS = r"""const aiItem = $input.item.json;
-const sourceNames = ['Normalize scheduled email', 'Normalize IMAP email', 'Sample stakeholder email'];
-
-let email = null;
-for (const name of sourceNames) {
-  try {
-    const candidate = $(name).item.json;
-    if (candidate?.from) {
-      email = candidate;
-      break;
-    }
-  } catch (_) {}
+NODE_LOOKUP_HELPER = r"""function nodeNameVariants(base) {
+  const names = [base];
+  for (let i = 1; i <= 9; i++) {
+    names.push(`${base}${i}`);
+    names.push(`${base} ${i}`);
+  }
+  return names;
 }
 
+function readNodeJson(bases, predicate = () => true) {
+  for (const base of bases) {
+    for (const name of nodeNameVariants(base)) {
+      try {
+        const json = $(name).item.json;
+        if (json && predicate(json)) return json;
+      } catch (_) {}
+    }
+  }
+  return null;
+}
+"""
+
+BUILD_PAYLOAD_JS = NODE_LOOKUP_HELPER + r"""const aiItem = $input.item.json;
+const email = readNodeJson(
+  [
+    'Normalize scheduled email',
+    'Normalize IMAP email',
+    'Sample stakeholder email',
+    'Format for OpenAI chat',
+  ],
+  (candidate) => Boolean(candidate?.from || candidate?.subject || candidate?.body)
+);
+
 if (!email) {
-  throw new Error('No stakeholder email context found.');
+  throw new Error(
+    'No stakeholder email context found. Expected output from Normalize scheduled email, Normalize IMAP email, or Sample stakeholder email.'
+  );
 }
 
 let aiText = aiItem.text ?? aiItem.response ?? aiItem.output ?? '';
@@ -156,8 +177,11 @@ return [{
   },
 }];"""
 
-EVALUATE_JS = r"""const http = $input.item.json;
-const payload = $('Build Join payload').item.json;
+EVALUATE_JS = NODE_LOOKUP_HELPER + r"""const http = $input.item.json;
+const payload = readNodeJson(['Build Join payload'], (candidate) => Boolean(candidate?.title));
+if (!payload) {
+  throw new Error('Build Join payload output not found.');
+}
 const statusCode = Number(http.statusCode || 0);
 let body = http.body ?? http;
 if (typeof body === 'string') {
@@ -188,7 +212,31 @@ return [{
   },
 }];"""
 
-PICK_ARCHIVE_JS = r"""const ctx = $('Resolve Gmail label IDs').item.json;
+AUTO_CAP_JS = r"""const CAP = 10;
+const items = $input.all();
+
+return items.map((item, index) => {
+  const source = String(item.json.emailSource || '').trim().toLowerCase();
+  const isManual = source === 'manual';
+  const skipTaskCreation = !isManual && index >= CAP;
+
+  return {
+    json: {
+      ...item.json,
+      autoCap: CAP,
+      batchIndex: index + 1,
+      batchCount: items.length,
+      skipTaskCreation,
+      skipReason: skipTaskCreation ? 'AUTO_EMAIL_CAP_REACHED' : '',
+      capBypassedForManual: isManual,
+    },
+  };
+});"""
+
+PICK_ARCHIVE_JS = NODE_LOOKUP_HELPER + r"""const ctx = readNodeJson(['Resolve Gmail label IDs'], () => true);
+if (!ctx) {
+  throw new Error('Resolve Gmail label IDs output not found.');
+}
 const found = $input.item.json;
 const archiveGmailId = String(found.id || '').trim();
 if (!archiveGmailId) {
@@ -199,10 +247,12 @@ return [{ json: { ...ctx, archiveGmailId, archiveSkipped: false } }];
 
 PICK_ERROR_JS = PICK_ARCHIVE_JS.replace(
     "Resolve Gmail label IDs", "Resolve Gmail label IDs (error)"
-).replace("Prepare success archive", "Prepare error archive")
+)
 
-RESOLVE_LABELS_JS = r"""const sourceNode = 'SOURCE_NODE';
-const ctx = $(sourceNode).item.json;
+RESOLVE_LABELS_JS = NODE_LOOKUP_HELPER + r"""const ctx = readNodeJson(['SOURCE_BASE'], () => true);
+if (!ctx) {
+  throw new Error('SOURCE_BASE output not found.');
+}
 const labels = $input.all().map((item) => item.json);
 
 function findLabelId(...names) {
@@ -227,8 +277,18 @@ return [{
   },
 }];"""
 
-RESOLVE_LABELS_OK_JS = RESOLVE_LABELS_JS.replace("SOURCE_NODE", "Prepare success archive")
-RESOLVE_LABELS_ERR_JS = RESOLVE_LABELS_JS.replace("SOURCE_NODE", "Prepare error archive")
+RESOLVE_LABELS_OK_JS = (
+    RESOLVE_LABELS_JS.replace("SOURCE_BASE", "Prepare success archive").replace(
+        "labelsResolved: Boolean(erledigtLabelId && zuBearbeitenLabelId),",
+        "labelsResolved: Boolean(erledigtLabelId),",
+    )
+)
+RESOLVE_LABELS_ERR_JS = (
+    RESOLVE_LABELS_JS.replace("SOURCE_BASE", "Prepare error archive").replace(
+        "labelsResolved: Boolean(erledigtLabelId && zuBearbeitenLabelId),",
+        "labelsResolved: Boolean(zuBearbeitenLabelId),",
+    )
+)
 
 IF_LABEL_OK = {
     "conditions": {
@@ -241,7 +301,28 @@ IF_LABEL_OK = {
         "conditions": [
             {
                 "id": "erledigt-label",
-                "leftValue": "={{ $json.erledigtLabelId }}",
+                "leftValue": "={{ $('Resolve Gmail label IDs').item.json.erledigtLabelId }}",
+                "rightValue": "",
+                "operator": {"type": "string", "operation": "notEmpty"},
+            }
+        ],
+        "combinator": "and",
+    },
+    "options": {},
+}
+
+IF_LABEL_ERR = {
+    "conditions": {
+        "options": {
+            "caseSensitive": True,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2,
+        },
+        "conditions": [
+            {
+                "id": "zb-label",
+                "leftValue": "={{ $('Resolve Gmail label IDs (error)').item.json.zuBearbeitenLabelId }}",
                 "rightValue": "",
                 "operator": {"type": "string", "operation": "notEmpty"},
             }
@@ -265,6 +346,27 @@ IF_OK = {
                 "leftValue": "={{ $json.ok }}",
                 "rightValue": True,
                 "operator": {"type": "boolean", "operation": "true"},
+            }
+        ],
+        "combinator": "and",
+    },
+    "options": {},
+}
+
+IF_WITHIN_AUTO_CAP = {
+    "conditions": {
+        "options": {
+            "caseSensitive": True,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2,
+        },
+        "conditions": [
+            {
+                "id": "within-cap",
+                "leftValue": "={{ $json.skipTaskCreation }}",
+                "rightValue": True,
+                "operator": {"type": "boolean", "operation": "false"},
             }
         ],
         "combinator": "and",
@@ -335,10 +437,25 @@ IF_CAN_ARCHIVE = {
     "options": {},
 }
 
-GMAIL_ARCHIVE_MSG_ID = "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId || $('Pick Gmail ID for archive').item.json.archiveGmailId }}"
-GMAIL_ERLEDIGT_LABEL = "={{ [$('Resolve Gmail label IDs').item.json.erledigtLabelId].filter(Boolean) }}"
-GMAIL_ZB_MSG_ID = "={{ $('Resolve Gmail label IDs (error)').item.json.archiveGmailId || $('Pick Gmail ID for error').item.json.archiveGmailId }}"
-GMAIL_ZB_LABEL = "={{ [$('Resolve Gmail label IDs (error)').item.json.zuBearbeitenLabelId].filter(Boolean) }}"
+GMAIL_ARCHIVE_MSG_ID = (
+    "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId "
+    "|| $('Pick Gmail ID for archive').item.json.archiveGmailId "
+    "|| $('Prepare success archive').item.json.archiveGmailId }}"
+)
+GMAIL_ERLEDIGT_LABEL = "={{ $('Resolve Gmail label IDs').item.json.erledigtLabelId }}"
+GMAIL_RFC_QUERY_OK = (
+    "=rfc822msgid:{{ $('Resolve Gmail label IDs').item.json.searchRfcId }}"
+)
+GMAIL_ZB_MSG_ID = (
+    "={{ $('Resolve Gmail label IDs (error)').item.json.archiveGmailId "
+    "|| $('Pick Gmail ID for error').item.json.archiveGmailId "
+    "|| $('Prepare error archive').item.json.archiveGmailId }}"
+)
+GMAIL_ZB_LABEL = "={{ $('Resolve Gmail label IDs (error)').item.json.zuBearbeitenLabelId }}"
+GMAIL_RFC_QUERY_ERR = (
+    "=rfc822msgid:{{ $('Resolve Gmail label IDs (error)').item.json.searchRfcId }}"
+)
+GMAIL_NODE_VERSION = 2.1
 GMAIL_CRED = {"gmailOAuth2": {"id": "GMAIL_CREDENTIAL_ID", "name": "Gmail account"}}
 IMAP_CRED = {"imap": {"id": "IMAP_CREDENTIAL_ID", "name": "IMAP account"}}
 OPENAI_CRED = {"openAiApi": {"id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account"}}
@@ -397,15 +514,14 @@ workflow = {
             "parameters": {
                 "resource": "message",
                 "operation": "getAll",
-                "returnAll": False,
-                "limit": 10,
+                "returnAll": True,
                 "filters": {"readStatus": "unread", "labelIds": ["INBOX"]},
                 "options": {"simplify": False},
             },
             "id": "n-fetch-gmail",
             "name": "Fetch unread emails (Gmail)",
             "type": "n8n-nodes-base.gmail",
-            "typeVersion": 2.1,
+            "typeVersion": GMAIL_NODE_VERSION,
             "position": [240, 208],
             "credentials": GMAIL_CRED,
         },
@@ -480,6 +596,23 @@ workflow = {
             "position": [1000, 208],
         },
         {
+            "parameters": {"mode": "runOnceForAllItems", "jsCode": AUTO_CAP_JS},
+            "id": "n-cap-limit",
+            "name": "Apply auto email cap (max 10)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [1240, 320],
+            "notes": "Hard cap for automated processing: after 10 auto emails, skip task creation and route to manual labeling path.",
+        },
+        {
+            "parameters": IF_WITHIN_AUTO_CAP,
+            "id": "n-if-cap",
+            "name": "IF within auto cap",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [1480, 320],
+        },
+        {
             "parameters": {
                 "method": "POST",
                 "url": "https://join-issue-collector-70cb7.web.app/internal/n8n/tasks",
@@ -538,7 +671,7 @@ workflow = {
             "id": "n-get-labels-ok",
             "name": "Get Gmail labels",
             "type": "n8n-nodes-base.gmail",
-            "typeVersion": 2.1,
+            "typeVersion": GMAIL_NODE_VERSION,
             "position": [2440, 80],
             "credentials": GMAIL_CRED,
             "notes": "Loads label IDs for Erledigt / zu bearbeiten.",
@@ -550,23 +683,7 @@ workflow = {
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [2680, 80],
-        },
-        {
-            "parameters": IF_DIRECT,
-            "id": "n-if-direct",
-            "name": "IF direct Gmail ID",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2.2,
-            "position": [2920, 80],
-        },
-        {
-            "parameters": {"resource": "message", "operation": "markAsRead", "messageId": GMAIL_ARCHIVE_MSG_ID},
-            "id": "n-mark-read",
-            "name": "Mark Gmail read",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": 2.1,
-            "position": [3160, -16],
-            "credentials": GMAIL_CRED,
+            "notes": "Maps Gmail label names Erledigt / zu bearbeiten to Label_… IDs.",
         },
         {
             "parameters": IF_LABEL_OK,
@@ -574,7 +691,25 @@ workflow = {
             "name": "IF Erledigt label found",
             "type": "n8n-nodes-base.if",
             "typeVersion": 2.2,
+            "position": [2920, 80],
+            "notes": "Stops archive if Gmail label Erledigt is missing.",
+        },
+        {
+            "parameters": IF_DIRECT,
+            "id": "n-if-direct",
+            "name": "IF direct Gmail ID",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [3160, 80],
+        },
+        {
+            "parameters": {"resource": "message", "operation": "markAsRead", "messageId": GMAIL_ARCHIVE_MSG_ID},
+            "id": "n-mark-read",
+            "name": "Mark Gmail read",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": GMAIL_NODE_VERSION,
             "position": [3400, -16],
+            "credentials": GMAIL_CRED,
         },
         {
             "parameters": {
@@ -586,10 +721,10 @@ workflow = {
             "id": "n-add-erledigt",
             "name": "Add Erledigt label",
             "type": "n8n-nodes-base.gmail",
-            "typeVersion": 2.1,
+            "typeVersion": GMAIL_NODE_VERSION,
             "position": [3640, -16],
             "credentials": GMAIL_CRED,
-            "notes": "Requires Gmail label: Erledigt",
+            "notes": "Uses Label_… ID from Resolve Gmail label IDs (not display name Erledigt).",
         },
         {
             "parameters": {
@@ -601,7 +736,7 @@ workflow = {
             "id": "n-rm-inbox",
             "name": "Remove from Inbox",
             "type": "n8n-nodes-base.gmail",
-            "typeVersion": 2.1,
+            "typeVersion": GMAIL_NODE_VERSION,
             "position": [3880, -16],
             "credentials": GMAIL_CRED,
         },
@@ -611,14 +746,14 @@ workflow = {
                 "operation": "getAll",
                 "returnAll": False,
                 "limit": 1,
-                "filters": {"q": "=rfc822msgid:{{ $json.searchRfcId }}"},
+                "filters": {"q": GMAIL_RFC_QUERY_OK},
                 "options": {"simplify": False},
             },
             "id": "n-find-rfc",
             "name": "Find Gmail by RFC ID",
             "type": "n8n-nodes-base.gmail",
-            "typeVersion": 2.1,
-            "position": [3160, 176],
+            "typeVersion": GMAIL_NODE_VERSION,
+            "position": [3400, 176],
             "credentials": GMAIL_CRED,
             "continueOnFail": True,
         },
@@ -659,7 +794,7 @@ workflow = {
             "id": "n-get-labels-err",
             "name": "Get Gmail labels (error)",
             "type": "n8n-nodes-base.gmail",
-            "typeVersion": 2.1,
+            "typeVersion": GMAIL_NODE_VERSION,
             "position": [2440, 336],
             "credentials": GMAIL_CRED,
         },
@@ -670,6 +805,16 @@ workflow = {
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [2680, 336],
+            "notes": "Maps Gmail label zu bearbeiten to Label_… ID.",
+        },
+        {
+            "parameters": IF_LABEL_ERR,
+            "id": "n-if-label-err",
+            "name": "IF zu bearbeiten label found",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [2920, 336],
+            "notes": "Stops error archive if Gmail label zu bearbeiten is missing.",
         },
         {
             "parameters": IF_DIRECT,
@@ -677,7 +822,7 @@ workflow = {
             "name": "IF direct Gmail ID (error)",
             "type": "n8n-nodes-base.if",
             "typeVersion": 2.2,
-            "position": [2920, 336],
+            "position": [3160, 336],
         },
         {
             "parameters": {
@@ -689,10 +834,10 @@ workflow = {
             "id": "n-add-zb",
             "name": "Add zu bearbeiten label",
             "type": "n8n-nodes-base.gmail",
-            "typeVersion": 2.1,
-            "position": [3160, 336],
+            "typeVersion": GMAIL_NODE_VERSION,
+            "position": [3400, 336],
             "credentials": GMAIL_CRED,
-            "notes": "Requires Gmail label: zu bearbeiten",
+            "notes": "Uses Label_… ID from Resolve Gmail label IDs (error).",
         },
         {
             "parameters": {
@@ -700,14 +845,14 @@ workflow = {
                 "operation": "getAll",
                 "returnAll": False,
                 "limit": 1,
-                "filters": {"q": "=rfc822msgid:{{ $json.searchRfcId }}"},
+                "filters": {"q": GMAIL_RFC_QUERY_ERR},
                 "options": {"simplify": False},
             },
             "id": "n-find-rfc-err",
             "name": "Find Gmail by RFC ID (error)",
             "type": "n8n-nodes-base.gmail",
-            "typeVersion": 2.1,
-            "position": [3160, 496],
+            "typeVersion": GMAIL_NODE_VERSION,
+            "position": [3400, 496],
             "credentials": GMAIL_CRED,
             "continueOnFail": True,
         },
@@ -731,7 +876,14 @@ workflow = {
         "Sample stakeholder email": {"main": [[{"node": "Parse ticket with AI", "type": "main", "index": 0}]]},
         "OpenAI Chat Model": {"ai_languageModel": [[{"node": "Parse ticket with AI", "type": "ai_languageModel", "index": 0}]]},
         "Parse ticket with AI": {"main": [[{"node": "Build Join payload", "type": "main", "index": 0}]]},
-        "Build Join payload": {"main": [[{"node": "Create task in Triage", "type": "main", "index": 0}]]},
+        "Build Join payload": {"main": [[{"node": "Apply auto email cap (max 10)", "type": "main", "index": 0}]]},
+        "Apply auto email cap (max 10)": {"main": [[{"node": "IF within auto cap", "type": "main", "index": 0}]]},
+        "IF within auto cap": {
+            "main": [
+                [{"node": "Create task in Triage", "type": "main", "index": 0}],
+                [{"node": "Prepare error archive", "type": "main", "index": 0}],
+            ]
+        },
         "Create task in Triage": {"main": [[{"node": "Evaluate create result", "type": "main", "index": 0}]]},
         "Evaluate create result": {"main": [[{"node": "IF task created", "type": "main", "index": 0}]]},
         "IF task created": {
@@ -745,7 +897,10 @@ workflow = {
             "main": [[{"node": "Get Gmail labels", "type": "main", "index": 0}], []]
         },
         "Get Gmail labels": {"main": [[{"node": "Resolve Gmail label IDs", "type": "main", "index": 0}]]},
-        "Resolve Gmail label IDs": {"main": [[{"node": "IF direct Gmail ID", "type": "main", "index": 0}]]},
+        "Resolve Gmail label IDs": {"main": [[{"node": "IF Erledigt label found", "type": "main", "index": 0}]]},
+        "IF Erledigt label found": {
+            "main": [[{"node": "IF direct Gmail ID", "type": "main", "index": 0}], []]
+        },
         "IF direct Gmail ID": {
             "main": [
                 [{"node": "Mark Gmail read", "type": "main", "index": 0}],
@@ -765,7 +920,10 @@ workflow = {
             "main": [[{"node": "Resolve Gmail label IDs (error)", "type": "main", "index": 0}]]
         },
         "Resolve Gmail label IDs (error)": {
-            "main": [[{"node": "IF direct Gmail ID (error)", "type": "main", "index": 0}]]
+            "main": [[{"node": "IF zu bearbeiten label found", "type": "main", "index": 0}]]
+        },
+        "IF zu bearbeiten label found": {
+            "main": [[{"node": "IF direct Gmail ID (error)", "type": "main", "index": 0}], []]
         },
         "IF direct Gmail ID (error)": {
             "main": [
