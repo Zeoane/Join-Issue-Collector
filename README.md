@@ -2,6 +2,24 @@
 
 Join-Issue Collector ist eine statische Multi-Page-Web-App (Vanilla HTML/CSS/JS) mit Firebase Realtime Database und Firebase Authentication.
 
+<a id="inhaltsverzeichnis"></a>
+## Inhaltsverzeichnis
+
+- [Features](#features)
+- [Voraussetzungen](#voraussetzungen)
+- [Setup](#setup)
+- [1. Firebase konfigurieren](#setup-firebase)
+- [2. Security Rules deployen](#setup-rules)
+- [3. Lokal starten](#setup-local)
+- [4. Entwicklungstools](#setup-tools)
+- [n8n Final-Konfiguration (E-Mail -> Triage)](#n8n-final)
+- [Projektstruktur](#projektstruktur)
+- [Auth & Guest-Mode](#auth-guest-mode)
+- [Migration von alter Auth](#migration)
+- [Bekannte Einschränkungen](#einschraenkungen)
+- [Seitenübersicht](#seitenuebersicht)
+
+<a id="features"></a>
 ## Features
 
 - **Summary** – Dashboard mit Begrüßung und Task-Statistiken
@@ -10,14 +28,17 @@ Join-Issue Collector ist eine statische Multi-Page-Web-App (Vanilla HTML/CSS/JS)
 - **Contacts** – Kontaktverwaltung
 - **Auth** – Login, Signup, Guest-Mode
 
+<a id="voraussetzungen"></a>
 ## Voraussetzungen
 
 - [Node.js](https://nodejs.org/) 18+ (für Linting und Tests)
 - [Firebase CLI](https://firebase.google.com/docs/cli) (optional, für Security Rules)
 - Ein Firebase-Projekt mit **Realtime Database** und **Authentication**
 
+<a id="setup"></a>
 ## Setup
 
+<a id="setup-firebase"></a>
 ### 1. Firebase konfigurieren
 
 1. In der [Firebase Console](https://console.firebase.google.com/) **Email/Password** und **Anonymous** Auth aktivieren.
@@ -26,6 +47,7 @@ Join-Issue Collector ist eine statische Multi-Page-Web-App (Vanilla HTML/CSS/JS)
 
 **Wichtig:** `js/firebase-config.js` ist in `.gitignore` und darf **nicht** ins Repository committed werden. Liegt ein API-Key bereits in GitHub, in der [Google Cloud Console](https://console.cloud.google.com/apis/credentials) den betroffenen Key **rotieren/revoken**, lokal `js/firebase-config.js` mit dem neuen Key aktualisieren und den GitHub-Secret-Alert als „revoked“ schließen.
 
+<a id="setup-rules"></a>
 ### 2. Security Rules deployen
 
 ```bash
@@ -36,6 +58,7 @@ firebase deploy --only database
 
 Die Rules liegen in `database.rules.json`. Sie erlauben Lese-/Schreibzugriff nur für den authentifizierten eigenen User-Pfad `users/{uid}/`.
 
+<a id="setup-local"></a>
 ### 3. Lokal starten
 
 Statischen Server im Projektroot starten, z. B.:
@@ -48,6 +71,7 @@ python -m http.server 5500
 
 Dann `http://localhost:3000` (serve) bzw. `http://localhost:5500` öffnen.
 
+<a id="setup-tools"></a>
 ### 4. Entwicklungstools
 
 ```bash
@@ -56,6 +80,22 @@ npm run lint
 npm test
 ```
 
+<a id="n8n-final"></a>
+## n8n Final-Konfiguration (E-Mail -> Triage)
+
+Die produktive Automatisierung liegt in `n8n/workflows/Join-email-to-task-proposal.json` und wird über `n8n/scripts/build-email-workflow.py` regeneriert.
+
+- **Ein aktiver Workflow:** Nur `Join-email-to-task-proposal` ist aktiv.
+- **Trigger:** `Schedule Trigger (every 5 min)` ist der produktive Einstieg. Der IMAP-Zweig bleibt deaktiviert.
+- **E-Mail Abruf:** `Fetch unread emails (Gmail)` mit `Return All = true` und Search `in:inbox is:unread`.
+- **Automations-Cap:** `Apply auto email cap (max 10)` (Code-Node, Modus `Run Once for All Items`) lässt pro Lauf nur die ersten 10 Items automatisch weiterlaufen.
+- **Cap-Verhalten:** Ab Item 11 (`skipTaskCreation = true`) geht der Flow direkt in den manuellen Nachbearbeitungszweig (`zu bearbeiten`), ohne neue Task-Erstellung.
+- **Task-API Auth:** `Create task in Triage` sendet Header `X-N8N-Secret` und muss exakt zum Firebase Functions Secret `N8N_API_SECRET` passen.
+- **Erfolgsbewertung:** `Evaluate create result` behandelt als Erfolg: `201` oder `200` mit `duplicate=true` oder vorhandener `id`.
+- **Erfolgspfad:** Task wird in `triageColumn` erstellt, E-Mail wird in Gmail auf `Erledigt` gelabelt und aus `INBOX` entfernt.
+- **Fehlerpfad:** Bei API-/Validierungsfehlern wird die Mail mit `zu bearbeiten` gelabelt.
+
+<a id="projektstruktur"></a>
 ## Projektstruktur
 
 ```
@@ -78,6 +118,7 @@ Join-Issue Collector/
 └── tests/                  # Vitest Unit-Tests
 ```
 
+<a id="auth-guest-mode"></a>
 ## Auth & Guest-Mode
 
 - **Registrierte User:** Firebase Email/Password Auth; Profil unter `users/{uid}/`
@@ -86,16 +127,19 @@ Join-Issue Collector/
 
 Geschützte Seiten haben `data-auth="required"` am `<body>`-Tag.
 
+<a id="migration"></a>
 ## Migration von alter Auth
 
 Bestehende User mit Klartext-Passwörtern in der Realtime DB sind **nicht kompatibel** mit der neuen Firebase-Auth. Neue Registrierung erforderlich.
 
+<a id="einschraenkungen"></a>
 ## Bekannte Einschränkungen
 
 - `js/firebase-config.js` muss mit gültigem `apiKey` befüllt sein, sonst funktioniert Auth nicht.
 - Security Rules müssen in Firebase deployed sein, sonst schlagen DB-Zugriffe fehl.
 - Kein Build-Step: Scripts werden direkt per `<script>`-Tags geladen.
 
+<a id="seitenuebersicht"></a>
 ## Seitenübersicht
 
 | Seite | Pfad | Auth |

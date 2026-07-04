@@ -187,13 +187,21 @@ let body = http.body ?? http;
 if (typeof body === 'string') {
   try { body = JSON.parse(body || '{}'); } catch (_) { body = {}; }
 }
-const ok = statusCode === 201 || (statusCode === 200 && body?.duplicate === true);
+const createdId =
+  typeof body?.id === 'string' && body.id.trim() ? body.id.trim() : '';
+const ok =
+  statusCode === 201 ||
+  (statusCode === 200 && (body?.duplicate === true || Boolean(createdId)));
 
 return [{
   json: {
     ok,
     statusCode,
     duplicate: Boolean(body?.duplicate),
+    createdId,
+    title: payload.title || '',
+    creatorName: payload.creatorName || '',
+    creatorEmail: payload.creatorEmail || '',
     sourceMessageId: payload.sourceMessageId || '',
     gmailId: payload.gmailId || '',
     emailSource: payload.emailSource || 'unknown',
@@ -437,6 +445,52 @@ IF_CAN_ARCHIVE = {
     "options": {},
 }
 
+IF_CAP_REACHED = {
+    "conditions": {
+        "options": {
+            "caseSensitive": True,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2,
+        },
+        "conditions": [
+            {
+                "id": "cap-reached",
+                "leftValue": "={{ $json.skipReason }}",
+                "rightValue": "AUTO_EMAIL_CAP_REACHED",
+                "operator": {"type": "string", "operation": "equals"},
+            }
+        ],
+        "combinator": "and",
+    },
+    "options": {},
+}
+
+MAIL_TO_STAKEHOLDER = "={{ $json.creatorEmail }}"
+MAIL_SUBJECT_SUCCESS = "={{ 'Bestaetigung: Ticket in Triage angelegt - ' + ($json.title || 'Anfrage') }}"
+MAIL_MESSAGE_SUCCESS = (
+    "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n'"
+    " + 'vielen Dank fuer Ihre Nachricht. Ihr Ticket wurde erfolgreich im Join Task Board "
+    "(Spalte Triage) angelegt.\\n\\n'"
+    " + 'Betreff: ' + ($json.title || 'Anfrage') + '\\n\\n'"
+    " + 'Viele Gruesse\\nJoin Team' }}"
+)
+MAIL_SUBJECT_CAP = "={{ 'Hinweis: Tageslimit fuer automatische Ticket-Erstellung erreicht' }}"
+MAIL_MESSAGE_CAP = (
+    "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n'"
+    " + 'wir haben Ihre E-Mail erhalten. Das Tageslimit fuer die automatische Ticket-Erstellung "
+    "ist heute bereits erreicht.\\n'"
+    " + 'Ihr Anliegen wird vom Team manuell geprueft und ins Task Board uebertragen.\\n\\n'"
+    " + 'Viele Gruesse\\nJoin Team' }}"
+)
+MAIL_SUBJECT_ERROR = "={{ 'Hinweis: E-Mail erhalten - manuelle Rueckmeldung folgt' }}"
+MAIL_MESSAGE_ERROR = (
+    "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n'"
+    " + 'wir haben Ihre E-Mail erhalten. Bei der automatischen Verarbeitung ist ein Fehler aufgetreten.\\n'"
+    " + 'Das Team kuemmert sich zeitnah manuell um Ihr Anliegen.\\n\\n'"
+    " + 'Viele Gruesse\\nJoin Team' }}"
+)
+
 GMAIL_ARCHIVE_MSG_ID = (
     "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId "
     "|| $('Pick Gmail ID for archive').item.json.archiveGmailId "
@@ -667,6 +721,25 @@ workflow = {
             "notes": "Skips Gmail archive for manual test runs.",
         },
         {
+            "parameters": {
+                "resource": "message",
+                "operation": "send",
+                "sendTo": MAIL_TO_STAKEHOLDER,
+                "subject": MAIL_SUBJECT_SUCCESS,
+                "emailType": "text",
+                "message": MAIL_MESSAGE_SUCCESS,
+                "options": {"appendAttribution": False},
+            },
+            "id": "n-mail-success",
+            "name": "Send success response",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": GMAIL_NODE_VERSION,
+            "position": [2440, -16],
+            "credentials": GMAIL_CRED,
+            "continueOnFail": True,
+            "notes": "Confirmation email to stakeholder when task was created successfully.",
+        },
+        {
             "parameters": {"resource": "label", "operation": "getAll", "returnAll": True},
             "id": "n-get-labels-ok",
             "name": "Get Gmail labels",
@@ -790,12 +863,59 @@ workflow = {
             "position": [2200, 336],
         },
         {
+            "parameters": IF_CAP_REACHED,
+            "id": "n-if-cap-reached",
+            "name": "IF cap reached",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [2440, 336],
+            "notes": "Distinguishes daily limit response from generic processing errors.",
+        },
+        {
+            "parameters": {
+                "resource": "message",
+                "operation": "send",
+                "sendTo": MAIL_TO_STAKEHOLDER,
+                "subject": MAIL_SUBJECT_CAP,
+                "emailType": "text",
+                "message": MAIL_MESSAGE_CAP,
+                "options": {"appendAttribution": False},
+            },
+            "id": "n-mail-cap",
+            "name": "Send cap reached response",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": GMAIL_NODE_VERSION,
+            "position": [2680, 272],
+            "credentials": GMAIL_CRED,
+            "continueOnFail": True,
+            "notes": "Automatic response when daily auto-processing limit is reached.",
+        },
+        {
+            "parameters": {
+                "resource": "message",
+                "operation": "send",
+                "sendTo": MAIL_TO_STAKEHOLDER,
+                "subject": MAIL_SUBJECT_ERROR,
+                "emailType": "text",
+                "message": MAIL_MESSAGE_ERROR,
+                "options": {"appendAttribution": False},
+            },
+            "id": "n-mail-error",
+            "name": "Send processing error response",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": GMAIL_NODE_VERSION,
+            "position": [2680, 400],
+            "credentials": GMAIL_CRED,
+            "continueOnFail": True,
+            "notes": "Automatic response when processing failed for other reasons.",
+        },
+        {
             "parameters": {"resource": "label", "operation": "getAll", "returnAll": True},
             "id": "n-get-labels-err",
             "name": "Get Gmail labels (error)",
             "type": "n8n-nodes-base.gmail",
             "typeVersion": GMAIL_NODE_VERSION,
-            "position": [2440, 336],
+            "position": [2920, 336],
             "credentials": GMAIL_CRED,
         },
         {
@@ -894,8 +1014,9 @@ workflow = {
         },
         "Prepare success archive": {"main": [[{"node": "IF not manual test", "type": "main", "index": 0}]]},
         "IF not manual test": {
-            "main": [[{"node": "Get Gmail labels", "type": "main", "index": 0}], []]
+            "main": [[{"node": "Send success response", "type": "main", "index": 0}], []]
         },
+        "Send success response": {"main": [[{"node": "Get Gmail labels", "type": "main", "index": 0}]]},
         "Get Gmail labels": {"main": [[{"node": "Resolve Gmail label IDs", "type": "main", "index": 0}]]},
         "Resolve Gmail label IDs": {"main": [[{"node": "IF Erledigt label found", "type": "main", "index": 0}]]},
         "IF Erledigt label found": {
@@ -914,7 +1035,19 @@ workflow = {
         "IF archive ID found": {"main": [[{"node": "Mark Gmail read", "type": "main", "index": 0}], []]},
         "Prepare error archive": {"main": [[{"node": "IF not manual test (error)", "type": "main", "index": 0}]]},
         "IF not manual test (error)": {
-            "main": [[{"node": "Get Gmail labels (error)", "type": "main", "index": 0}], []]
+            "main": [[{"node": "IF cap reached", "type": "main", "index": 0}], []]
+        },
+        "IF cap reached": {
+            "main": [
+                [{"node": "Send cap reached response", "type": "main", "index": 0}],
+                [{"node": "Send processing error response", "type": "main", "index": 0}],
+            ]
+        },
+        "Send cap reached response": {
+            "main": [[{"node": "Get Gmail labels (error)", "type": "main", "index": 0}]]
+        },
+        "Send processing error response": {
+            "main": [[{"node": "Get Gmail labels (error)", "type": "main", "index": 0}]]
         },
         "Get Gmail labels (error)": {
             "main": [[{"node": "Resolve Gmail label IDs (error)", "type": "main", "index": 0}]]

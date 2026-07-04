@@ -314,7 +314,7 @@
     },
     {
       "parameters": {
-        "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst http = $input.item.json;\nconst payload = readNodeJson(['Build Join payload'], (candidate) => Boolean(candidate?.title));\nif (!payload) {\n  throw new Error('Build Join payload output not found.');\n}\nconst statusCode = Number(http.statusCode || 0);\nlet body = http.body ?? http;\nif (typeof body === 'string') {\n  try { body = JSON.parse(body || '{}'); } catch (_) { body = {}; }\n}\nconst ok = statusCode === 201 || (statusCode === 200 && body?.duplicate === true);\n\nreturn [{\n  json: {\n    ok,\n    statusCode,\n    duplicate: Boolean(body?.duplicate),\n    sourceMessageId: payload.sourceMessageId || '',\n    gmailId: payload.gmailId || '',\n    emailSource: payload.emailSource || 'unknown',\n  },\n}];"
+        "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst http = $input.item.json;\nconst payload = readNodeJson(['Build Join payload'], (candidate) => Boolean(candidate?.title));\nif (!payload) {\n  throw new Error('Build Join payload output not found.');\n}\nconst statusCode = Number(http.statusCode || 0);\nlet body = http.body ?? http;\nif (typeof body === 'string') {\n  try { body = JSON.parse(body || '{}'); } catch (_) { body = {}; }\n}\nconst createdId =\n  typeof body?.id === 'string' && body.id.trim() ? body.id.trim() : '';\nconst ok =\n  statusCode === 201 ||\n  (statusCode === 200 && (body?.duplicate === true || Boolean(createdId)));\n\nreturn [{\n  json: {\n    ok,\n    statusCode,\n    duplicate: Boolean(body?.duplicate),\n    createdId,\n    title: payload.title || '',\n    creatorName: payload.creatorName || '',\n    creatorEmail: payload.creatorEmail || '',\n    sourceMessageId: payload.sourceMessageId || '',\n    gmailId: payload.gmailId || '',\n    emailSource: payload.emailSource || 'unknown',\n  },\n}];"
       },
       "id": "n-eval",
       "name": "Evaluate create result",
@@ -404,6 +404,35 @@
         80
       ],
       "notes": "Skips Gmail archive for manual test runs."
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.creatorEmail }}",
+        "subject": "={{ 'Bestaetigung: Ticket in Triage angelegt - ' + ($json.title || 'Anfrage') }}",
+        "emailType": "text",
+        "message": "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n' + 'vielen Dank fuer Ihre Nachricht. Ihr Ticket wurde erfolgreich im Join Task Board (Spalte Triage) angelegt.\\n\\n' + 'Betreff: ' + ($json.title || 'Anfrage') + '\\n\\n' + 'Viele Gruesse\\nJoin Team' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "n-mail-success",
+      "name": "Send success response",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2440,
+        -16
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Confirmation email to stakeholder when task was created successfully."
     },
     {
       "parameters": {
@@ -700,6 +729,98 @@
     },
     {
       "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cap-reached",
+              "leftValue": "={{ $json.skipReason }}",
+              "rightValue": "AUTO_EMAIL_CAP_REACHED",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "n-if-cap-reached",
+      "name": "IF cap reached",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2440,
+        336
+      ],
+      "notes": "Distinguishes daily limit response from generic processing errors."
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.creatorEmail }}",
+        "subject": "={{ 'Hinweis: Tageslimit fuer automatische Ticket-Erstellung erreicht' }}",
+        "emailType": "text",
+        "message": "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n' + 'wir haben Ihre E-Mail erhalten. Das Tageslimit fuer die automatische Ticket-Erstellung ist heute bereits erreicht.\\n' + 'Ihr Anliegen wird vom Team manuell geprueft und ins Task Board uebertragen.\\n\\n' + 'Viele Gruesse\\nJoin Team' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "n-mail-cap",
+      "name": "Send cap reached response",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2680,
+        272
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Automatic response when daily auto-processing limit is reached."
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.creatorEmail }}",
+        "subject": "={{ 'Hinweis: E-Mail erhalten - manuelle Rueckmeldung folgt' }}",
+        "emailType": "text",
+        "message": "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n' + 'wir haben Ihre E-Mail erhalten. Bei der automatischen Verarbeitung ist ein Fehler aufgetreten.\\n' + 'Das Team kuemmert sich zeitnah manuell um Ihr Anliegen.\\n\\n' + 'Viele Gruesse\\nJoin Team' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "n-mail-error",
+      "name": "Send processing error response",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2680,
+        400
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Automatic response when processing failed for other reasons."
+    },
+    {
+      "parameters": {
         "resource": "label",
         "operation": "getAll",
         "returnAll": true
@@ -709,7 +830,7 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        2440,
+        2920,
         336
       ],
       "credentials": {
@@ -1062,12 +1183,23 @@
       "main": [
         [
           {
-            "node": "Get Gmail labels",
+            "node": "Send success response",
             "type": "main",
             "index": 0
           }
         ],
         []
+      ]
+    },
+    "Send success response": {
+      "main": [
+        [
+          {
+            "node": "Get Gmail labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Get Gmail labels": {
@@ -1193,12 +1325,52 @@
       "main": [
         [
           {
-            "node": "Get Gmail labels (error)",
+            "node": "IF cap reached",
             "type": "main",
             "index": 0
           }
         ],
         []
+      ]
+    },
+    "IF cap reached": {
+      "main": [
+        [
+          {
+            "node": "Send cap reached response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send processing error response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send cap reached response": {
+      "main": [
+        [
+          {
+            "node": "Get Gmail labels (error)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send processing error response": {
+      "main": [
+        [
+          {
+            "node": "Get Gmail labels (error)",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Get Gmail labels (error)": {
