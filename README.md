@@ -14,6 +14,7 @@ Join-Issue Collector ist eine statische Multi-Page-Web-App (Vanilla HTML/CSS/JS)
 - [4. Entwicklungstools](#setup-tools)
 - [n8n Final-Konfiguration (E-Mail -> Triage)](#n8n-final)
 - [Projektstruktur](#projektstruktur)
+- [Add-Task Modulstruktur](#addtask-modulstruktur)
 - [Auth & Guest-Mode](#auth-guest-mode)
 - [Migration von alter Auth](#migration)
 - [Bekannte Einschränkungen](#einschraenkungen)
@@ -83,13 +84,29 @@ npm test
 <a id="n8n-final"></a>
 ## n8n Final-Konfiguration (E-Mail -> Triage)
 
-Die produktive Automatisierung liegt in `n8n/workflows/Join-email-to-task-proposal.json` und wird über `n8n/scripts/build-email-workflow.py` regeneriert.
+Die produktive Automatisierung ist in drei Workflows aufgeteilt:
 
-- **Ein aktiver Workflow:** Nur `Join-email-to-task-proposal` ist aktiv.
+- `n8n/workflows/Join-email-intake-normalize.json`
+- `n8n/workflows/Join-email-parse-payload.json`
+- `n8n/workflows/Join-email-process-triage.json`
+
+Regenerierung:
+
+```bash
+python n8n/scripts/build-email-workflow.py
+python n8n/scripts/split-email-workflow.py
+```
+
+- **Aktive Workflows:** Aktivieren der drei Split-Workflows (Intake, Parse, Process).
+- **Workflow-Verkabelung:** In `Join-email-intake-normalize` rufen die Nodes `Call parse workflow` und `Call process workflow` die beiden Folge-Workflows per `Execute Workflow` auf.
+- **Sub-Workflow-Auswahl:** In beiden `Execute Workflow`-Nodes im Intake-Workflow einmalig den Ziel-Workflow aus der Liste auswählen:
+  - `Join-email-parse-payload`
+  - `Join-email-process-triage`
+  Danach sind keine Host-URLs oder Webhook-ENV-Variablen erforderlich.
 - **Trigger:** `Schedule Trigger (every 5 min)` ist der produktive Einstieg. Der IMAP-Zweig bleibt deaktiviert.
 - **E-Mail Abruf:** `Fetch unread emails (Gmail)` mit `Return All = true` und Search `in:inbox is:unread`.
-- **Automations-Cap:** `Apply auto email cap (max 10)` (Code-Node, Modus `Run Once for All Items`) lässt pro Lauf nur die ersten 10 Items automatisch weiterlaufen.
-- **Cap-Verhalten:** Ab Item 11 (`skipTaskCreation = true`) geht der Flow direkt in den manuellen Nachbearbeitungszweig (`zu bearbeiten`), ohne neue Task-Erstellung.
+- **Automations-Cap:** `Apply auto email cap (max 10)` (Code-Node, Modus `Run Once for All Items`) begrenzt die automatische Verarbeitung auf **10 E-Mails pro Tag**.
+- **Cap-Verhalten:** Ist das Tageslimit erreicht (`skipTaskCreation = true`), geht der Flow direkt in den manuellen Nachbearbeitungszweig (`zu bearbeiten`), ohne neue Task-Erstellung.
 - **Task-API Auth:** `Create task in Triage` sendet Header `X-N8N-Secret` und muss exakt zum Firebase Functions Secret `N8N_API_SECRET` passen.
 - **Erfolgsbewertung:** `Evaluate create result` behandelt als Erfolg: `201` oder `200` mit `duplicate=true` oder vorhandener `id`.
 - **Erfolgspfad:** Task wird in `triageColumn` erstellt, E-Mail wird in Gmail auf `Erledigt` gelabelt und aus `INBOX` entfernt.
@@ -117,6 +134,31 @@ Join-Issue Collector/
 ├── database.rules.json     # Firebase Security Rules
 └── tests/                  # Vitest Unit-Tests
 ```
+
+<a id="addtask-modulstruktur"></a>
+## Add-Task Modulstruktur
+
+Der Add-Task-Bereich ist bewusst in kleine, klar getrennte Dateien aufgeteilt:
+
+- `js/addTaskForm.js`  
+  Overlay-/Form-Initialisierung, Date-Picker, globale UI-Helfer (ohne Subtask-/Assignee-Fachlogik).
+- `js/addTaskSubtasks.js`  
+  Komplette Subtask-Logik (Anlegen, Editieren, Validieren, Enter-Handling).
+- `js/addTaskAssigneesData.js`  
+  Datenzugriff und Normalisierung für Assignees (Auth-Check, Kontakte laden, Owner ergänzen).
+- `js/addTaskAssigneesUI.js`  
+  Assignee-UI (Rendern, Suchen/Filtern, Auswahlzustand, Icon-Overflow `+N`).
+
+### Script-Ladereihenfolge (wichtig)
+
+Da ohne Build-Step gearbeitet wird, müssen die Scripts in den HTML-Seiten in dieser Reihenfolge eingebunden bleiben:
+
+1. `js/addTaskForm.js`
+2. `js/addTaskSubtasks.js`
+3. `js/addTaskAssigneesData.js`
+4. `js/addTaskAssigneesUI.js`
+
+`addTaskAssigneesUI.js` verwendet Funktionen aus der Data-Datei, daher muss `addTaskAssigneesData.js` vorher geladen werden.
 
 <a id="auth-guest-mode"></a>
 ## Auth & Guest-Mode

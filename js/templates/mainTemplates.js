@@ -103,10 +103,6 @@ if (!window.closeMenu) {
 
 
 /**
- * Erzwinge Navigation, selbst wenn andere Click-Handler preventDefault() aufrufen.
- * Lässt das href trotzdem stehen (Accessibility, Kontextmenü, Mittelklick etc.).
- */
-/**
  * Forces navigation to a given href, even if other handlers preventDefault.
  * Keeps native anchor behavior for accessibility and middle-click.
  *

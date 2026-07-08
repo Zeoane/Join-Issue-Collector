@@ -31,7 +31,14 @@ function extractFrom(item) {
 }
 
 function extractSubject(item) {
-  return item.subject || item.Subject || item.envelope?.subject || item.headers?.subject?.[0] || item.headers?.subject || '';
+  const subject =
+    item.subject ||
+    item.Subject ||
+    item.envelope?.subject ||
+    item.headers?.subject?.[0] ||
+    item.headers?.subject ||
+    '';
+  return normalizeEmailText(subject);
 }
 
 function stripHtml(value) {
@@ -44,14 +51,84 @@ function stripHtml(value) {
     .trim();
 }
 
+function decodeHtmlEntities(value) {
+  function fromCodePointOrRaw(raw, codePoint) {
+    if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff) return raw;
+    try { return String.fromCodePoint(codePoint); } catch (_) { return raw; }
+  }
+  const named = {
+    nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'",
+    Auml: 'Ä', Ouml: 'Ö', Uuml: 'Ü', auml: 'ä', ouml: 'ö', uuml: 'ü', szlig: 'ß',
+  };
+  return String(value || '')
+    .replace(/&#(\d+);/g, (raw, dec) => fromCodePointOrRaw(raw, Number(dec)))
+    .replace(/&#x([0-9a-f]+);/gi, (raw, hex) => fromCodePointOrRaw(raw, parseInt(hex, 16)))
+    .replace(/&([a-zA-Z]+);/g, (match, key) => named[key] ?? match);
+}
+
+function decodeMimeWords(value) {
+  return String(value || '').replace(/=\?([^?]+)\?([bqBQ])\?([^?]*)\?=/g, (_, charset, encoding, content) => {
+    try {
+      let bytes;
+      if (String(encoding).toUpperCase() === 'B') {
+        bytes = Buffer.from(content, 'base64');
+      } else {
+        const qp = content
+          .replace(/_/g, ' ')
+          .replace(/=([0-9A-F]{2})/gi, (__unused, hex) => String.fromCharCode(parseInt(hex, 16)));
+        bytes = Buffer.from(qp, 'latin1');
+      }
+      const label = String(charset || 'utf-8').toLowerCase();
+      const latin = label.includes('iso-8859-1') || label.includes('latin1') || label.includes('windows-1252');
+      return bytes.toString(latin ? 'latin1' : 'utf8');
+    } catch (_) {
+      return content;
+    }
+  });
+}
+
+function looksQuotedPrintable(value) {
+  const text = String(value || '');
+  if (/=\r?\n/.test(text)) return true;
+  const matches = text.match(/=[0-9A-F]{2}/gi);
+  return Array.isArray(matches) && matches.length >= 2;
+}
+
+function decodeQuotedPrintable(value) {
+  const input = String(value || '');
+  if (!looksQuotedPrintable(input)) return input;
+  const unfolded = input.replace(/=\r?\n/g, '');
+  return unfolded.replace(/=([0-9A-F]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+}
+
+function repairMojibake(value) {
+  const input = String(value || '');
+  if (!/[ÃÂâ][\x80-\xBF]/.test(input)) return input;
+  try {
+    const repaired = Buffer.from(input, 'latin1').toString('utf8');
+    return repaired.includes('�') ? input : repaired;
+  } catch (_) {
+    return input;
+  }
+}
+
+function normalizeEmailText(value) {
+  let text = decodeMimeWords(value);
+  text = decodeQuotedPrintable(text);
+  text = repairMojibake(text);
+  text = decodeHtmlEntities(text);
+  return String(text || '').replace(/\r/g, '').trim();
+}
+
 function extractBody(item) {
   const candidates = [item.textPlain, item.text, item.textContent, item.textAsHtml, item.textHtml, item.htmlContent];
   for (const candidate of candidates) {
     if (typeof candidate === 'string' && candidate.trim()) {
-      return candidate.includes('<') ? stripHtml(candidate) : candidate.trim();
+      const raw = candidate.includes('<') ? stripHtml(candidate) : candidate.trim();
+      return normalizeEmailText(raw);
     }
   }
-  return item.snippet ? String(item.snippet).trim() : '';
+  return item.snippet ? normalizeEmailText(item.snippet) : '';
 }
 
 function extractMessageId(item) {
@@ -63,8 +140,8 @@ function extractMessageId(item) {
 
 return [{
   json: {
-    from: extractFrom(data),
-    subject: String(extractSubject(data)).trim(),
+    from: normalizeEmailText(extractFrom(data)),
+    subject: extractSubject(data),
     body: extractBody(data),
     messageId: extractMessageId(data),
     gmailId: data.id || '',
@@ -222,21 +299,58 @@ return [{
 
 AUTO_CAP_JS = r"""const CAP = 10;
 const items = $input.all();
+const today = new Date().toISOString().slice(0, 10);
+const hasStaticDataApi = typeof $getWorkflowStaticData === 'function';
+
+let processedToday = 0;
+let staticData = null;
+
+if (hasStaticDataApi) {
+  staticData = $getWorkflowStaticData('global');
+  if (staticData.autoCapDate !== today) {
+    staticData.autoCapDate = today;
+    staticData.autoCapCount = 0;
+  }
+  if (!Number.isInteger(staticData.autoCapCount) || staticData.autoCapCount < 0) {
+    staticData.autoCapCount = 0;
+  }
+  processedToday = staticData.autoCapCount;
+}
 
 return items.map((item, index) => {
   const source = String(item.json.emailSource || '').trim().toLowerCase();
   const isManual = source === 'manual';
-  const skipTaskCreation = !isManual && index >= CAP;
+  let skipTaskCreation = false;
+  let skipReason = '';
+
+  if (!isManual) {
+    if (processedToday >= CAP) {
+      skipTaskCreation = true;
+      skipReason = 'AUTO_EMAIL_CAP_REACHED';
+    } else {
+      processedToday += 1;
+      if (staticData) staticData.autoCapCount = processedToday;
+    }
+  }
+
+  // Fallback: if static storage is unavailable, cap applies per batch only.
+  if (!hasStaticDataApi && !isManual) {
+    skipTaskCreation = index >= CAP;
+    skipReason = skipTaskCreation ? 'AUTO_EMAIL_CAP_REACHED' : '';
+  }
 
   return {
     json: {
       ...item.json,
       autoCap: CAP,
+      autoCapDate: today,
+      autoProcessedToday: processedToday,
       batchIndex: index + 1,
       batchCount: items.length,
       skipTaskCreation,
-      skipReason: skipTaskCreation ? 'AUTO_EMAIL_CAP_REACHED' : '',
+      skipReason,
       capBypassedForManual: isManual,
+      capMode: hasStaticDataApi ? 'daily' : 'batch-fallback',
     },
   };
 });"""
@@ -656,7 +770,7 @@ workflow = {
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [1240, 320],
-            "notes": "Hard cap for automated processing: after 10 auto emails, skip task creation and route to manual labeling path.",
+            "notes": "Daily cap for automated processing: after 10 emails per day, skip task creation and route to manual labeling path.",
         },
         {
             "parameters": IF_WITHIN_AUTO_CAP,
