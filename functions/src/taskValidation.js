@@ -13,7 +13,9 @@ import {
  */
 export function readStringField(input, key, fallback = "") {
   const value = input[key];
-  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+  if (typeof value !== "string") return fallback;
+  const normalized = normalizeTaskText(value);
+  return normalized ? normalized : fallback;
 }
 
 /**
@@ -72,6 +74,64 @@ export function resolveDescription(input) {
 }
 
 /**
+ * Normalizes task text fields to avoid hidden unicode mismatches.
+ * @param {string} value
+ * @returns {string}
+ */
+function normalizeTaskText(value) {
+  return String(value || "")
+    .replace(/\r/g, "")
+    .normalize("NFC")
+    .trim();
+}
+
+/**
+ * Converts common inbound due-date formats to YYYY-MM-DD.
+ * Accepted inputs:
+ * - YYYY-MM-DD
+ * - DD.MM.YYYY
+ * - DD/MM/YYYY
+ * @param {Record<string, unknown>} input
+ * @returns {string}
+ */
+function resolveDueDate(input) {
+  const raw = readStringField(input, "dueDate");
+  if (!raw) return "";
+  if (isIsoDate(raw)) return raw;
+
+  const dotMatch = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (dotMatch) {
+    const [, dd, mm, yyyy] = dotMatch;
+    const iso = `${yyyy}-${mm}-${dd}`;
+    return isIsoDate(iso) ? iso : raw;
+  }
+
+  const slashMatch = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (slashMatch) {
+    const [, dd, mm, yyyy] = slashMatch;
+    const iso = `${yyyy}-${mm}-${dd}`;
+    return isIsoDate(iso) ? iso : raw;
+  }
+
+  return raw;
+}
+
+/**
+ * @param {string} value
+ * @returns {boolean}
+ */
+function isIsoDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+/**
  * Maps validated n8n fields to the Firebase task document shape.
  * @param {Record<string, unknown>} input
  * @param {string} title
@@ -92,7 +152,7 @@ export function buildTaskFromInput(input, title, column, priority, description) 
     priority,
     creatorType: input.creatorType === "internal" ? "internal" : "external",
     category: readStringField(input, "category", "User Story"),
-    dueDate: readStringField(input, "dueDate"),
+    dueDate: resolveDueDate(input),
     creatorEmail: readStringField(input, "creatorEmail"),
     creatorName: readStringField(input, "creatorName"),
     aiGenerated: input.aiGenerated !== false,

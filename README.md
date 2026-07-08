@@ -84,30 +84,23 @@ npm test
 <a id="n8n-final"></a>
 ## n8n Final-Konfiguration (E-Mail -> Triage)
 
-Die produktive Automatisierung ist in drei Workflows aufgeteilt:
+Die produktive Automatisierung läuft aktuell als ein Workflow:
 
-- `n8n/workflows/Join-email-intake-normalize.json`
-- `n8n/workflows/Join-email-parse-payload.json`
-- `n8n/workflows/Join-email-process-triage.json`
+- `n8n/workflows/Join-email-to-task-proposal.json`
 
 Regenerierung:
 
 ```bash
 python n8n/scripts/build-email-workflow.py
-python n8n/scripts/split-email-workflow.py
 ```
 
-- **Aktive Workflows:** Aktivieren der drei Split-Workflows (Intake, Parse, Process).
-- **Workflow-Verkabelung:** In `Join-email-intake-normalize` rufen die Nodes `Call parse workflow` und `Call process workflow` die beiden Folge-Workflows per `Execute Workflow` auf.
-- **Sub-Workflow-Auswahl:** In beiden `Execute Workflow`-Nodes im Intake-Workflow einmalig den Ziel-Workflow aus der Liste auswählen:
-  - `Join-email-parse-payload`
-  - `Join-email-process-triage`
-  Danach sind keine Host-URLs oder Webhook-ENV-Variablen erforderlich.
+- **Aktiver Workflow:** Nur `Join-email-to-task-proposal` in n8n aktiv/published halten.
 - **Trigger:** `Schedule Trigger (every 5 min)` ist der produktive Einstieg. Der IMAP-Zweig bleibt deaktiviert.
 - **E-Mail Abruf:** `Fetch unread emails (Gmail)` mit `Return All = true` und Search `in:inbox is:unread`.
 - **Automations-Cap:** `Apply auto email cap (max 10)` (Code-Node, Modus `Run Once for All Items`) begrenzt die automatische Verarbeitung auf **10 E-Mails pro Tag**.
 - **Cap-Verhalten:** Ist das Tageslimit erreicht (`skipTaskCreation = true`), geht der Flow direkt in den manuellen Nachbearbeitungszweig (`zu bearbeiten`), ohne neue Task-Erstellung.
 - **Task-API Auth:** `Create task in Triage` sendet Header `X-N8N-Secret` und muss exakt zum Firebase Functions Secret `N8N_API_SECRET` passen.
+- **401 Unauthorized (Troubleshooting):** In der n8n-Credential `Header Auth account` muss der gleiche Secret-Wert wie in Firebase `N8N_API_SECRET` stehen (ohne zusätzliche Leerzeichen/Zeilenumbruch). Alternativ funktioniert auch `Authorization: Bearer <secret>`.
 - **Erfolgsbewertung:** `Evaluate create result` behandelt als Erfolg: `201` oder `200` mit `duplicate=true` oder vorhandener `id`.
 - **Erfolgspfad:** Task wird in `triageColumn` erstellt, E-Mail wird in Gmail auf `Erledigt` gelabelt und aus `INBOX` entfernt.
 - **Fehlerpfad:** Bei API-/Validierungsfehlern wird die Mail mit `zu bearbeiten` gelabelt.

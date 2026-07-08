@@ -56,6 +56,21 @@ describe("POST /internal/n8n/tasks", () => {
     expect(res.body.task.title).toBe("Test ticket from n8n");
   });
 
+  it("accepts bearer auth and trims secret whitespace", async () => {
+    const app = createApp();
+    process.env.N8N_API_SECRET = "  test-secret  ";
+    const res = await request(app)
+      .post("/internal/n8n/tasks")
+      .set("Authorization", "bearer test-secret")
+      .send({
+        title: "Bearer auth ticket",
+        creatorEmail: "stakeholder@example.com",
+      });
+
+    expect(res.status).toBe(201);
+    expect(res.body.id).toBe("task-123");
+  });
+
   it("returns 200 when sourceMessageId was already processed", async () => {
     const app = createApp();
     const res = await request(app)

@@ -790,7 +790,7 @@ workflow = {
                 "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
                 "sendBody": True,
                 "specifyBody": "json",
-                "jsonBody": "={{ JSON.stringify($json) }}",
+                "jsonBody": "={{ $json }}",
                 "options": {"response": {"response": {"fullResponse": True, "neverError": True}}},
             },
             "id": "n-create",
@@ -799,7 +799,7 @@ workflow = {
             "typeVersion": 4.2,
             "position": [1240, 208],
             "credentials": HTTP_CRED,
-            "notes": "POST to Firebase via Hosting rewrite. Needs Header Auth credential.",
+            "notes": "POST to Firebase via Hosting rewrite. Header Auth credential must send X-N8N-Secret with the same value as Firebase secret N8N_API_SECRET.",
         },
         {
             "parameters": {"jsCode": EVALUATE_JS},

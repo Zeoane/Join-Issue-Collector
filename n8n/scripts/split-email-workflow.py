@@ -83,6 +83,67 @@ return [{
   },
 }];"""
 
+PROCESS_EVALUATE_JS = """function nodeNameVariants(base) {
+  const names = [base];
+  for (let i = 1; i <= 9; i++) {
+    names.push(`${base}${i}`);
+    names.push(`${base} ${i}`);
+  }
+  return names;
+}
+
+function readNodeJson(bases, predicate = () => true) {
+  for (const base of bases) {
+    for (const name of nodeNameVariants(base)) {
+      try {
+        const linked = $(name).item.json;
+        if (linked && predicate(linked)) return linked;
+      } catch (_) {}
+      try {
+        const all = $(name).all();
+        if (!Array.isArray(all)) continue;
+        for (const item of all) {
+          const json = item?.json || item;
+          if (json && predicate(json)) return json;
+        }
+      } catch (_) {}
+    }
+  }
+  return null;
+}
+
+const http = $input.item.json;
+const payload = readNodeJson(
+  ['Normalize process payload', 'Apply auto email cap (max 10)', 'When Executed by Another Workflow'],
+  (candidate) => Boolean(candidate?.title || candidate?.creatorEmail || candidate?.sourceMessageId || candidate?.gmailId)
+) || {};
+const statusCode = Number(http.statusCode || 0);
+let body = http.body ?? http;
+if (typeof body === 'string') {
+  try { body = JSON.parse(body || '{}'); } catch (_) { body = {}; }
+}
+const createdId =
+  typeof body?.id === 'string' && body.id.trim() ? body.id.trim() : '';
+const ok =
+  statusCode === 201 ||
+  (statusCode === 200 && (body?.duplicate === true || Boolean(createdId)));
+const fallbackTask = body?.task && typeof body.task === 'object' ? body.task : {};
+
+return [{
+  json: {
+    ok,
+    statusCode,
+    duplicate: Boolean(body?.duplicate),
+    createdId,
+    title: payload.title || fallbackTask.title || '',
+    creatorName: payload.creatorName || fallbackTask.creatorName || '',
+    creatorEmail: payload.creatorEmail || fallbackTask.creatorEmail || '',
+    sourceMessageId: payload.sourceMessageId || fallbackTask.sourceMessageId || '',
+    gmailId: payload.gmailId || fallbackTask.gmailId || '',
+    emailSource: payload.emailSource || fallbackTask.emailSource || 'unknown',
+  },
+}];"""
+
 NORMALIZE_PROCESS_PAYLOAD_JS = """const incoming = $input.item.json;
 const payload = incoming?.body && typeof incoming.body === 'object' ? incoming.body : incoming;
 if (!payload || typeof payload !== 'object') {
@@ -93,14 +154,14 @@ return [{ json: payload }];"""
 PARSE_WORKFLOW_SELECTOR = {
     "__rl": True,
     "mode": "list",
-    "value": "REPLACE_WITH_PARSE_WORKFLOW_ID",
+    "value": "Join-email-parse-payload",
     "cachedResultName": "Join-email-parse-payload",
 }
 
 PROCESS_WORKFLOW_SELECTOR = {
     "__rl": True,
     "mode": "list",
-    "value": "REPLACE_WITH_PROCESS_WORKFLOW_ID",
+    "value": "Join-email-process-triage",
     "cachedResultName": "Join-email-process-triage",
 }
 
@@ -329,18 +390,7 @@ def build_process_workflow(mono):
     node_index = build_node_index(mono)
     workflow = base_workflow("Join-email-process-triage")
     selected_nodes = clone_selected_nodes(node_index, PROCESS_NODE_NAMES)
-    replace_in_node_code(
-        selected_nodes,
-        "Evaluate create result",
-        "readNodeJson(['Build Join payload']",
-        "readNodeJson(['Normalize process payload']",
-    )
-    replace_in_node_code(
-        selected_nodes,
-        "Evaluate create result",
-        "Build Join payload output not found.",
-        "Normalize process payload output not found.",
-    )
+    set_node_code(selected_nodes, "Evaluate create result", PROCESS_EVALUATE_JS)
     trigger = make_execute_workflow_trigger_node("split-process-trigger", [280, 304])
     normalize = make_code_node(
         "split-process-normalize",

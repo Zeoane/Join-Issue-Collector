@@ -5,10 +5,11 @@ import { getDatabase } from "../config/firebaseAdmin.js";
  * @returns {string}
  */
 function sanitizeMessageId(messageId) {
-  return String(messageId || "")
+  const normalized = String(messageId || "")
     .trim()
-    .replace(/^<|>$/g, "")
-    .replace(/[.#$[\]/\\]/g, "_");
+    .replace(/^<|>$/g, "");
+  if (!normalized) return "";
+  return encodeURIComponent(normalized).replace(/\./g, "%2E");
 }
 
 /**
@@ -19,7 +20,6 @@ function sanitizeMessageId(messageId) {
 async function findExistingTaskForMessage(uid, sourceMessageId) {
   const key = sanitizeMessageId(sourceMessageId);
   if (!key) return null;
-
   const db = getDatabase();
   const processedSnap = await db.ref(`users/${uid}/processedEmails/${key}`).get();
   if (!processedSnap.exists()) return null;
@@ -45,7 +45,7 @@ async function findExistingTaskForMessage(uid, sourceMessageId) {
 export async function createTaskForUser(uid, task, sourceMessageId = "") {
   const normalizedMessageId = sanitizeMessageId(sourceMessageId);
   if (normalizedMessageId) {
-    const existing = await findExistingTaskForMessage(uid, normalizedMessageId);
+    const existing = await findExistingTaskForMessage(uid, sourceMessageId);
     if (existing) return existing;
   }
 

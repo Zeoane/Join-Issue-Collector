@@ -9,14 +9,12 @@ import { sanitizeMessageId } from "./processedEmail.js";
 async function findExistingTaskForMessage(uid, sourceMessageId) {
   const key = sanitizeMessageId(sourceMessageId);
   if (!key) return null;
-
-  const processedSnap = await getDatabase()
-    .ref(`users/${uid}/processedEmails/${key}`)
-    .get();
+  const db = getDatabase();
+  const processedSnap = await db.ref(`users/${uid}/processedEmails/${key}`).get();
   if (!processedSnap.exists()) return null;
 
   const { taskId } = processedSnap.val();
-  const taskSnap = await getDatabase().ref(`users/${uid}/tasks/${taskId}`).get();
+  const taskSnap = await db.ref(`users/${uid}/tasks/${taskId}`).get();
 
   return {
     duplicate: true,
@@ -36,7 +34,7 @@ async function findExistingTaskForMessage(uid, sourceMessageId) {
 export async function createTaskForUser(uid, task, sourceMessageId = "") {
   const normalizedMessageId = sanitizeMessageId(sourceMessageId);
   if (normalizedMessageId) {
-    const existing = await findExistingTaskForMessage(uid, normalizedMessageId);
+    const existing = await findExistingTaskForMessage(uid, sourceMessageId);
     if (existing) return existing;
   }
 
