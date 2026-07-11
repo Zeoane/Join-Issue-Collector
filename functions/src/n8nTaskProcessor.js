@@ -1,9 +1,9 @@
-import { createTaskForUser } from "./taskRepository.js";
+import { createTaskForAllUsers } from "./taskRepository.js";
 import { sendJson } from "./responseHelpers.js";
 import { readStringField, validateN8nTaskPayload } from "./taskValidation.js";
 
 /**
- * Persists a validated n8n payload as a triage task for the demo user.
+ * Persists a validated n8n payload and mirrors it to all user boards.
  * @param {import("firebase-functions/v2/https").Request} req
  * @param {import("firebase-functions/v2/https").Response} res
  * @param {string} demoUid
@@ -21,7 +21,7 @@ export async function processN8nTaskBody(req, res, demoUid) {
   );
 
   try {
-    const result = await createTaskForUser(
+    const result = await createTaskForAllUsers(
       demoUid,
       validation.task,
       sourceMessageId

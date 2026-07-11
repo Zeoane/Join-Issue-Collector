@@ -30,6 +30,8 @@ export const internalN8nTasks = onRequest(
 export const notifyTaskCreatorOnColumnChange = onValueUpdated(
   {
     ref: "/users/{uid}/tasks/{taskId}",
+    region: "europe-west1",
+    instance: "join-issue-collector-70cb7-default-rtdb",
     secrets: [taskMovedWebhookUrl, n8nSecret],
   },
   async (event) => {
