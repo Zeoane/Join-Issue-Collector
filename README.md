@@ -94,7 +94,7 @@ Regenerierung:
 python n8n/scripts/build-email-workflow.py
 ```
 
-- **Aktiver Workflow:** Nur `Join-email-to-task-proposal` in n8n aktiv/published halten.
+- **Aktive Workflows:** Fuer den E-Mail->Triage-Flow `Join-email-to-task-proposal` aktiv/published halten. Fuer Spaltenwechsel-Benachrichtigungen zusaetzlich einen separaten "Task moved"-Webhook-Workflow aktivieren.
 - **Trigger:** `Schedule Trigger (every 5 min)` ist der produktive Einstieg. Der IMAP-Zweig bleibt deaktiviert.
 - **E-Mail Abruf:** `Fetch unread emails (Gmail)` mit `Return All = true` und Search `in:inbox is:unread`.
 - **Automations-Cap:** `Apply auto email cap (max 10)` (Code-Node, Modus `Run Once for All Items`) begrenzt die automatische Verarbeitung auf **10 E-Mails pro Tag**.
@@ -104,6 +104,9 @@ python n8n/scripts/build-email-workflow.py
 - **Erfolgsbewertung:** `Evaluate create result` behandelt als Erfolg: `201` oder `200` mit `duplicate=true` oder vorhandener `id`.
 - **Erfolgspfad:** Task wird in `triageColumn` erstellt, E-Mail wird in Gmail auf `Erledigt` gelabelt und aus `INBOX` entfernt.
 - **Fehlerpfad:** Bei API-/Validierungsfehlern wird die Mail mit `zu bearbeiten` gelabelt.
+- **Spaltenwechsel-Benachrichtigung (neu):** Die Firebase Function `notifyTaskCreatorOnColumnChange` reagiert auf Änderungen an `users/{uid}/tasks/{taskId}` und ruft bei echtem Spaltenwechsel (`before.column !== after.column`) einen n8n-Webhook auf.
+- **Webhook-Secret für Spaltenwechsel:** Der Call nutzt den gleichen Header `X-N8N-Secret` wie die Task-API (`N8N_API_SECRET`).
+- **Neues Secret in Firebase Functions:** `N8N_TASK_MOVED_WEBHOOK_URL` muss auf den produktiven n8n-Webhook für "Task moved" gesetzt werden.
 
 <a id="projektstruktur"></a>
 ## Projektstruktur
