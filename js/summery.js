@@ -27,6 +27,7 @@
  */
 
 const userKey = () => window.USERKEY;
+const DAILY_EMAIL_USAGE_ENDPOINT = "/public/stakeholder-usage";
 
 window.addEventListener("DOMContentLoaded", async () => {
   const ok = await ensureAuthenticated("../../index.html");
@@ -134,6 +135,7 @@ async function loadAndRenderTaskCounts() {
     const { countByColumn, highPriorityCount, upcomingUrgentDates } = analyzeTasks(tasks);
     renderTaskCounts(countByColumn, tasks.length, highPriorityCount);
     renderNextDeadline(upcomingUrgentDates);
+    await renderDailyEmailRequestsCount(tasks);
   } catch (error) {
     console.error("Error loading tasks:", error);
   }
@@ -257,6 +259,63 @@ function renderNextDeadline(dates) {
   });
 
   elem.innerText = formatted;
+}
+
+/**
+ * Loads and renders the daily number of new email requests on board.
+ * Uses the public daily usage endpoint and falls back to task-based estimation.
+ *
+ * @param {Task[]} tasks - Current user tasks used for fallback estimation.
+ * @returns {Promise<void>}
+ */
+async function renderDailyEmailRequestsCount(tasks) {
+  const elem = document.getElementById("emailRequestsCount");
+  if (!elem) return;
+
+  try {
+    const usage = await fetchDailyEmailUsage();
+    elem.innerText = String(Math.max(0, usage.usedToday));
+  } catch (error) {
+    console.warn("Falling back to local email request count:", error);
+    elem.innerText = String(estimateDailyEmailRequestsFromTasks(tasks));
+  }
+}
+
+/**
+ * Reads the authoritative daily email usage from the public endpoint.
+ *
+ * @returns {Promise<{usedToday:number}>}
+ */
+async function fetchDailyEmailUsage() {
+  const response = await fetch(DAILY_EMAIL_USAGE_ENDPOINT, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Email usage endpoint failed (${response.status})`);
+  }
+  const payload = await response.json();
+  const usedToday = Number(payload?.usedToday);
+  return { usedToday: Number.isFinite(usedToday) ? Math.floor(usedToday) : 0 };
+}
+
+/**
+ * Fallback count when the usage endpoint is unavailable.
+ * Counts today's external tasks by movedAt timestamp in local time.
+ *
+ * @param {Task[]} tasks
+ * @returns {number}
+ */
+function estimateDailyEmailRequestsFromTasks(tasks) {
+  const dayStart = new Date();
+  dayStart.setHours(0, 0, 0, 0);
+  const dayStartMs = dayStart.getTime();
+  const nextDayStartMs = dayStartMs + 24 * 60 * 60 * 1000;
+
+  return tasks.reduce((count, task) => {
+    const movedAt = Number(task?.movedAt);
+    if (task?.creatorType !== "external") return count;
+    if (!Number.isFinite(movedAt)) return count;
+    if (movedAt < dayStartMs || movedAt >= nextDayStartMs) return count;
+    return count + 1;
+  }, 0);
 }
 
 /**

@@ -297,7 +297,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const CAP = 10;\nconst items = $input.all();\nconst today = new Date().toISOString().slice(0, 10);\nconst hasStaticDataApi = typeof $getWorkflowStaticData === 'function';\n\nlet processedToday = 0;\nlet staticData = null;\n\nif (hasStaticDataApi) {\n  staticData = $getWorkflowStaticData('global');\n  if (staticData.autoCapDate !== today) {\n    staticData.autoCapDate = today;\n    staticData.autoCapCount = 0;\n  }\n  if (!Number.isInteger(staticData.autoCapCount) || staticData.autoCapCount < 0) {\n    staticData.autoCapCount = 0;\n  }\n  processedToday = staticData.autoCapCount;\n}\n\nreturn items.map((item, index) => {\n  const source = String(item.json.emailSource || '').trim().toLowerCase();\n  const isManual = source === 'manual';\n  let skipTaskCreation = false;\n  let skipReason = '';\n\n  if (!isManual) {\n    if (processedToday >= CAP) {\n      skipTaskCreation = true;\n      skipReason = 'AUTO_EMAIL_CAP_REACHED';\n    } else {\n      processedToday += 1;\n      if (staticData) staticData.autoCapCount = processedToday;\n    }\n  }\n\n  // Fallback: if static storage is unavailable, cap applies per batch only.\n  if (!hasStaticDataApi && !isManual) {\n    skipTaskCreation = index >= CAP;\n    skipReason = skipTaskCreation ? 'AUTO_EMAIL_CAP_REACHED' : '';\n  }\n\n  return {\n    json: {\n      ...item.json,\n      autoCap: CAP,\n      autoCapDate: today,\n      autoProcessedToday: processedToday,\n      batchIndex: index + 1,\n      batchCount: items.length,\n      skipTaskCreation,\n      skipReason,\n      capBypassedForManual: isManual,\n      capMode: hasStaticDataApi ? 'daily' : 'batch-fallback',\n    },\n  };\n});"
+        "jsCode": "const AUTO_CAP = 10;\nconst TOTAL_CAP = 15;\nconst items = $input.all();\nconst today = new Date().toISOString().slice(0, 10);\nconst hasStaticDataApi = typeof $getWorkflowStaticData === 'function';\n\nlet autoProcessedToday = 0;\nlet totalProcessedToday = 0;\nlet staticData = null;\nlet autoBatchProcessed = 0;\nlet totalBatchProcessed = 0;\n\nif (hasStaticDataApi) {\n  staticData = $getWorkflowStaticData('global');\n  if (staticData.capDate !== today) {\n    staticData.capDate = today;\n    staticData.autoCapDate = today;\n    staticData.totalCapDate = today;\n    staticData.autoCapCount = 0;\n    staticData.totalCapCount = 0;\n  }\n  if (!Number.isInteger(staticData.autoCapCount) || staticData.autoCapCount < 0) {\n    staticData.autoCapCount = 0;\n  }\n  if (!Number.isInteger(staticData.totalCapCount) || staticData.totalCapCount < 0) {\n    staticData.totalCapCount = 0;\n  }\n  autoProcessedToday = staticData.autoCapCount;\n  totalProcessedToday = staticData.totalCapCount;\n}\n\nreturn items.map((item, index) => {\n  const source = String(item.json.emailSource || '').trim().toLowerCase();\n  const isManual = source === 'manual';\n  let skipTaskCreation = false;\n  let skipReason = '';\n\n  if (!isManual) {\n    if (hasStaticDataApi) {\n      if (totalProcessedToday >= TOTAL_CAP) {\n        skipTaskCreation = true;\n        skipReason = 'TOTAL_EMAIL_CAP_REACHED';\n      } else {\n        totalProcessedToday += 1;\n        if (staticData) staticData.totalCapCount = totalProcessedToday;\n        if (autoProcessedToday >= AUTO_CAP) {\n          skipTaskCreation = true;\n          skipReason = 'AUTO_EMAIL_CAP_REACHED';\n        } else {\n          autoProcessedToday += 1;\n          if (staticData) staticData.autoCapCount = autoProcessedToday;\n        }\n      }\n    } else if (totalBatchProcessed >= TOTAL_CAP) {\n      skipTaskCreation = true;\n      skipReason = 'TOTAL_EMAIL_CAP_REACHED';\n    } else {\n      totalBatchProcessed += 1;\n      totalProcessedToday = totalBatchProcessed;\n      if (autoBatchProcessed >= AUTO_CAP) {\n        skipTaskCreation = true;\n        skipReason = 'AUTO_EMAIL_CAP_REACHED';\n      } else {\n        autoBatchProcessed += 1;\n        autoProcessedToday = autoBatchProcessed;\n      }\n    }\n  }\n\n  return {\n    json: {\n      ...item.json,\n      autoCap: AUTO_CAP,\n      totalCap: TOTAL_CAP,\n      autoCapDate: today,\n      totalCapDate: today,\n      autoProcessedToday,\n      totalProcessedToday,\n      batchIndex: index + 1,\n      batchCount: items.length,\n      skipTaskCreation,\n      skipReason,\n      capBypassedForManual: isManual,\n      capMode: hasStaticDataApi ? 'daily' : 'batch-fallback',\n    },\n  };\n});"
       },
       "id": "08836e16-1722-4e9e-b55c-804b853cba50",
       "name": "Apply auto email cap (max 10)1",
@@ -307,7 +307,7 @@
         -2896,
         1040
       ],
-      "notes": "Daily cap for automated processing: after 10 emails per day, skip task creation and route to manual labeling path."
+      "notes": "Daily caps: max 15 accepted emails/day in Join Collector, of which max 10 are auto-processed into board tasks."
     },
     {
       "parameters": {
@@ -807,11 +807,11 @@
           "conditions": [
             {
               "id": "cap-reached",
-              "leftValue": "={{ $json.skipReason }}",
-              "rightValue": "AUTO_EMAIL_CAP_REACHED",
+              "leftValue": "={{ ['AUTO_EMAIL_CAP_REACHED', 'TOTAL_EMAIL_CAP_REACHED'].includes($json.skipReason) }}",
+              "rightValue": true,
               "operator": {
-                "type": "string",
-                "operation": "equals"
+                "type": "boolean",
+                "operation": "true"
               }
             }
           ],
@@ -832,9 +832,9 @@
     {
       "parameters": {
         "sendTo": "={{ $json.creatorEmail }}",
-        "subject": "={{ 'Hinweis: Tageslimit fuer automatische Ticket-Erstellung erreicht' }}",
+        "subject": "={{ $json.skipReason === 'TOTAL_EMAIL_CAP_REACHED' ? 'Hinweis: Tageslimit fuer E-Mail-Eingang im Join Collector erreicht' : 'Hinweis: Tageslimit fuer automatische Ticket-Erstellung erreicht' }}",
         "emailType": "text",
-        "message": "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n' + 'wir haben Ihre E-Mail erhalten. Das Tageslimit fuer die automatische Ticket-Erstellung ist heute bereits erreicht.\\n' + 'Ihr Anliegen wird vom Team manuell geprueft und ins Task Board uebertragen.\\n\\n' + 'Viele Gruesse\\nJoin Team' }}",
+        "message": "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n' + ($json.skipReason === 'TOTAL_EMAIL_CAP_REACHED' ? 'wir koennen heute keine weiteren E-Mails im Join Collector annehmen. Bitte senden Sie Ihr Anliegen morgen erneut.\\n\\n' : 'wir haben Ihre E-Mail erhalten. Das Tageslimit fuer die automatische Ticket-Erstellung ist heute bereits erreicht.\\nIhr Anliegen wird vom Team manuell geprueft und ins Task Board uebertragen.\\n\\n') + 'Viele Gruesse\\nJoin Team' }}",
         "options": {
           "appendAttribution": false
         }

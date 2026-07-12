@@ -138,6 +138,53 @@ h2 {
     min-height: 90px;
 }
 
+.row--deadline-email .item2 {
+    flex: 1;
+    max-width: none;
+    min-width: 0;
+    padding: 0 32px;
+    height: 168px;
+}
+
+.item-email-requests {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 168px;
+    min-width: 168px;
+    height: 168px;
+    border-radius: 30px;
+    background-color: #ffffff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    gap: 13px;
+    padding: 25px 0;
+}
+
+.email-requests-count {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 64px;
+    line-height: 120%;
+    text-align: center;
+    color: #8933fc;
+    background: linear-gradient(180deg, #8933fc 0%, #29abe2 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.email-requests-label {
+    width: 83px;
+    height: 48px;
+    font-family: "Inter", sans-serif;
+    font-weight: 400;
+    font-size: 20px;
+    line-height: 120%;
+    text-align: center;
+    color: #2A3647;
+}
+
 
 .deadline {
     display: flex;
@@ -249,6 +296,22 @@ font-weight: 400;
 .item3:hover .nummber,
 .item3:hover .To-do {
     color: white;
+}
+
+.item-email-requests:hover {
+    transform: scale(1.07);
+    transition: transform 80ms ease-out;
+    background-color: #2A3647;
+}
+
+.item-email-requests:hover .email-requests-count {
+    background: none;
+    -webkit-text-fill-color: #ffffff;
+    color: #ffffff;
+}
+
+.item-email-requests:hover .email-requests-label {
+    color: #ffffff;
 }
 
 .circle-wrapper {

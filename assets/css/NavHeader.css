@@ -224,15 +224,20 @@ span {
 }
 
 .initials-button {
+  --initial-size: 56px;
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: var(--initial-size);
+  height: var(--initial-size);
+  min-width: var(--initial-size);
+  min-height: var(--initial-size);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 var(--initial-size);
   border: none;
   background: none;
   padding: 0;
   cursor: pointer;
-  width: 56px;
-  height: 56px;
 }
 .initials-button:hover {
   background-color: #e9e7e7;
@@ -240,8 +245,8 @@ span {
 }
 
 .initials-button .contact-icon {
-  width: 56px;
-  height: 56px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   border: none;
   font-size: 20px !important;
@@ -254,8 +259,8 @@ span {
 }
 
 .initials-button img {
-  width: 56px;
-  height: 56px;
+  width: 100%;
+  height: 100%;
   display: block;
 }
 

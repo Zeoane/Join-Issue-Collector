@@ -56,16 +56,6 @@
     height: 24px;
   }
 
-  .initials-button {
-    width: 45px;
-    height: 45px; 
-  }
-
-  .initials-button img {
-    width: 45px;
-    height: 45px;
-  }
-
   .initials-text {
     font-size: 16px;
   }
@@ -139,16 +129,6 @@
   .icon {
     width: 22px;
     height: 22px; 
-  }
-
-  .initials-button {
-    width: 40px;
-    height: 40px; 
-  }
-
-  .initials-button img {
-    width: 40px;
-    height: 40px;
   }
 
   .initials-text {
@@ -242,6 +222,7 @@
   .headerContent {
     padding: 0 16px;
     height: 80px;
+    align-items: center;
   }
   header h3 {
     display: none;
@@ -251,6 +232,20 @@
   }
   .joinM {
     display: flex;
+    align-items: center;
+  }
+
+  .userInfo {
+    margin-left: auto;
+    gap: 0;
+    height: 100%;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .initials-button {
+    --initial-size: 40px;
+    align-self: center;
   }
 }
 

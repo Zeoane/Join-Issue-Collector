@@ -97,8 +97,8 @@ python n8n/scripts/build-email-workflow.py
 - **Aktive Workflows:** Fuer den E-Mail->Triage-Flow `Join-email-to-task-proposal` aktiv/published halten. Fuer Spaltenwechsel-Benachrichtigungen zusaetzlich einen separaten "Task moved"-Webhook-Workflow aktivieren.
 - **Trigger:** `Schedule Trigger (every 5 min)` ist der produktive Einstieg. Der IMAP-Zweig bleibt deaktiviert.
 - **E-Mail Abruf:** `Fetch unread emails (Gmail)` mit `Return All = true` und Search `in:inbox is:unread`.
-- **Automations-Cap:** `Apply auto email cap (max 10)` (Code-Node, Modus `Run Once for All Items`) begrenzt die automatische Verarbeitung auf **10 E-Mails pro Tag**.
-- **Cap-Verhalten:** Ist das Tageslimit erreicht (`skipTaskCreation = true`), geht der Flow direkt in den manuellen Nachbearbeitungszweig (`zu bearbeiten`), ohne neue Task-Erstellung.
+- **Automations-Caps:** `Apply auto email cap (max 10)` (Code-Node, Modus `Run Once for All Items`) nutzt zwei Tageslimits: **maximal 15 akzeptierte E-Mails** im Join Collector und davon **maximal 10** zur automatischen Ticket-Erstellung im Board.
+- **Cap-Verhalten:** Bei `AUTO_EMAIL_CAP_REACHED` (E-Mails 11-15) geht der Flow in den Nachbearbeitungszweig. Bei `TOTAL_EMAIL_CAP_REACHED` (ab E-Mail 16) wird der Gesamteingang für den Tag abgewiesen.
 - **Task-API Auth:** `Create task in Triage` sendet Header `X-N8N-Secret` und muss exakt zum Firebase Functions Secret `N8N_API_SECRET` passen.
 - **401 Unauthorized (Troubleshooting):** In der n8n-Credential `Header Auth account` muss der gleiche Secret-Wert wie in Firebase `N8N_API_SECRET` stehen (ohne zusätzliche Leerzeichen/Zeilenumbruch). Alternativ funktioniert auch `Authorization: Bearer <secret>`.
 - **Erfolgsbewertung:** `Evaluate create result` behandelt als Erfolg: `201` oder `200` mit `duplicate=true` oder vorhandener `id`.

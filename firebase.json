@@ -23,6 +23,10 @@
       {
         "source": "/internal/n8n/tasks",
         "function": "internalN8nTasks"
+      },
+      {
+        "source": "/public/stakeholder-usage",
+        "function": "stakeholderDailyUsage"
       }
     ]
   }

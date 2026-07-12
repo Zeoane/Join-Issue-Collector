@@ -61,6 +61,30 @@
     padding: 0 38px;
   }
 
+  .row--deadline-email .item2 {
+    padding: 0 26px;
+    height: 134px;
+  }
+
+  .item-email-requests {
+    width: 134px;
+    min-width: 134px;
+    height: 134px;
+    border-radius: 24px;
+    gap: 10px;
+    padding: 20px 0;
+  }
+
+  .email-requests-count {
+    font-size: 51px;
+  }
+
+  .email-requests-label {
+    width: 66px;
+    height: 38px;
+    font-size: 16px;
+  }
+
   .deadline {
     gap: 10px;
   }
@@ -167,6 +191,30 @@
     padding: 0 30px;
   }
 
+  .row--deadline-email .item2 {
+    padding: 0 20px;
+    height: 118px;
+  }
+
+  .item-email-requests {
+    width: 118px;
+    min-width: 118px;
+    height: 118px;
+    border-radius: 22px;
+    gap: 8px;
+    padding: 16px 0;
+  }
+
+  .email-requests-count {
+    font-size: 40px;
+  }
+
+  .email-requests-label {
+    width: 64px;
+    height: 34px;
+    font-size: 14px;
+  }
+
   .deadline {
     gap: 8px;
   }
@@ -254,6 +302,28 @@
     .nameAndToDo {
       justify-content: center;
     }
+
+    .row--deadline-email {
+      gap: 12px;
+    }
+
+    .item-email-requests {
+      width: 110px;
+      min-width: 110px;
+      height: 110px;
+      border-radius: 20px;
+      padding: 12px 0;
+    }
+
+    .email-requests-count {
+      font-size: 36px;
+    }
+
+    .email-requests-label {
+      width: 60px;
+      height: 32px;
+      font-size: 13px;
+    }
 }
 
 @media (max-width: 400px) {
@@ -262,6 +332,29 @@
   }
   .item2 {
     gap: 10px;
+  }
+
+  .row--deadline-email {
+    gap: 8px;
+  }
+
+  .item-email-requests {
+    width: 96px;
+    min-width: 96px;
+    height: 96px;
+    border-radius: 18px;
+    gap: 6px;
+    padding: 10px 0;
+  }
+
+  .email-requests-count {
+    font-size: 30px;
+  }
+
+  .email-requests-label {
+    width: 54px;
+    height: 30px;
+    font-size: 12px;
   }
       .row-grid {
         gap: 12px;

@@ -3,6 +3,7 @@ import { onValueUpdated } from "firebase-functions/v2/database";
 import { defineSecret } from "firebase-functions/params";
 import { handleN8nTaskRequest } from "./src/n8nTaskHandler.js";
 import { handleTaskColumnChange } from "./src/taskMoveTrigger.js";
+import { handleStakeholderUsageRequest } from "./src/stakeholderUsageHandler.js";
 
 const n8nSecret = defineSecret("N8N_API_SECRET");
 const demoUserUid = defineSecret("DEMO_USER_UID");
@@ -20,6 +21,16 @@ export const internalN8nTasks = onRequest(
       n8nSecret.value(),
       demoUserUid.value()
     );
+  }
+);
+
+/**
+ * Public HTTPS endpoint returning today's stakeholder board-task usage.
+ */
+export const stakeholderDailyUsage = onRequest(
+  { secrets: [demoUserUid], invoker: "public" },
+  async (req, res) => {
+    await handleStakeholderUsageRequest(req, res, demoUserUid.value());
   }
 );
 
