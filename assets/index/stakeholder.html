@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Open+Sans:wght@400;700&display=swap" rel="stylesheet" media="(min-width: 769px)">
     <link rel="stylesheet" href="../css/standard-css.css">
     <link rel="stylesheet" href="../css/stakeholder.css">
+    <link rel="stylesheet" href="../css/stakeholder-responsive.css">
     <link rel="stylesheet" href="../css/stakeholder-mobile-fonts.css">
 </head>
 <body class="stakeholder-page">
@@ -63,21 +64,24 @@
                                 </p>
                             </div>
 
-                            <a
-                                href="https://mail.google.com/mail/?view=cm&fs=1&to=joincollector%40gmail.com&su=Feature%20Request"
+                            <button
+                                type="button"
                                 class="stakeholder-btn stakeholder-btn--desktop"
                                 data-stakeholder-email-request
+                                data-compose-url="https://mail.google.com/mail/?view=cm&fs=1&to=joincollector%40gmail.com&su=Feature%20Request"
                             >
                                 Create Email Request
                                 <img src="../img/emailrequest/check.svg" alt="" width="24" height="24">
-                            </a>
+                            </button>
 
-                            <a
-                                href="./stakeholder-limit-reached.html"
+                            <button
+                                type="button"
                                 class="stakeholder-btn stakeholder-btn--mobile"
+                                data-stakeholder-email-request
+                                data-compose-url="https://mail.google.com/mail/?view=cm&fs=1&to=joincollector%40gmail.com&su=Feature%20Request"
                             >
                                 Create request
-                            </a>
+                            </button>
                         </div>
 
                         <figure class="stakeholder-visual">
@@ -99,6 +103,6 @@
         <a href="./legal-notice-login.html">Legal notice</a>
     </footer>
     <script src="../../js/stakeholderLimit.js" defer></script>
-    <script src="../../js/stakeholderEmailRequest.js" defer></script>
+    <script src="../../js/stakeholderEmailRequest.js?v=3"></script>
 </body>
 </html>

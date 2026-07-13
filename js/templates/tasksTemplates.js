@@ -10,8 +10,7 @@ function renderTaskCreatorRow(task) {
 
     if (isInternalCreatorTask(task)) {
         return `
-                <div class="task-creator-row task-creator-row--member width-100 flexR ${getVisibilityClass(true)}">
-                    <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
+                <div class="task-creator-row task-creator-row--member width-100 ${getVisibilityClass(true)}">
                     <img
                         src="../img/Member-Taskcard.svg"
                         alt=""
@@ -19,20 +18,22 @@ function renderTaskCreatorRow(task) {
                         width="93"
                         height="22"
                     >
-                    <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
-                    <img
-                        src="../img/Profile-Taskcard.svg"
-                        alt=""
-                        class="task-creator-row__profile-badge"
-                        width="63"
-                        height="24"
-                    >
+                    <div class="task-creator-row__meta width-100">
+                        <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
+                        <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
+                        <img
+                            src="../img/Profile-Taskcard.svg"
+                            alt=""
+                            class="task-creator-row__profile-badge"
+                            width="63"
+                            height="24"
+                        >
+                    </div>
                 </div>`;
     }
 
     return `
-                <div class="task-creator-row task-creator-row--external width-100 flexR ${getVisibilityClass(true)}">
-                    <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
+                <div class="task-creator-row task-creator-row--external width-100 ${getVisibilityClass(true)}">
                     <img
                         src="../img/Extern-Taskcard.svg"
                         alt=""
@@ -40,14 +41,17 @@ function renderTaskCreatorRow(task) {
                         width="75"
                         height="22"
                     >
-                    <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
-                    <img
-                        src="../img/Email-Taskcard.svg"
-                        alt=""
-                        class="task-creator-row__email-badge"
-                        width="76"
-                        height="24"
-                    >
+                    <div class="task-creator-row__meta width-100">
+                        <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
+                        <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
+                        <img
+                            src="../img/Email-Taskcard.svg"
+                            alt=""
+                            class="task-creator-row__email-badge"
+                            width="76"
+                            height="24"
+                        >
+                    </div>
                 </div>`;
 }
 
@@ -61,6 +65,7 @@ function taskOverlayTemplate(task){
     const safeId = escapeJsString(task.id);
     const description = getTaskDescriptionForDisplay(task);
     const showAiNotice = isAiGeneratedTask(task);
+    const externalOverlayClass = isInternalCreatorTask(task) ? '' : ' task-overlay-header--external';
     return `
         <div class="flexC gap-24 task-overlay-content width-100" id="taskOverlayContent" data-task-id="${escapeHtml(task.id)}">
             <div class="space-between flexR">
@@ -78,7 +83,7 @@ function taskOverlayTemplate(task){
                     ${CLOSE_CANCEL_SVG}
                 </button>
             </div>
-            <div class="task-overlay-header gap-24 flexC">
+            <div class="task-overlay-header gap-24 flexC${externalOverlayClass}">
                 <h2>${escapeHtml(task.title)}</h2>
                 <p class="${getVisibilityClass(description)}" id="taskOverlayDescription">${escapeHtml(description)}</p>
                 ${renderTaskCreatorRow(task)}

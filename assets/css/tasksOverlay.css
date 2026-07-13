@@ -22,6 +22,12 @@
 .task-overlay-header {
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.task-overlay-header::-webkit-scrollbar {
+  display: none;
 }
 
 .task-overlay-header>*, .task-overlay-footer {
@@ -30,6 +36,14 @@
   padding: 0;
   color: black;
   font-size: 20px;
+}
+
+.task-overlay-header .task-overlay-headdings {
+  margin: 0;
+}
+
+.task-overlay-header > * {
+  flex-shrink: 0;
 }
 
 .task-overlay h2 {
@@ -78,11 +92,18 @@
   gap: 8px;
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
 }
 
 .task-overlay-content > .space-between.flexR {
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+
+.task-overlay-content > .space-between.flexR .overlay-button {
+  flex: 0 0 auto;
+  flex-shrink: 0;
 }
 
 .task-category {
@@ -97,100 +118,16 @@
   flex: 0 0 auto;
   align-items: center;
   min-width: 0;
-  max-width: 100%;
-  white-space: nowrap;
-}
-
-.task-ai-badge {
-  flex: 0 0 auto;
-  width: 177px;
-  height: 22px;
-  object-fit: contain;
-}
-
-.task-creator-row {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
-  grid-template-areas: "label type name badge";
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  min-height: 24px;
-  overflow: hidden;
-}
-
-.task-creator-row__label {
-  grid-area: label;
-  flex: 0 0 auto;
-  margin: 0;
-  white-space: nowrap;
-}
-
-.task-creator-row__member-icon {
-  grid-area: type;
-  flex: 0 0 auto;
-  width: 93px;
-  height: 22px;
-  padding: 0 4px;
-  object-fit: contain;
-}
-
-.task-creator-row__type-icon {
-  grid-area: type;
-  flex: 0 0 auto;
-  width: 75px;
-  height: 22px;
-  padding: 0 4px;
-  object-fit: contain;
-}
-
-.task-creator-row__name {
-  grid-area: name;
-  font-family: "Open Sans", sans-serif;
-  font-size: 19px;
-  font-weight: 400;
-  line-height: 120%;
-  color: #2a3647;
-  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.task-creator-row--member .task-creator-row__name {
-  flex: 1 1 auto;
-  width: auto;
-  height: 23px;
-}
-
-.task-creator-row--external .task-creator-row__name {
-  flex: 1 1 auto;
-  width: auto;
-  min-width: 0;
-  height: 23px;
-}
-
-.task-creator-row--external .task-creator-row__email-badge {
-  margin-left: 0;
-}
-
-.task-creator-row__profile-badge {
-  grid-area: badge;
+.task-ai-badge {
   flex: 0 0 auto;
-  width: 63px;
-  height: 24px;
-  padding: 0 3px;
-  margin-left: 0;
-  object-fit: contain;
-}
-
-.task-creator-row__email-badge {
-  grid-area: badge;
-  flex: 0 0 auto;
-  width: 76px;
-  height: 24px;
-  padding: 0 3px;
-  margin-left: 0;
+  width: auto;
+  max-width: 177px;
+  height: 22px;
   object-fit: contain;
 }
 
@@ -277,233 +214,10 @@
   overflow-y: auto;
   padding-right: 8px;
   margin-bottom: 16px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-@media (max-width: 1000px) {
-  .task-overlay h2 {
-    font-size: 56px;
-  }
-}
-
-@media (max-width: 800px) {
-  .task-overlay-content > .space-between.flexR {
-    align-items: center;
-  }
-
-  .task-overlay-content > .space-between.flexR .overlay-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    align-self: center;
-    line-height: 0;
-    padding: 0;
-  }
-
-  .task-overlay-content > .space-between.flexR .overlay-button svg {
-    display: block;
-  }
-}
-
-@media (max-width: 525px) {
-  #taskOverlayContent .task-category {
-    padding: 3px 10px;
-    margin-left: -2px;
-  }
-}
-
-@media (max-width: 600px) {
-  .task-overlay h2 {
-    font-size: 47px;
-  }
-  .task-overlay {
-    padding: 32px ;
-  }
-  .task-overlay-headdings, #taskOverlayDescription, .overlay-priority, .member-name-text, .task-ai-notice, .task-creator-row__name{
-    font-size: 16px;
-  }
-  .task-overlay-header {
-    gap:16px;
-  }
-}
-@media (max-width: 480px) {
-  .task-overlay {
-    padding: 30px 16px;
-    width: 100%;
-    max-width: none;
-  }
-  .task-overlay h2 {
-    font-size: 36px;
-  }
-
-  .task-ai-badge {
-    width: 177px;
-    height: 22px;
-  }
-
-  #taskOverlayContent .task-category {
-    padding: 4px 12px;
-    font-size: 16px;
-  }
-
-  .task-creator-row {
-    gap: 2px;
-  }
-
-  .task-creator-row__member-icon {
-    width: 82px;
-    height: 20px;
-    padding: 0 2px;
-  }
-
-  .task-creator-row__type-icon {
-    width: 66px;
-    height: 20px;
-    padding: 0 2px;
-  }
-
-  .task-creator-row__profile-badge {
-    width: 56px;
-    height: 22px;
-    margin-left: 0;
-  }
-
-  .task-creator-row__email-badge {
-    width: 68px;
-    height: 22px;
-    margin-left: 0;
-  }
-}
-
-@media (max-width: 410px) {
-  .task-overlay {
-    padding: 24px 10px;
-  }
-
-  .task-overlay-content > .space-between.flexR {
-    gap: 6px;
-    align-items: center;
-  }
-
-  .task-overlay-content > .space-between.flexR .overlay-button {
-    width: 18px;
-    min-width: 18px;
-    height: 18px;
-    flex: 0 0 auto;
-  }
-
-  .task-overlay-content > .space-between.flexR .overlay-button:hover {
-    transform: scale(1.05);
-  }
-
-  .task-overlay-content > .space-between.flexR .overlay-button svg {
-    width: 12px;
-    height: 12px;
-  }
-
-  .task-category-row {
-    margin-left: -4px;
-    gap: 4px;
-  }
-
-  .task-ai-badge {
-    flex: 0 1 auto;
-    width: 150px;
-    max-width: 150px;
-    min-width: 120px;
-  }
-
-  #taskOverlayContent .task-category {
-    padding: 2px 6px;
-    font-size: 16px;
-    overflow: visible;
-    text-overflow: unset;
-  }
-}
-
-@media (max-width: 363px) {
-  .task-overlay {
-    padding: 22px 10px;
-  }
-
-  .task-overlay-content > .space-between.flexR {
-    gap: 6px;
-  }
-
-  .task-category-row {
-    flex-wrap: nowrap;
-    gap: 4px;
-    align-items: center;
-  }
-
-  .task-category {
-    max-width: none;
-    font-size: 16px;
-  }
-
-  #taskOverlayContent .task-category {
-    padding: 2px 6px;
-    font-size: 16px;
-    overflow: visible;
-    text-overflow: unset;
-  }
-
-  .task-ai-badge {
-    flex: 0 1 auto;
-    width: 140px;
-    max-width: 140px;
-    min-width: 112px;
-    height: 22px;
-  }
-
-  .task-overlay-content > .space-between.flexR .overlay-button {
-    width: 20px;
-    min-width: 20px;
-    height: 20px;
-  }
-
-  .task-overlay-content > .space-between.flexR .overlay-button svg {
-    width: 12px;
-    height: 12px;
-  }
-
-  .task-creator-row {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-rows: auto auto;
-    grid-template-areas:
-      "type . ."
-      "label name badge";
-    column-gap: 2px;
-    row-gap: 2px;
-  }
-
-  .task-creator-row__label {
-    font-size: 16px;
-  }
-
-  .task-creator-row__member-icon,
-  .task-creator-row__type-icon {
-    align-self: end;
-  }
-
-  .task-creator-row__member-icon {
-    width: 66px;
-    height: 16px;
-  }
-
-  .task-creator-row__type-icon {
-    width: 54px;
-    height: 16px;
-  }
-
-  .task-creator-row__profile-badge {
-    width: 44px;
-    height: 18px;
-    margin-left: 0;
-  }
-
-  .task-creator-row__email-badge {
-    width: 52px;
-    height: 18px;
-    margin-left: 0;
-  }
+.edit-task-div::-webkit-scrollbar {
+  display: none;
 }

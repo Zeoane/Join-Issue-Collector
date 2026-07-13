@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&display=swap" rel="stylesheet" media="(min-width: 769px)">
     <link rel="stylesheet" href="../css/standard-css.css">
     <link rel="stylesheet" href="../css/stakeholder.css">
+    <link rel="stylesheet" href="../css/stakeholder-responsive.css">
     <link rel="stylesheet" href="../css/stakeholder-mobile-fonts.css">
 </head>
 <body class="stakeholder-page stakeholder-page--limit-reached">
@@ -57,22 +58,24 @@
                                 manually instead of using AI to create tickets.
                             </p>
 
-                            <a
-                                href="https://mail.google.com/mail/?view=cm&fs=1&to=joincollector%40gmail.com&su=Feature%20Request"
+                            <button
+                                type="button"
                                 class="stakeholder-btn stakeholder-btn--email stakeholder-btn--desktop"
                                 data-stakeholder-email-request
+                                data-compose-url="https://mail.google.com/mail/?view=cm&fs=1&to=joincollector%40gmail.com&su=Feature%20Request"
                             >
                                 Send an email
                                 <img src="../img/emailrequest/check.svg" alt="" width="24" height="24">
-                            </a>
+                            </button>
 
-                            <a
-                                href="https://mail.google.com/mail/?view=cm&fs=1&to=joincollector%40gmail.com&su=Feature%20Request"
+                            <button
+                                type="button"
                                 class="stakeholder-btn stakeholder-btn--mobile stakeholder-btn--limit-mobile"
                                 data-stakeholder-email-request
+                                data-compose-url="https://mail.google.com/mail/?view=cm&fs=1&to=joincollector%40gmail.com&su=Feature%20Request"
                             >
                                 Create request
-                            </a>
+                            </button>
                         </div>
 
                         <figure class="stakeholder-visual stakeholder-visual--limit">
@@ -94,6 +97,6 @@
         <a href="./legal-notice-login.html">Legal notice</a>
     </footer>
     <script src="../../js/stakeholderLimit.js" defer></script>
-    <script src="../../js/stakeholderEmailRequest.js" defer></script>
+    <script src="../../js/stakeholderEmailRequest.js?v=3"></script>
 </body>
 </html>

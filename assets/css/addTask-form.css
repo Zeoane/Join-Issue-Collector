@@ -1,0 +1,284 @@
+.date-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.date-input-wrapper::after {
+  content: "";
+  position: absolute;
+  right: 40px;
+  top: 1px;
+  bottom: 1px;
+  width: 36px;
+  background: #fff;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.date-input-wrapper input[type="date"] {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 52px;
+  cursor: text;
+  background: #fff;
+  color-scheme: light;
+}
+
+.date-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+  display: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.date-input-wrapper input[type="date"]::-webkit-inner-spin-button {
+  display: none;
+}
+
+.date-input-wrapper input[type="date"]::-moz-calendar-picker-indicator {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.date-input-icon-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.date-input-icon-btn:hover {
+  opacity: 0.85;
+}
+
+.date-input-icon {
+  width: 24px;
+  height: 24px;
+  display: block;
+  pointer-events: none;
+}
+
+#taskAssignee:focus,
+#taskCategory:focus,
+#editedTaskAssignee:focus,
+#editedTaskCategory:focus {
+  background: white url('data:image/svg+xml;utf8,<svg width="8" height="5" viewBox="0 0 8 5" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4.24854 0.7C4.38187 0.7 4.50687 0.725 4.62354 0.775C4.7402 0.825 4.84854 0.9 4.94854 1L7.54853 3.6C7.8652 3.91667 7.93604 4.27917 7.76103 4.6875C7.58603 5.09583 7.27354 5.3 6.82354 5.3H1.67354C1.22354 5.3 0.911035 5.09583 0.736035 4.6875C0.561035 4.27917 0.631868 3.91667 0.948535 3.6L3.54854 1C3.64854 0.9 3.75687 0.825 3.87354 0.775C3.9902 0.725 4.1152 0.7 4.24854 0.7Z" fill=\"%232A3647\"/></svg>') no-repeat right 16px center/16px 10px;
+}
+
+.extra-count {
+      background: blueviolet;
+}
+
+.input-svg-wrapper:focus .input-svg,
+.input-svg-wrapper:focus-within .input-svg,
+.category-options button:focus {
+  outline: none;
+  border-color: #29ABE2;
+}
+
+.task-form-top {
+  align-items: flex-start;
+  flex: 1;
+  max-height: 572px;
+  overflow-y: scroll;
+  scrollbar-width: none;
+}
+
+.submit-section {
+  margin: 16px 0 16px 0;
+}
+
+.assignee-options {
+  opacity: 0;
+  box-shadow: 0 0 14px 3px rgba(0, 0, 0, 4%);
+  border-radius: 0 0 10px 10px;
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.assignee-options.active {
+  background: white;
+  opacity: 1;
+  transition: all 0.1s ease-in-out;
+}
+
+.selected-assignee {
+  justify-content: flex-start;
+}
+
+.assignee-option {
+  cursor: pointer;
+  padding: 12px 16px;
+  border-radius: 10px;
+}
+
+.assignee-option:hover {
+  background: #E7E7E7;
+}
+
+.selcted-assignee {
+  background: #2A3647;
+  color: white;
+}
+
+.selcted-assignee:hover {
+  background: #091931;
+  color: white;
+}
+
+.assignee-option span {
+  font-size: 20px;
+  font-weight: 400;
+}
+
+
+.category-options-btn {
+  padding: 12px 16px;
+  font-size: 20px;
+}
+
+.category-options-list {
+  box-shadow: 0 0 14px 3px rgba(0, 0, 0, 4%);
+  border-radius: 0 0 10px 10px;
+  overflow-y: auto;
+  max-height: 200px;
+  opacity: 0;
+}
+
+.category-options-list.active {
+  background: white;
+  opacity: 1;
+  transition: all 0.1s ease-in-out;
+}
+
+.category-option {
+  cursor: pointer;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.category-option:hover {
+  background: #E7E7E7;
+}
+
+.subtask {
+  width: 100%;
+  padding: 4px 21px;
+  border-radius: 10px;
+  cursor: pointer;
+  justify-content: space-between;
+}
+
+.subtask:hover {
+  background: #E7E7E7;
+}
+
+.subtask span {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+#subtasksList {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+}
+
+.edit-subtask-input-wrapper {
+  padding: 4px 21px;
+  background: white;
+  border-bottom: #29ABE2 1px solid;
+}
+
+.overlay-button {
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 56px;
+}
+
+.overlay-button:hover {
+  background: #E7E7E7;
+  transform: scale(1.05);
+}
+
+#subtaskHintMessage {
+  color: #FF8190;
+  font-size: 16px;
+  text-align: left;
+}
+
+.edit-validation-hint {
+  color: #FF4444;
+  font-size: 16px;
+  margin-top: 5px;
+  display: block;
+}
+
+.edit-validation-error {
+  border-bottom: 1px solid #FF4444;
+}
+
+.correct-me,
+.correct-me:focus-within,
+.correct-me:focus {
+  border: 1px solid #FF8190 !important;
+}
+
+#addTaskButton svg path {
+  fill: white;
+}
+
+.delete-edit-btns {
+  visibility: hidden;
+  transition: all 0.1s ease-out;
+  opacity: 0;
+}
+
+.subtask:hover .delete-edit-btns {
+  visibility: visible;
+  opacity: 1;
+}
+
+
+.contact-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 45px;
+  border: 2px solid white;
+  font-size: 16px !important;
+  color: white;
+  justify-content: center;
+}
+
+span {
+  width: fit-content;
+}
+
+.overlay-bottom {
+  flex: 1;
+}

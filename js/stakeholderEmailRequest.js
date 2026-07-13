@@ -1,36 +1,26 @@
-const STAKEHOLDER_RETURN_URL = "/index.html";
+const COMPOSE_URL =
+  "https://mail.google.com/mail/?view=cm&fs=1&to=joincollector%40gmail.com&su=Feature%20Request";
 
 /**
- * @param {HTMLElement} trigger
- * @param {boolean} waiting
+ * @returns {string}
  */
-function setTriggerWaitingState(trigger, waiting) {
-  if (!trigger) return;
-  trigger.setAttribute("aria-busy", waiting ? "true" : "false");
-  if (waiting) {
-    trigger.dataset.stakeholderEmailWaiting = "true";
-    trigger.setAttribute("aria-disabled", "true");
-    trigger.style.pointerEvents = "none";
-    return;
-  }
-  delete trigger.dataset.stakeholderEmailWaiting;
-  trigger.removeAttribute("aria-disabled");
-  trigger.style.pointerEvents = "";
+function getReturnUrl() {
+  return `${window.location.origin}/index.html`;
 }
 
 /**
  * @param {string} composeUrl
- * @returns {boolean}
+ * @returns {void}
  */
 function openComposeInNewTab(composeUrl) {
   const popup = window.open(composeUrl, "_blank");
-  if (!popup) return false;
-  try {
-    popup.opener = null;
-  } catch (_) {
-    // Ignore cross-browser restrictions.
+  if (popup) {
+    try {
+      popup.opener = null;
+    } catch (_) {
+      // Ignore cross-browser restrictions.
+    }
   }
-  return true;
 }
 
 /**
@@ -40,27 +30,17 @@ function openComposeInNewTab(composeUrl) {
 function handleStakeholderEmailRequest(event) {
   const trigger = event.currentTarget;
   if (!(trigger instanceof HTMLElement)) return;
-  if (trigger.dataset.stakeholderEmailWaiting === "true") {
-    event.preventDefault();
-    return;
-  }
-
-  const composeUrl = trigger.getAttribute("href");
-  if (!composeUrl) return;
 
   event.preventDefault();
-  setTriggerWaitingState(trigger, true);
+  event.stopImmediatePropagation();
 
-  const opened = openComposeInNewTab(composeUrl);
-  if (!opened) {
-    setTriggerWaitingState(trigger, false);
-    window.alert(
-      "Bitte erlaube Pop-ups für diese Seite, damit die E-Mail in einem neuen Tab geöffnet werden kann."
-    );
-    return;
-  }
+  const composeUrl = trigger.getAttribute("data-compose-url") || COMPOSE_URL;
+  openComposeInNewTab(composeUrl);
 
-  window.location.replace(STAKEHOLDER_RETURN_URL);
+  // One frame delay so the browser keeps the Gmail tab open while we navigate away.
+  requestAnimationFrame(() => {
+    window.location.replace(getReturnUrl());
+  });
 }
 
 /**
@@ -68,8 +48,12 @@ function handleStakeholderEmailRequest(event) {
  */
 function initStakeholderEmailRequest() {
   document.querySelectorAll("[data-stakeholder-email-request]").forEach((element) => {
-    element.addEventListener("click", handleStakeholderEmailRequest);
+    element.addEventListener("click", handleStakeholderEmailRequest, true);
   });
 }
 
-void initStakeholderEmailRequest();
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initStakeholderEmailRequest);
+} else {
+  initStakeholderEmailRequest();
+}
