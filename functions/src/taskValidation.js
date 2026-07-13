@@ -86,6 +86,56 @@ function normalizeTaskText(value) {
 }
 
 /**
+ * Normalizes assignee values to a deduplicated string array.
+ * @param {unknown} input
+ * @returns {string[]}
+ */
+function normalizeAssignees(input) {
+  if (!Array.isArray(input)) return [];
+  const seen = new Set();
+  const normalized = [];
+  for (const entry of input) {
+    const value = normalizeTaskText(typeof entry === "string" ? entry : "");
+    if (!value) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push(value);
+  }
+  return normalized;
+}
+
+/**
+ * Normalizes subtasks to { value, checked } entries.
+ * @param {unknown} input
+ * @returns {{ value: string, checked: boolean }[]}
+ */
+function normalizeSubtasks(input) {
+  if (!Array.isArray(input)) return [];
+  const seen = new Set();
+  const normalized = [];
+  for (const entry of input) {
+    let value = "";
+    let checked = false;
+    if (typeof entry === "string") {
+      value = normalizeTaskText(entry);
+    } else if (entry && typeof entry === "object") {
+      const candidate = /** @type {{ value?: unknown, checked?: unknown }} */ (entry);
+      value = normalizeTaskText(
+        typeof candidate.value === "string" ? candidate.value : ""
+      );
+      checked = candidate.checked === true;
+    }
+    if (!value || value.length < 3) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push({ value, checked });
+  }
+  return normalized;
+}
+
+/**
  * Converts common inbound due-date formats to YYYY-MM-DD.
  * Accepted inputs:
  * - YYYY-MM-DD
@@ -142,8 +192,8 @@ function isIsoDate(value) {
  */
 export function buildTaskFromInput(input, title, column, priority, description) {
   const lists = {
-    assignee: Array.isArray(input.assignee) ? input.assignee : [],
-    subtasks: Array.isArray(input.subtasks) ? input.subtasks : [],
+    assignee: normalizeAssignees(input.assignee),
+    subtasks: normalizeSubtasks(input.subtasks),
   };
   return {
     title,

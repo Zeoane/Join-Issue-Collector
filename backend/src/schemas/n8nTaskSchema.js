@@ -11,6 +11,53 @@ const VALID_PRIORITIES = new Set(["HighPriority", "MidPriority", "LowPriority"])
 export const AI_GENERATED_NOTICE = "This ticket was AI-generated.";
 
 /**
+ * @param {unknown} input
+ * @returns {string[]}
+ */
+function normalizeAssignees(input) {
+  if (!Array.isArray(input)) return [];
+  const seen = new Set();
+  const normalized = [];
+  for (const entry of input) {
+    if (typeof entry !== "string") continue;
+    const value = entry.trim();
+    if (!value) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push(value);
+  }
+  return normalized;
+}
+
+/**
+ * @param {unknown} input
+ * @returns {{ value: string, checked: boolean }[]}
+ */
+function normalizeSubtasks(input) {
+  if (!Array.isArray(input)) return [];
+  const seen = new Set();
+  const normalized = [];
+  for (const entry of input) {
+    let value = "";
+    let checked = false;
+    if (typeof entry === "string") {
+      value = entry.trim();
+    } else if (entry && typeof entry === "object") {
+      const candidate = /** @type {{ value?: unknown, checked?: unknown }} */ (entry);
+      value = typeof candidate.value === "string" ? candidate.value.trim() : "";
+      checked = candidate.checked === true;
+    }
+    if (!value || value.length < 3) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push({ value, checked });
+  }
+  return normalized;
+}
+
+/**
  * Validates and normalizes an n8n task proposal payload.
  * @param {unknown} body
  * @returns {{ ok: true, task: object } | { ok: false, error: string }}
@@ -71,8 +118,8 @@ export function validateN8nTaskPayload(body) {
       creatorType:
         input.creatorType === "internal" ? "internal" : "external",
       aiGenerated,
-      assignee: Array.isArray(input.assignee) ? input.assignee : [],
-      subtasks: Array.isArray(input.subtasks) ? input.subtasks : [],
+      assignee: normalizeAssignees(input.assignee),
+      subtasks: normalizeSubtasks(input.subtasks),
       movedAt: Date.now(),
     },
   };

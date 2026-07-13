@@ -32,4 +32,26 @@ describe("validateN8nTaskPayload", () => {
     });
     expect(result.ok).toBe(false);
   });
+
+  it("normalizes subtasks and assignees", () => {
+    const result = validateN8nTaskPayload({
+      title: "Ticket with subtasks",
+      assignee: ["Alice", "alice", " Bob ", "", false],
+      subtasks: [
+        "Analyse",
+        { value: "Implement", checked: true },
+        { value: " implement ", checked: false },
+        { value: "QA" },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.task.assignee).toEqual(["Alice", "Bob"]);
+      expect(result.task.subtasks).toEqual([
+        { value: "Analyse", checked: false },
+        { value: "Implement", checked: true },
+      ]);
+    }
+  });
 });

@@ -4,6 +4,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "workflows" / "Join-email-to-task-proposal.json"
+SUBTASK_EXTRACTION_JS = (
+    Path(__file__).parent / "email-subtask-extraction.js"
+).read_text(encoding="utf-8")
 
 NORMALIZE_GMAIL_JS = r"""const data = $input.item.json;
 
@@ -234,7 +237,10 @@ function normalizeCreatorName(value) {
   return name;
 }
 
+""" + SUBTASK_EXTRACTION_JS + r"""
+
 const creatorName = normalizeCreatorName(parsed.creatorName) || parseFromDisplayName(fromRaw) || '';
+const subtasks = extractExplicitSubtasks(email.body);
 
 return [{
   json: {
@@ -251,6 +257,7 @@ return [{
     sourceMessageId: String(email.messageId || '').trim(),
     emailSource: String(email.emailSource || 'unknown').trim(),
     gmailId: String(email.gmailId || '').trim(),
+    subtasks,
   },
 }];"""
 
@@ -754,7 +761,7 @@ workflow = {
                         {
                             "id": "s-body",
                             "name": "body",
-                            "value": "Bitte Dark Mode bis Ende August testen.\n\nMit freundlichen Grüßen\nMax Mustermann",
+                            "value": "Bitte Dark Mode bis Ende August testen.\n\nSubtasks:\n- Kontrast prüfen\n- Mobile Ansicht testen\n- Feedback an Team senden\n\nMit freundlichen Grüßen\nMax Mustermann",
                             "type": "string",
                         },
                         {"id": "s-msgid", "name": "messageId", "value": "<manual-test-001@join-collector.local>", "type": "string"},

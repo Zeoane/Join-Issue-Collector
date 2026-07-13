@@ -36,4 +36,28 @@ describe("validateN8nTaskPayload", () => {
       expect(result.task.dueDate).toBe("2026-07-15");
     }
   });
+
+  it("normalizes subtasks and assignees from n8n payload", () => {
+    const result = validateN8nTaskPayload({
+      title: "Subtask parse",
+      assignee: ["Alice", "alice", " Bob ", "", 123],
+      subtasks: [
+        "Step 1",
+        { value: "Step 2", checked: true },
+        { value: " step 2 ", checked: false },
+        { value: "ok", checked: true },
+        { value: "Step 3" },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.task.assignee).toEqual(["Alice", "Bob"]);
+      expect(result.task.subtasks).toEqual([
+        { value: "Step 1", checked: false },
+        { value: "Step 2", checked: true },
+        { value: "Step 3", checked: false },
+      ]);
+    }
+  });
 });
