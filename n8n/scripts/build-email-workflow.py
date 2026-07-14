@@ -237,6 +237,13 @@ function normalizeCreatorName(value) {
   return name;
 }
 
+function normalizeDueDate(value) {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed || /^(undefined|null|n\/a|na)$/i.test(trimmed)) return '';
+  return trimmed;
+}
+
 """ + SUBTASK_EXTRACTION_JS + r"""
 
 const creatorName = normalizeCreatorName(parsed.creatorName) || parseFromDisplayName(fromRaw) || '';
@@ -248,7 +255,7 @@ return [{
     description: String(parsed.description || email.body || '').trim(),
     category: validCategories.has(parsed.category) ? parsed.category : 'User Story',
     priority: validPriorities.has(parsed.priority) ? parsed.priority : 'MidPriority',
-    dueDate: typeof parsed.dueDate === 'string' ? parsed.dueDate.trim() : '',
+    dueDate: normalizeDueDate(parsed.dueDate),
     column: 'triageColumn',
     creatorName,
     creatorEmail,
@@ -674,12 +681,18 @@ HTTP_CRED = {"httpHeaderAuth": {"id": "HTTP_HEADER_AUTH_ID", "name": "Header Aut
 
 AI_PROMPT = (
     "=You parse stakeholder emails into Kanban ticket fields for Join-Issue Collector.\n\n"
+    "Stakeholders often use this structure (each label on its own line):\n"
+    "- Description: main request text\n"
+    "- Subtask: optional subtasks (bullets or one item per line)\n"
+    "- Enddate: optional deadline in YYYY-MM-DD or DD.MM.YYYY\n\n"
+    "Ignore email signatures and company footers (contact lines like E-Mail, Tel, Webseite, "
+    "Adresse, HRB). Never put signature or footer content into description or subtasks.\n\n"
     "Return ONLY valid JSON with these keys:\n"
     "- title (string, max 80 chars)\n"
-    "- description (string)\n"
+    "- description (string: only the Description section, without Subtask/Enddate/signature)\n"
     '- category: exactly "User Story" or "Technical Task"\n'
     '- priority: exactly "HighPriority", "MidPriority", or "LowPriority"\n'
-    '- dueDate: "YYYY-MM-DD" or empty string\n'
+    '- dueDate: "YYYY-MM-DD" from Enddate when provided, otherwise empty string\n'
     '- creatorName (string: first and last name from the email signature at the end of the body, '
     'or from the sender display name; never an email address; never the word "Stakeholder")\n\n'
     "Email from: {{ $json.from }}\n"

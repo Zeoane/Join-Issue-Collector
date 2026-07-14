@@ -30,69 +30,109 @@ body {
     width: 100%;
     gap: 30px;
     align-items: center;
+    flex-wrap: nowrap;
 }
+
+.into h1 {
+    font-weight: 700;
+    font-size: 61px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.into h2 {
+    font-weight: 400;
+    font-size: 27px;
+    color: #2A3647;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
 h1 {
     font-weight: 700;
     font-size: 61px;
 }
-h2 {
-    font-weight: 400;
-    font-size: 27px;
-    color: #2A3647;
+
+.nameAndToDo {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 80px;
+    height: 100%;
+    width: 100%;
+}
+
+.row-grid {
+    display: flex;
+  flex-direction: column;
+  gap: var(--summary-row-stack-gap, 28px);
+  max-width: 560px;
+  width: 100%;
+  height: 100%;
+  flex-shrink: 0;
+  --summary-row-stack-gap: 28px;
+  --summary-row-inline-gap: 32px;
+  --summary-deadline-row-gap: 28px;
+  --summary-number-size: 64px;
+  --summary-label-size: 20px;
+  --summary-deadline-strong-size: 21px;
+  --summary-deadline-normal-size: 16px;
+}
+
+.row-grid h2.nummber,
+.row-grid .email-requests-count {
+    font-size: var(--summary-number-size, 64px);
+    line-height: 1;
+}
+
+.row-grid .To-do,
+.row-grid .email-requests-label {
+    font-size: var(--summary-label-size, 20px);
+    line-height: 1.2;
+    width: auto;
+    max-width: 100%;
+    padding: 0 4px;
+    overflow-wrap: anywhere;
 }
 .separater {
-    height: 75%;
-    width: 4px;
+    flex-shrink: 0;
+    align-self: center;
+    height: 59px;
+    width: 3px;
     background-color: #29ABE2;
     border-radius: 8px;
 }
 .separator2 {
     height: 61%;
     width: 2px;
-    background-color: #D1D1D1;
+    background-color: #686868;
     border-radius: 8px;
 }
 .separaterM {
-  display: none;
+    display: none;
     height: 4px;
     width: 26px;
     background-color: #29ABE2;
     border-radius: 8px;
-}
-.nameAndToDo {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 80px;
-    height: 100%;
-    width: 100%;
 }
 
 .d-flex {
     display: flex;
     gap: 18px;
 }
-.row-grid {
-    display: flex;
-  flex-direction: column;
-  gap: 28px;
-  max-width: 560px;
-  width: 100%;
-  height: 100%;
-}
+
 .row {
-  display: flex
-;
-    gap: 32px;
-    max-height: 168px;
-    height: 100%;
+  display: flex;
+  gap: var(--summary-row-inline-gap, 32px);
+  max-height: 168px;
+  height: 100%;
 }
 .item1 {
     display: flex;
     width: 100%;
     max-width: 264px;
     background-color: white;
-    border-radius: 30px;
+    border-radius: 20px;
     align-items: center;
     justify-content: center;
     gap: 18px;
@@ -113,15 +153,20 @@ h2 {
 }
 .nummber {
     font-weight: 600;
-    font-size: 64px;
+    font-size: var(--summary-number-size, 64px);
+    line-height: 1;
     color: #000000;
 }
 .To-do {
     font-weight: 400;
-    font-size: 20px;
+    font-size: var(--summary-label-size, 20px);
     color: #2A3647;
     text-align: center;
-    width: 80px;
+    width: auto;
+    max-width: 100%;
+    line-height: 1.2;
+    padding: 0 4px;
+    overflow-wrap: anywhere;
 }
 
 .item2 {
@@ -129,7 +174,7 @@ h2 {
     width: 100%;
     max-width: 560px;
     background-color: white;
-    border-radius: 30px;
+    border-radius: 20px;
     align-items: center;
     justify-content: space-between;
     gap: 18px;
@@ -138,15 +183,76 @@ h2 {
     min-height: 90px;
 }
 
-.row--deadline-email .item2 {
-    flex: 1;
-    max-width: none;
-    min-width: 0;
-    padding: 0 32px;
-    height: 168px;
+.row--deadline-email {
+  gap: var(--summary-deadline-row-gap, 28px);
 }
 
-.item-email-requests {
+.row--deadline-email .item2 {
+    display: grid;
+    grid-template-columns: 120px auto 169px;
+    flex: 0 0 364px;
+    width: 364px;
+    min-width: 364px;
+    max-width: 364px;
+    height: 168px;
+    padding: 0 24px;
+    box-sizing: border-box;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+}
+
+.row--deadline-email .item2 .d-flex {
+    grid-column: 1;
+    width: 120px;
+    min-width: 120px;
+    max-width: 120px;
+    height: 96px;
+    gap: 10px;
+    flex-shrink: 0;
+    align-items: center;
+    overflow: visible;
+}
+
+.row--deadline-email .item2 .d-flex .img1 {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    object-fit: contain;
+}
+
+.row--deadline-email .item2 .d-flex .d-colum {
+    flex: 1;
+    min-width: 0;
+    align-items: center;
+}
+
+.row--deadline-email .item2 .d-flex .nummber {
+    font-size: var(--summary-number-size, 64px);
+    line-height: 1;
+}
+
+.row--deadline-email .item2 .d-flex .To-do {
+    width: auto;
+    white-space: nowrap;
+}
+
+.row--deadline-email .item2 .separator2 {
+    grid-column: 2;
+    flex-shrink: 0;
+    width: 0;
+    height: 102px;
+    margin: 0 12px;
+    background-color: transparent;
+    border: none;
+    border-left: 2px solid #686868;
+    border-radius: 0;
+    box-sizing: border-box;
+    align-self: center;
+    justify-self: center;
+}
+
+.row--deadline-email .item2 .separator2 {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -154,7 +260,7 @@ h2 {
     width: 168px;
     min-width: 168px;
     height: 168px;
-    border-radius: 30px;
+    border-radius: 20px;
     background-color: #ffffff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     gap: 13px;
@@ -164,7 +270,7 @@ h2 {
 .email-requests-count {
     font-family: "Inter", sans-serif;
     font-weight: 600;
-    font-size: 64px;
+    font-size: var(--summary-number-size, 64px);
     line-height: 120%;
     text-align: center;
     color: #8933fc;
@@ -179,7 +285,7 @@ h2 {
     height: 48px;
     font-family: "Inter", sans-serif;
     font-weight: 400;
-    font-size: 20px;
+    font-size: var(--summary-label-size, 20px);
     line-height: 120%;
     text-align: center;
     color: #2A3647;
@@ -194,13 +300,13 @@ h2 {
 
 .p-strong {
     font-weight: 700;
-    font-size: 21px;
+    font-size: var(--summary-deadline-strong-size, 21px);
     color: #2A3647;
 }
 
 .p-normal {
 font-weight: 400;
-    font-size: 16px;
+    font-size: var(--summary-deadline-normal-size, 16px);
     color: #2A3647;
 }
 
@@ -210,12 +316,14 @@ font-weight: 400;
     width: 100%;
     max-width: 168px;
     background-color: white;
-    border-radius: 30px;
+    border-radius: 20px;
     align-items: center;
     justify-content: center;
     gap: 13px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    min-height: 90px;
+    min-height: 168px;
+    padding: 0 8px;
+    box-sizing: border-box;
 }
 
 .greetings {
@@ -223,6 +331,8 @@ font-weight: 400;
     flex-direction: column;
     gap: 3px;
     justify-content: center;
+    flex-shrink: 0;
+    margin-left: auto;
 }
 
 .greetingsMobile {
@@ -343,9 +453,10 @@ font-weight: 400;
 }
 
 .nameAndToDoParent {
-        align-items: flex-start;
+    align-items: flex-start;
     max-height: 560px;
     height: 100%;
+    width: 100%;
 }
 
 .MobileGreeting {

@@ -110,7 +110,10 @@ export function validateN8nTaskPayload(body) {
           ? input.category.trim()
           : "User Story",
       priority,
-      dueDate: typeof input.dueDate === "string" ? input.dueDate.trim() : "",
+      dueDate: (() => {
+        const raw = typeof input.dueDate === "string" ? input.dueDate.trim() : "";
+        return raw && !/^(undefined|null|n\/a|na)$/i.test(raw) ? raw : "";
+      })(),
       column,
       creatorEmail,
       creatorName:

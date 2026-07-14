@@ -196,6 +196,7 @@ function setLoggedInState(userKey) {
  */
 async function preloadAndSeed(userKey) {
   await preloadContacts(userKey);
+  await syncUserBoardTasks();
   await seedUserTasksIfEmpty();
 }
 

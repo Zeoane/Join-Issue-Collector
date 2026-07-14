@@ -37,6 +37,18 @@ describe("validateN8nTaskPayload", () => {
     }
   });
 
+  it("treats placeholder due dates as empty", () => {
+    const result = validateN8nTaskPayload({
+      title: "No deadline",
+      dueDate: "undefined",
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.task.dueDate).toBe("");
+    }
+  });
+
   it("normalizes subtasks and assignees from n8n payload", () => {
     const result = validateN8nTaskPayload({
       title: "Subtask parse",

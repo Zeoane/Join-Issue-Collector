@@ -40,6 +40,23 @@ const cases = [
     input: "Subtasks angelegt?",
     expected: [],
   },
+  {
+    name: "company signature bullets are ignored",
+    input:
+      "Description:\nBitte bestellt Party-Hüte und kauft Pizza für alle.\n\nSubtask:\n- Party-Hüte bestellen\n- Pizza kaufen\n\nMit freundlichen Grüßen\nJulia Weißenberger\n- E-Mail: julia.weissenberger@developerakademie.com\n- Webseite: www.developerakademie.com\n- Adresse: Tassilopl. 25, 81541 München",
+    expected: ["Party-Hüte bestellen", "Pizza kaufen"],
+  },
+  {
+    name: "signature contact lines without bullets are ignored",
+    input:
+      "Subtask:\n- Kontrast prüfen\n\nE-Mail: julia.weissenberger@developerakademie.com\nWebseite: www.developerakademie.com\nAdresse: Tassilopl. 25, 81541 München",
+    expected: ["Kontrast prüfen"],
+  },
+  {
+    name: "enddate section does not create subtasks",
+    input: "Subtask:\n- Mobile testen\n\nEnddate:\n2026-08-15",
+    expected: ["Mobile testen"],
+  },
 ];
 
 let failed = 0;

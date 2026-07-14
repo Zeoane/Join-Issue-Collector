@@ -1,5 +1,15 @@
+const EMAIL_BODY_TEMPLATE = `Description:
+
+
+Subtask:
+
+
+Enddate:
+
+`;
+
 const COMPOSE_URL =
-  "https://mail.google.com/mail/?view=cm&fs=1&to=joincollector%40gmail.com&su=Feature%20Request";
+  `https://mail.google.com/mail/?view=cm&fs=1&to=joincollector%40gmail.com&su=Feature%20Request&body=${encodeURIComponent(EMAIL_BODY_TEMPLATE)}`;
 
 /**
  * @returns {string}
@@ -48,6 +58,7 @@ function handleStakeholderEmailRequest(event) {
  */
 function initStakeholderEmailRequest() {
   document.querySelectorAll("[data-stakeholder-email-request]").forEach((element) => {
+    element.setAttribute("data-compose-url", COMPOSE_URL);
     element.addEventListener("click", handleStakeholderEmailRequest, true);
   });
 }

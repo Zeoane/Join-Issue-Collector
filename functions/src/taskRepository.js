@@ -124,3 +124,46 @@ export async function createTaskForAllUsers(
 
   return { duplicate: false, id: ref.key, task };
 }
+
+/**
+ * Copies missing tasks from the canonical demo board into a target user board.
+ * Existing task IDs on the target board are left unchanged.
+ * @param {string} targetUid
+ * @param {string} sourceUid
+ * @returns {Promise<{ synced: number, totalSourceTasks: number }>}
+ */
+export async function syncMissingTasksFromSource(targetUid, sourceUid) {
+  if (!targetUid || !sourceUid || targetUid === sourceUid) {
+    return { synced: 0, totalSourceTasks: 0 };
+  }
+
+  const db = getDatabase();
+  const sourceSnap = await db.ref(`users/${sourceUid}/tasks`).get();
+  if (!sourceSnap.exists()) {
+    return { synced: 0, totalSourceTasks: 0 };
+  }
+
+  const sourceTasks = sourceSnap.val() || {};
+  const sourceEntries = Object.entries(sourceTasks).filter(
+    ([taskId, task]) => Boolean(taskId) && task && typeof task === "object"
+  );
+  if (sourceEntries.length === 0) {
+    return { synced: 0, totalSourceTasks: 0 };
+  }
+
+  const targetSnap = await db.ref(`users/${targetUid}/tasks`).get();
+  const targetTasks = targetSnap.exists() ? targetSnap.val() || {} : {};
+
+  const missingEntries = sourceEntries.filter(([taskId]) => !targetTasks[taskId]);
+  if (missingEntries.length === 0) {
+    return { synced: 0, totalSourceTasks: sourceEntries.length };
+  }
+
+  await Promise.all(
+    missingEntries.map(([taskId, task]) =>
+      db.ref(`users/${targetUid}/tasks/${taskId}`).set(task)
+    )
+  );
+
+  return { synced: missingEntries.length, totalSourceTasks: sourceEntries.length };
+}

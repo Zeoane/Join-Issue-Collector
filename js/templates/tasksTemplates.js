@@ -59,6 +59,16 @@ function renderTaskCreatorRow(task) {
                 </div>`;
 }
 
+function renderTaskDueDateRow(task) {
+    const dueDateDisplay = formatDueDateForDisplay(task?.dueDate);
+    if (!dueDateDisplay) return "";
+
+    return `
+                <div class="gap-25 flexR">
+                    <p class="task-overlay-headdings">Due Date:</p><span class="task-overlay-value">${escapeHtml(dueDateDisplay)}</span>
+                </div>`;
+}
+
 /**
  * Builds the task details overlay content including actions and edit form.
  *
@@ -91,9 +101,7 @@ function taskOverlayTemplate(task){
                 <h2>${escapeHtml(task.title)}</h2>
                 <p class="${getVisibilityClass(description)}" id="taskOverlayDescription">${escapeHtml(description)}</p>
                 ${renderTaskCreatorRow(task)}
-                <div class="gap-25 flexR">
-                    <p class="task-overlay-headdings">Due Date:</p><span class="task-overlay-value">${formatDate(task.dueDate)}</span>
-                </div>
+                ${renderTaskDueDateRow(task)}
                 <div class="flexR gap-25 ${getVisibilityClass(task.priority)}">
                     <p class="task-overlay-headdings">Priority:</p><div class="flexR overlay-priority">
                         ${handlePriority(task.priority)} 
@@ -152,7 +160,7 @@ function taskEditTemplate(task) {
             <div class="gap-8 width-100 flexC">
                 <label class="width-100" for="editedTaskDueDate">Due date<span class="highlight">*</span></label>
                 <div class="date-input-wrapper width-100">
-                    <input class="inputs change-onfoucus requierd-input" value="${task.dueDate ? task.dueDate.split('T')[0] : ''}" type="date" id="editedTaskDueDate" name="taskDueDate" min="" onfocus="this.min=new Date().toISOString().split('T')[0]">
+                    <input class="inputs change-onfoucus requierd-input" value="${formatDueDateInputValue(task.dueDate)}" type="date" id="editedTaskDueDate" name="taskDueDate" min="" onfocus="this.min=new Date().toISOString().split('T')[0]">
                     <button type="button" class="date-input-icon-btn" onclick="openDatePicker('editedTaskDueDate', event)" aria-label="Choose date">
                         <img class="date-input-icon" src="../img/calender.svg" alt="" aria-hidden="true">
                     </button>

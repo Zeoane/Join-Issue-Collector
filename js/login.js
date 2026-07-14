@@ -85,6 +85,7 @@ async function onSubmitLogin(e, { emailInput, passwordInput, loginButton, msgBox
   disableButton(loginButton);
   const result = await signInWithEmail(email, password);
   if (result.success) {
+    await syncUserBoardTasks();
     await ensureUserContactsIfEmpty();
     sessionStorage.setItem("showMobileGreeting", "1");
     window.location.href = "../index/summary.html";
@@ -143,6 +144,7 @@ async function startGuestSession() {
   try {
     await signInAsGuest();
     await preloadGuestContacts(window.USERKEY);
+    await syncUserBoardTasks();
     await seedUserTasksIfEmpty();
     sessionStorage.setItem("showMobileGreeting", "1");
     window.location.href = "../index/summary.html";

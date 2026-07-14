@@ -171,6 +171,7 @@ async function fetchBoardData() {
         throw new Error('Not authenticated');
     }
 
+    await syncUserBoardTasks();
     await seedUserTasksIfEmpty();
     await ensureUserContactsIfEmpty();
 

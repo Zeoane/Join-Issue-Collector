@@ -27,6 +27,10 @@
       {
         "source": "/public/stakeholder-usage",
         "function": "stakeholderDailyUsage"
+      },
+      {
+        "source": "/internal/sync-board-tasks",
+        "function": "syncBoardTasks"
       }
     ]
   }

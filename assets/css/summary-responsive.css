@@ -11,6 +11,14 @@
     gap: 24px;
   }
 
+  .into h1 {
+    font-size: 49px;
+  }
+
+  .into h2 {
+    font-size: 22px;
+  }
+
   h1 {
     font-size: 49px;
   }
@@ -20,6 +28,7 @@
   }
 
   .separater {
+    height: 47px;
     width: 3px;
   }
 
@@ -28,12 +37,12 @@
   }
 
   .row-grid {
-    gap: 22px;
+    gap: var(--summary-row-stack-gap, 28px);
     max-width: 448px;
   }
 
   .row {
-    gap: 26px;
+    gap: var(--summary-row-inline-gap, 32px);
     max-height: 134px;
   }
 
@@ -46,12 +55,7 @@
     width: 55px;
   }
 
-  .nummber {
-    font-size: 51px;
-  }
-
   .To-do {
-    font-size: 16px;
     width: 64px;
   }
 
@@ -61,40 +65,64 @@
     padding: 0 38px;
   }
 
+  .row--deadline-email {
+    gap: var(--summary-deadline-row-gap, 28px);
+  }
+
   .row--deadline-email .item2 {
-    padding: 0 26px;
+    display: grid;
+    grid-template-columns: 96px auto 135px;
+    flex: 0 0 291px;
+    width: 291px;
+    min-width: 291px;
+    max-width: 291px;
     height: 134px;
+    padding: 0 29px;
+  }
+
+  .row--deadline-email .item2 .d-flex {
+    width: 96px;
+    min-width: 96px;
+    max-width: 96px;
+    height: 77px;
+    gap: 8px;
+  }
+
+  .row--deadline-email .item2 .d-flex .img1 {
+    width: 48px;
+    height: 48px;
+  }
+
+  .row--deadline-email .item2 .separator2 {
+    height: 82px;
+    margin: 0 10px;
+    border-width: 2px;
+  }
+
+  .row--deadline-email .item2 .deadline {
+    width: 135px;
+    min-width: 135px;
+    max-width: 135px;
+    height: 45px;
+    gap: 10px;
   }
 
   .item-email-requests {
     width: 134px;
     min-width: 134px;
     height: 134px;
-    border-radius: 24px;
+    border-radius: 20px;
     gap: 10px;
     padding: 20px 0;
-  }
-
-  .email-requests-count {
-    font-size: 51px;
   }
 
   .email-requests-label {
     width: 66px;
     height: 38px;
-    font-size: 16px;
   }
 
   .deadline {
     gap: 10px;
-  }
-
-  .p-strong {
-    font-size: 17px;
-  }
-
-  .p-normal {
-    font-size: 16px;
   }
 
   .item3 {
@@ -130,18 +158,16 @@
   }
 
   .into {
-    align-items: flex-start;
-    flex-direction: column;
-    max-height: 54px;
-    gap: 16px;
-    max-height: none;
+    gap: 20px;
   }
 
-  .separaterM {
-  display: flex;
-  height: 2px;
-  width: 90px;
-}
+  .into h1 {
+    font-size: 40px;
+  }
+
+  .into h2 {
+    font-size: 16px;
+  }
 
   h1 {
     font-size: 40px;
@@ -152,7 +178,8 @@
   }
 
   .separater {
-    width: 2.5px;
+    height: 38px;
+    width: 3px;
   }
 
   .nameAndToDo {
@@ -160,7 +187,7 @@
   }
 
   .row-grid {
-    gap: 19px;
+    gap: var(--summary-row-stack-gap, 28px);
     max-width: 395px;
   }
 
@@ -176,12 +203,7 @@
     width: 48px;
   }
 
-  .nummber {
-    font-size: 40px;
-  }
-
   .To-do {
-    font-size: 16px;
     width: 56px;
   }
 
@@ -191,40 +213,64 @@
     padding: 0 30px;
   }
 
+  .row--deadline-email {
+    gap: var(--summary-deadline-row-gap, 28px);
+  }
+
   .row--deadline-email .item2 {
-    padding: 0 20px;
+    display: grid;
+    grid-template-columns: 84px auto 119px;
+    flex: 0 0 256px;
+    width: 256px;
+    min-width: 256px;
+    max-width: 256px;
     height: 118px;
+    padding: 0 25px;
+  }
+
+  .row--deadline-email .item2 .d-flex {
+    width: 84px;
+    min-width: 84px;
+    max-width: 84px;
+    height: 67px;
+    gap: 7px;
+  }
+
+  .row--deadline-email .item2 .d-flex .img1 {
+    width: 42px;
+    height: 42px;
+  }
+
+  .row--deadline-email .item2 .separator2 {
+    height: 72px;
+    margin: 0 8px;
+    border-width: 2px;
+  }
+
+  .row--deadline-email .item2 .deadline {
+    width: 119px;
+    min-width: 119px;
+    max-width: 119px;
+    height: 39px;
+    gap: 9px;
   }
 
   .item-email-requests {
     width: 118px;
     min-width: 118px;
     height: 118px;
-    border-radius: 22px;
+    border-radius: 20px;
     gap: 8px;
     padding: 16px 0;
-  }
-
-  .email-requests-count {
-    font-size: 40px;
   }
 
   .email-requests-label {
     width: 64px;
     height: 34px;
-    font-size: 14px;
   }
 
   .deadline {
     gap: 8px;
-  }
-
-  .p-strong {
-    font-size: 16px;
-  }
-
-  .p-normal {
-    font-size: 16px;
   }
 
   .item3 {
@@ -254,112 +300,249 @@
     width: 48px;
     height: 48px;
   }
-  
-.separater {
-  display: none;
-}
 }
 
 @media (max-width: 799px) {
   .MobileGreeting {
     z-index: 100;
-    display: grid;             
-    place-items: center;         
+    display: grid;
+    place-items: center;
     position: fixed;
-    inset: 80px 0 80px 0;        
+    inset: 80px 0 80px 0;
     background-color: #F6F7F8;
     opacity: 1;
     transition: opacity 1s ease;
   }
-  .MobileGreeting.fade-out { opacity: 0; }
-.greetingsMobile {
+
+  .MobileGreeting.fade-out {
+    opacity: 0;
+  }
+
+  .greetingsMobile {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;                   
-    width: min(90vw, 560px);     
+    gap: 8px;
+    width: min(90vw, 560px);
     text-align: center;
-    padding: 0 16px;            
+    padding: 0 16px;
   }
+
   .greetingsMobile .greeting {
     display: flex;
-    align-items: baseline;      
-    gap: 4px;                   
-    white-space: nowrap;         
+    align-items: baseline;
+    gap: 4px;
+    white-space: nowrap;
     margin: 0;
   }
+
   .content {
     padding: 36px 17px 29px 17px;
     height: calc(100vh - 160px);
-    }
-    .greetings {
-      display: none;
-    }
-    .hidden {
-      display: none;
-    }
-    .nameAndToDo {
-      justify-content: center;
-    }
-
-    .row--deadline-email {
-      gap: 12px;
-    }
-
-    .item-email-requests {
-      width: 110px;
-      min-width: 110px;
-      height: 110px;
-      border-radius: 20px;
-      padding: 12px 0;
-    }
-
-    .email-requests-count {
-      font-size: 36px;
-    }
-
-    .email-requests-label {
-      width: 60px;
-      height: 32px;
-      font-size: 13px;
-    }
-}
-
-@media (max-width: 400px) {
-  .row {
-    gap: 8px;
+    align-items: flex-start;
+    overflow-x: hidden;
   }
-  .item2 {
-    gap: 10px;
+
+  .into {
+    align-items: flex-start;
+    flex-direction: column;
+    max-height: none;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .separater {
+    display: none;
+  }
+
+  .separaterM {
+    display: flex;
+    height: 2px;
+    width: 90px;
+  }
+
+  .greetings {
+    display: none;
+  }
+
+  .hidden {
+    display: none;
+  }
+
+  .nameAndToDoParent {
+    width: 100%;
+    max-width: 100%;
+    align-items: flex-start;
+  }
+
+  .nameAndToDo {
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: 100%;
+    max-width: 560px;
+    gap: 0;
+  }
+
+  .row-grid {
+    width: 100%;
+    max-width: 560px;
+    gap: var(--summary-row-stack-gap, 28px);
+  }
+
+  .row {
+    gap: var(--summary-row-inline-gap, 32px);
+    max-height: none;
+    height: auto;
+    width: 100%;
+  }
+
+  .row .item1 {
+    flex: 1 1 0;
+    max-width: none;
+    width: auto;
+    min-width: 0;
+    min-height: clamp(72px, 20vw, 118px);
+    gap: clamp(8px, 2vw, 12px);
+  }
+
+  .row .item3 {
+    flex: 1 1 0;
+    max-width: none;
+    width: auto;
+    min-width: 0;
+    min-height: clamp(72px, 20vw, 118px);
+    gap: clamp(6px, 1.8vw, 10px);
+    padding: clamp(6px, 1.8vw, 10px);
+  }
+
+  .row .item3 .To-do {
+    width: auto;
+    max-width: 100%;
+  }
+
+  .To-do {
+    width: auto;
+    max-width: 100%;
+  }
+
+  .circle {
+    width: clamp(36px, 10vw, 48px);
+    height: clamp(36px, 10vw, 48px);
   }
 
   .row--deadline-email {
-    gap: 8px;
+    gap: var(--summary-deadline-row-gap, 28px);
   }
 
-  .item-email-requests {
-    width: 96px;
-    min-width: 96px;
-    height: 96px;
-    border-radius: 18px;
-    gap: 6px;
-    padding: 10px 0;
+  .row--deadline-email .item2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) auto minmax(0, 1fr);
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: clamp(96px, 24vw, 118px);
+    padding: 0 clamp(12px, 3.5vw, 25px);
   }
 
-  .email-requests-count {
-    font-size: 30px;
+  .row--deadline-email .item2 .d-flex {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    gap: clamp(6px, 1.8vw, 8px);
   }
 
-  .email-requests-label {
-    width: 54px;
-    height: 30px;
-    font-size: 12px;
+  .row--deadline-email .item2 .d-flex .img1 {
+    width: clamp(36px, 10vw, 48px);
+    height: clamp(36px, 10vw, 48px);
   }
-      .row-grid {
-        gap: 12px;
-    }
-        .content {
-        padding: 24px 8px 24px 8px;
-    }
+
+  .row--deadline-email .item2 .separator2 {
+    height: clamp(56px, 16vw, 72px);
+    margin: 0 clamp(6px, 1.8vw, 8px);
+  }
+
+  .row--deadline-email .item2 .deadline {
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    height: auto;
+    gap: clamp(6px, 1.8vw, 9px);
+    justify-self: end;
+  }
+
+  .row--deadline-email .item-email-requests {
+    flex: 0 0 clamp(96px, 27vw, 110px);
+    width: clamp(96px, 27vw, 110px);
+    min-width: clamp(96px, 27vw, 110px);
+    height: clamp(96px, 27vw, 110px);
+    border-radius: 20px;
+    gap: clamp(6px, 1.8vw, 10px);
+    padding: clamp(8px, 2.2vw, 12px) 0;
+  }
+}
+
+@media (max-width: 400px) {
+  .content {
+    padding: 24px 12px;
+  }
+
+  .row--deadline-email .item2 {
+    padding: 0 10px;
+  }
+
+  .row--deadline-email .item2 .separator2 {
+    margin: 0 6px;
+  }
+
+  .row--deadline-email .item-email-requests {
+    flex-basis: 92px;
+    width: 92px;
+    min-width: 92px;
+    height: 92px;
+  }
+}
+
+@media (max-width: 320px) {
+  .content {
+    padding: 20px 10px;
+  }
+
+  .into h1 {
+    font-size: clamp(28px, 9vw, 36px);
+    white-space: normal;
+  }
+
+  .into h2 {
+    font-size: 14px;
+  }
+
+  .row--deadline-email .item2 {
+    height: 88px;
+    padding: 0 8px;
+  }
+
+  .row--deadline-email .item2 .d-flex .img1 {
+    width: 32px;
+    height: 32px;
+  }
+
+  .row--deadline-email .item2 .separator2 {
+    height: 48px;
+    margin: 0 4px;
+  }
+
+  .row--deadline-email .item-email-requests {
+    flex-basis: 84px;
+    width: 84px;
+    min-width: 84px;
+    height: 84px;
+  }
+
+  .row .item1,
+  .row .item3 {
+    min-height: 68px;
+  }
 }

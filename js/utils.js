@@ -248,6 +248,61 @@ function getTaskDescriptionForDisplay(task) {
   return isAiGeneratedTask(task) ? stripAiGeneratedNotice(raw) : raw;
 }
 
+/**
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+function isPlaceholderDueDate(value) {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return (
+    !normalized ||
+    normalized === "undefined" ||
+    normalized === "null" ||
+    normalized === "n/a" ||
+    normalized === "na"
+  );
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
+function normalizeDueDateValue(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  return isPlaceholderDueDate(trimmed) ? "" : trimmed;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
+function formatDueDateForDisplay(value) {
+  const normalized = normalizeDueDateValue(value);
+  if (!normalized) return "";
+
+  const datePart = normalized.split("T")[0].trim();
+  const [year, month, day] = datePart.split("-");
+  if (!year || !month || !day) return "";
+  if (!/^\d{4}$/.test(year) || !/^\d{2}$/.test(month) || !/^\d{2}$/.test(day)) {
+    return "";
+  }
+  if (Number.isNaN(Number(year)) || Number.isNaN(Number(month)) || Number.isNaN(Number(day))) {
+    return "";
+  }
+
+  return `${day}/${month}/${year}`;
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
+function formatDueDateInputValue(value) {
+  const normalized = normalizeDueDateValue(value);
+  return normalized ? normalized.split("T")[0] : "";
+}
+
 window.escapeHtml = escapeHtml;
 window.escapeJsString = escapeJsString;
 window.predefinedColors = predefinedColors;
@@ -267,3 +322,6 @@ window.isInternalCreatorTask = isInternalCreatorTask;
 window.isAiGeneratedTask = isAiGeneratedTask;
 window.stripAiGeneratedNotice = stripAiGeneratedNotice;
 window.getTaskDescriptionForDisplay = getTaskDescriptionForDisplay;
+window.normalizeDueDateValue = normalizeDueDateValue;
+window.formatDueDateForDisplay = formatDueDateForDisplay;
+window.formatDueDateInputValue = formatDueDateInputValue;

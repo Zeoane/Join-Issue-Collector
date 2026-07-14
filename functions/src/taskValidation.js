@@ -146,7 +146,7 @@ function normalizeSubtasks(input) {
  */
 function resolveDueDate(input) {
   const raw = readStringField(input, "dueDate");
-  if (!raw) return "";
+  if (!raw || /^(undefined|null|n\/a|na)$/i.test(raw)) return "";
   if (isIsoDate(raw)) return raw;
 
   const dotMatch = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);

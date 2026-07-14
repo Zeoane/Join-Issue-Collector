@@ -129,6 +129,7 @@ function formatName(name) {
 async function loadAndRenderTaskCounts() {
   try {
     // Ensure starter tasks are seeded for new users if available
+    if (typeof syncUserBoardTasks === "function") await syncUserBoardTasks();
     if (typeof seedUserTasksIfEmpty === 'function') await seedUserTasksIfEmpty();
 
     const tasks = await fetchTasks();

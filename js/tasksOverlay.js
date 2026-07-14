@@ -50,11 +50,10 @@ function showTaskOverlay(task) {
 /**
  * Formats a date string from YYYY-MM-DD to DD/MM/YYYY.
  * @param {string} dateString - A date formatted like 2025-09-16.
- * @returns {string} Formatted date like 16/09/2025.
+ * @returns {string} Formatted date like 16/09/2025, or empty string when missing/invalid.
  */
 function formatDate(dateString) {
-    const [year, month, day] = dateString.split('-');
-    return `${day}/${month}/${year}`;
+    return formatDueDateForDisplay(dateString);
 }
 
 /**

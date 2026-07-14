@@ -4,6 +4,7 @@ import { defineSecret } from "firebase-functions/params";
 import { handleN8nTaskRequest } from "./src/n8nTaskHandler.js";
 import { handleTaskColumnChange } from "./src/taskMoveTrigger.js";
 import { handleStakeholderUsageRequest } from "./src/stakeholderUsageHandler.js";
+import { handleSyncBoardTasksRequest } from "./src/syncBoardTasksHandler.js";
 
 const n8nSecret = defineSecret("N8N_API_SECRET");
 const demoUserUid = defineSecret("DEMO_USER_UID");
@@ -31,6 +32,16 @@ export const stakeholderDailyUsage = onRequest(
   { secrets: [demoUserUid], invoker: "public" },
   async (req, res) => {
     await handleStakeholderUsageRequest(req, res, demoUserUid.value());
+  }
+);
+
+/**
+ * Authenticated HTTPS endpoint that backfills missing tasks from the demo board.
+ */
+export const syncBoardTasks = onRequest(
+  { secrets: [demoUserUid], invoker: "public" },
+  async (req, res) => {
+    await handleSyncBoardTasksRequest(req, res, demoUserUid.value());
   }
 );
 
