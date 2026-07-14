@@ -130,19 +130,7 @@ function toggleSubtaskDisplayOnly(subtaskValue) {
  * @param {string} taskId - Task key to delete.
  */
 function deleteTask(taskId) {
-    authFetchUrl(getUserTasksUrl())
-        .then((response) => parseJsonResponse(response))
-        .then((data) => {
-            const taskEntry = Object.entries(data || {}).find(([key]) => key === taskId);
-            if (taskEntry) {
-                const [firebaseKey] = taskEntry;
-                return authFetchUrl(getUserTaskItemUrl(firebaseKey), {
-                    method: 'DELETE'
-                });
-            } else {
-                console.error('Task not found:', taskId);
-            }
-        })
+    authFetchUrl(getUserTaskItemUrl(taskId), { method: 'DELETE' })
         .then(() => updateBoard())
         .then(() => closeOverlay())
         .catch(error => console.error('Error deleting task:', error));
@@ -174,17 +162,13 @@ function showEditTaskOverlay(task) {
  * @param {string} taskId - Task key to edit.
  */
 function editTask(taskId) {
-    authFetchUrl(getUserTasksUrl())
-        .then((response) => parseJsonResponse(response))
-        .then((data) => {
-            const taskEntry = Object.entries(data || {}).find(([key]) => key === taskId);
-            if (taskEntry) {
-                const [firebaseKey, task] = taskEntry;
-                const taskWithId = { ...task, id: firebaseKey };
-                showEditTaskOverlay(taskWithId);
-            } else {
+    loadData(getUserTaskItemUrl(taskId))
+        .then((task) => {
+            if (!task) {
                 console.error('Task not found:', taskId);
+                return;
             }
+            showEditTaskOverlay({ ...task, id: taskId });
         })
         .catch(error => console.error('Error fetching task:', error));
 }

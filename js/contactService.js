@@ -28,8 +28,6 @@ async function getAssignablePeople(userKey) {
     processContactsInMap(peopleMap, personalContactsData);
 
     const out = finalizePeopleList(peopleMap);
-    // kurze Sichtprüfung
-    console.log("[assignable] users:", !!allUsersData, "contacts:", !!personalContactsData, "own:", !!ownUser, "len:", out.length);
     return out;
   } catch (e) {
     console.error("Error loading assignable people:", e);
@@ -108,8 +106,6 @@ function processContactsInMap(peopleMap, personalContactsData) {
  * @returns {Array<object>} 
  */
 function finalizePeopleList(peopleMap) {
-  console.log('[contactService] finalize length=', Array.from(peopleMap.values()).length);
-
   const finalList = Array.from(peopleMap.values());
   finalList.sort((a, b) => a.name.localeCompare(b.name));
   return finalList;

@@ -125,14 +125,3 @@ function clearSearchInput() {
   if (mobileInput) mobileInput.value = "";
   handleSearch();
 }
-
-
-/** Fetches all tasks from Firebase and updates the board columns. */
-function fetchAllTasks() {
-  authFetchUrl(getUserTasksUrl())
-    .then((r) => parseJsonResponse(r))
-    .then((data) => {
-      const tasks = Object.entries(data || {}).map(([id, t]) => ({ ...t, id }));
-      window.updateColumns?.(tasks);
-    });
-}
