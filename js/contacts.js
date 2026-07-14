@@ -122,7 +122,9 @@ async function updateOwnUserContact(formData) {
   const { name, email, phone } = formData;
   const existingUserData = await loadData(`users/${window.USERKEY}`);
   const updatedUser = { ...existingUserData, name, email, phone };
-  await putData(`users/${window.USERKEY}`, updatedUser);  renderOwnContact(updatedUser);
+  await putData(`users/${window.USERKEY}`, updatedUser);
+  invalidateContactColorsCache?.();
+  renderOwnContact(updatedUser);
   showOwnContactCardDetails(updatedUser);
   activateContactCard("ownContact");
   toggleOverlay();
@@ -155,7 +157,8 @@ async function saveOrUpdateContact(formData) {
 async function updateContact(name, email, phone, contactKey) {
   const existingContact = contactsData[contactKey] || {};
   const updatedContact = { ...existingContact, name, email, phone };
-  await putData(`${getContactsBasePath()}/${contactKey}`, updatedContact);  // update tasks that reference the old contact name
+  await putData(`${getContactsBasePath()}/${contactKey}`, updatedContact);
+  invalidateContactColorsCache?.();
   await updateTasksAssigneeOnContactChange(existingContact.name, name);
   await loadDataAfterSave();
   showcontactCardDetails(contactKey);
@@ -193,7 +196,9 @@ async function updateTasksAssigneeOnContactChange(oldName, newName) {
 async function createNewContact(name, email, phone) {
   const color = getRandomColor();
   const newContact = { name, email, phone, color };
-  const result = await postData(getContactsBasePath(), newContact);  const newKey = result.name;
+  const result = await postData(getContactsBasePath(), newContact);
+  invalidateContactColorsCache?.();
+  const newKey = result.name;
   await loadDataAfterSave();
   showcontactCardDetails(newKey);
   activateContactCard(newKey);

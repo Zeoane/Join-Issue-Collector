@@ -198,7 +198,9 @@ function applyMobileDetailsSetup(key) {
  * @param {boolean} [closeOverlay=false] - Whether to close the overlay afterward.
  */
 async function deleteContact(key, closeOverlay = false) {
-  await deleteData(`${getContactsBasePath()}/${key}`);  document.getElementById("contactsDetails").innerHTML = "";
+  await deleteData(`${getContactsBasePath()}/${key}`);
+  invalidateContactColorsCache?.();
+  document.getElementById("contactsDetails").innerHTML = "";
   document.getElementById("contactsDetails").classList.remove("showDetails");
   await loadDataAfterSave();
   if (closeOverlay) {

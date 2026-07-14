@@ -174,10 +174,7 @@ async function fetchBoardData() {
     await seedUserTasksIfEmpty();
     await ensureUserContactsIfEmpty();
 
-    const [tasksData] = await Promise.all([
-        loadData(getUserTasksUrl()),
-        loadAllContactColors()
-    ]);
+    const tasksData = await loadData(getUserTasksUrl());
 
     return Object.entries(tasksData || {}).map(([firebaseKey, task]) => ({
         ...task,
@@ -216,6 +213,7 @@ async function initBoardPage() {
 window.updateBoard = updateBoard;
 window.updateColumns = updateColumns;
 window.initBoardPage = initBoardPage;
+window.invalidateContactColorsCache = invalidateContactColorsCache;
 
 /* Tasks-Design in Board functions */
 
@@ -225,15 +223,48 @@ window.initBoardPage = initBoardPage;
  */
 let contactColorMap = new Map();
 
+/** @type {string|null} */
+let contactColorsCacheUserKey = null;
+
+/** @type {Object|null} */
+let contactColorsCacheData = null;
+
+/**
+ * Clears the in-memory contact color cache (e.g. after contact CRUD).
+ * @returns {void}
+ */
+function invalidateContactColorsCache() {
+    contactColorsCacheUserKey = null;
+    contactColorsCacheData = null;
+    contactColorMap.clear();
+}
+
 /**
  * Loads all contact colors from Firebase and stores them in a Map for quick access
  * @function loadAllContactColors
- * @returns {Promise<Object>} Promise that resolves to the contacts object from Firebase
+ * @param {{ force?: boolean }} [options]
+ * @returns {Promise<Object|null>} Promise that resolves to the contacts object from Firebase
  */
-async function loadAllContactColors() {
+async function loadAllContactColors(options = {}) {
+    const { force = false } = options;
+    const userKey = window.USERKEY;
+
+    if (!userKey) {
+        invalidateContactColorsCache();
+        return null;
+    }
+
+    if (
+        !force &&
+        contactColorsCacheUserKey === userKey &&
+        contactColorsCacheData !== null
+    ) {
+        return contactColorsCacheData;
+    }
+
     const [result, ownUser] = await Promise.all([
-        loadData(`users/${window.USERKEY}/contacts`),
-        loadData(`users/${window.USERKEY}`),
+        loadData(`users/${userKey}/contacts`),
+        loadData(`users/${userKey}`),
     ]);
 
     contactColorMap.clear();
@@ -248,7 +279,10 @@ async function loadAllContactColors() {
         contactColorMap.set(ownUser.name, color);
     }
 
-    return result;
+    contactColorsCacheUserKey = userKey;
+    contactColorsCacheData = result || {};
+
+    return contactColorsCacheData;
 }
 
 /**

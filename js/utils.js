@@ -65,6 +65,7 @@ async function ensureUserColor(user) {
   const color = getRandomColor();
   try {
     await putData(`users/${window.USERKEY}`, { ...user, color });
+    invalidateContactColorsCache?.();
   } catch (error) {
     console.error("Failed to persist user color:", error);
   }
