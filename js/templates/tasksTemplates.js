@@ -20,14 +20,16 @@ function renderTaskCreatorRow(task) {
                     >
                     <div class="task-creator-row__meta width-100">
                         <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
-                        <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
-                        <img
-                            src="../img/Profile-Taskcard.svg"
-                            alt=""
-                            class="task-creator-row__profile-badge"
-                            width="63"
-                            height="24"
-                        >
+                        <div class="task-creator-row__details">
+                            <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
+                            <img
+                                src="../img/Profile-Taskcard.svg"
+                                alt=""
+                                class="task-creator-row__profile-badge"
+                                width="63"
+                                height="24"
+                            >
+                        </div>
                     </div>
                 </div>`;
     }
@@ -43,14 +45,16 @@ function renderTaskCreatorRow(task) {
                     >
                     <div class="task-creator-row__meta width-100">
                         <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
-                        <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
-                        <img
-                            src="../img/Email-Taskcard.svg"
-                            alt=""
-                            class="task-creator-row__email-badge"
-                            width="76"
-                            height="24"
-                        >
+                        <div class="task-creator-row__details">
+                            <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
+                            <img
+                                src="../img/Email-Taskcard.svg"
+                                alt=""
+                                class="task-creator-row__email-badge"
+                                width="76"
+                                height="24"
+                            >
+                        </div>
                     </div>
                 </div>`;
 }
@@ -88,12 +92,10 @@ function taskOverlayTemplate(task){
                 <p class="${getVisibilityClass(description)}" id="taskOverlayDescription">${escapeHtml(description)}</p>
                 ${renderTaskCreatorRow(task)}
                 <div class="gap-25 flexR">
-                    <p class="task-overlay-headdings">Due Date:</p>
-                    ${formatDate(task.dueDate)}
+                    <p class="task-overlay-headdings">Due Date:</p><span class="task-overlay-value">${formatDate(task.dueDate)}</span>
                 </div>
                 <div class="flexR gap-25 ${getVisibilityClass(task.priority)}">
-                    <p class="task-overlay-headdings">Priority:</p>
-                    <div class="flexR overlay-priority">
+                    <p class="task-overlay-headdings">Priority:</p><div class="flexR overlay-priority">
                         ${handlePriority(task.priority)} 
                         ${getPrioritySvg(task.priority)}
                     </div>

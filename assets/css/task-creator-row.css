@@ -34,6 +34,12 @@
   gap: 0;
 }
 
+.task-creator-row__details {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
 .task-creator-row__label {
   flex: 0 0 auto;
   margin: 0 25px 0 0;
@@ -95,7 +101,8 @@
     gap: 4px;
   }
 
-  .task-creator-row__meta {
+  .task-creator-row__meta,
+  .task-creator-row__details {
     display: contents;
   }
 
@@ -122,14 +129,18 @@
   }
 }
 
-/* Mobile: Extern/Member oben, Meta-Zeile wie Due Date (Label | 25px | Name | Badge) */
+/* Mobile: Label | Wert-Abstand | (Name | größerer Abstand | Badge) */
 @media (max-width: 599px) {
+  .task-overlay-header {
+    --creator-name-badge-gap: clamp(14px, calc(14px + (100vw - 320px) * 6 / 279), 20px);
+  }
+
   .task-creator-row--external,
   .task-creator-row--member {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: clamp(6px, calc(6px + (100vw - 320px) * 2 / 279), 8px);
     width: 100%;
   }
 
@@ -138,35 +149,98 @@
   }
 
   .task-creator-row__meta {
-    display: flex;
+    display: grid;
+    grid-template-columns: var(--task-overlay-label-width) minmax(0, 1fr);
+    column-gap: var(--task-overlay-value-gap);
     align-items: center;
     width: 100%;
     min-width: 0;
   }
 
   .task-creator-row__label {
-    flex: 0 0 auto;
-    min-width: var(--task-overlay-label-width);
-    margin-right: 25px;
+    grid-column: 1;
+    grid-row: 1;
+    flex: unset;
+    min-width: 0;
+    margin-right: 0;
     font-size: 16px;
     line-height: 1.2;
     white-space: nowrap;
   }
 
-  .task-creator-row__name {
-    flex: 1 1 auto;
+  .task-creator-row__details {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
     min-width: 0;
+    gap: var(--creator-name-badge-gap);
+  }
+
+  .task-creator-row__name {
+    grid-column: 1;
+    display: block;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
     font-size: 16px;
     line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .task-creator-row__email-badge,
   .task-creator-row__profile-badge {
+    grid-column: 2;
     flex: 0 0 auto;
-    margin-left: 0;
+    margin: 0;
+    padding: 0;
+  }
+
+  .task-creator-row__email-badge {
+    width: clamp(64px, calc(64px + (100vw - 320px) * 12 / 279), 76px);
+    height: clamp(20px, calc(20px + (100vw - 320px) * 4 / 279), 24px);
+  }
+
+  .task-creator-row__profile-badge {
+    width: clamp(53px, calc(53px + (100vw - 320px) * 10 / 279), 63px);
+    height: clamp(20px, calc(20px + (100vw - 320px) * 4 / 279), 24px);
+  }
+
+  .task-creator-row__type-icon {
+    width: clamp(63px, calc(63px + (100vw - 320px) * 12 / 279), 75px);
+    height: clamp(18px, calc(18px + (100vw - 320px) * 4 / 279), 22px);
+  }
+
+  .task-creator-row__member-icon {
+    width: clamp(78px, calc(78px + (100vw - 320px) * 15 / 279), 93px);
+    height: clamp(18px, calc(18px + (100vw - 320px) * 4 / 279), 22px);
   }
 
   .task-overlay-header > .task-creator-row {
     margin-block-end: 0;
+  }
+}
+
+/* 400px–320px: Name sauber kürzen, Badge-Größe unverändert */
+@media (max-width: 400px) {
+  .task-creator-row__details {
+    overflow: hidden;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    column-gap: var(--creator-name-badge-gap);
+  }
+
+  .task-creator-row__name {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .task-creator-row__email-badge,
+  .task-creator-row__profile-badge {
+    margin-left: clamp(4px, calc(4px + (100vw - 320px) * 4 / 80), 8px);
   }
 }
