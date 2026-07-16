@@ -57,6 +57,24 @@ const cases = [
     input: "Subtask:\n- Mobile testen\n\nEnddate:\n2026-08-15",
     expected: ["Mobile testen"],
   },
+  {
+    name: "plain lines under Subtask header (Create Request template)",
+    input:
+      "Description:\nBitte bestellt Party-Hüte und kauft Pizza für alle.\n\nSubtask:\nParty-Hüte bestellen\nPizza kaufen\n\nEnddate:\n2026-08-15",
+    expected: ["Party-Hüte bestellen", "Pizza kaufen"],
+  },
+  {
+    name: "free-form email with bullets, deadline and greeting",
+    input:
+      "Neuer Test\nSubtasks:\n- Angelegt\n- abgeschlossen\n\nbis 27.7.26\n\nBeste Grüße\n\nGabriele",
+    expected: ["Angelegt", "abgeschlossen"],
+  },
+  {
+    name: "free-form email without blank lines before deadline",
+    input:
+      "Neuer Test\nSubtasks:\n- Angelegt\n- abgeschlossen\nbis 27.7.26\nBeste Grüße\nGabriele",
+    expected: ["Angelegt", "abgeschlossen"],
+  },
 ];
 
 let failed = 0;

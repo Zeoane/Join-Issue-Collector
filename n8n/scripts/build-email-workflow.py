@@ -48,8 +48,14 @@ function stripHtml(value) {
   return String(value || '')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/tr>/gi, '\n')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '- ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
     .replace(/\r/g, '')
     .trim();
 }
@@ -123,14 +129,52 @@ function normalizeEmailText(value) {
   return String(text || '').replace(/\r/g, '').trim();
 }
 
+function extractBodyFromGmailPayload(payload) {
+  if (!payload || typeof payload !== 'object') return '';
+  const chunks = [];
+  function walk(part) {
+    if (!part || typeof part !== 'object') return;
+    const mime = String(part.mimeType || '').toLowerCase();
+    const data = part.body?.data;
+    if (typeof data === 'string' && data.trim()) {
+      try {
+        const decoded = Buffer.from(data.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+        if (mime.includes('text/plain')) chunks.unshift(decoded);
+        else if (mime.includes('text/html')) chunks.push(decoded);
+        else chunks.push(decoded);
+      } catch (_) {}
+    }
+    if (Array.isArray(part.parts)) part.parts.forEach(walk);
+  }
+  walk(payload);
+  for (const chunk of chunks) {
+    const text = chunk.includes('<') ? stripHtml(chunk) : String(chunk || '').trim();
+    const normalized = normalizeEmailText(text);
+    if (normalized) return normalized;
+  }
+  return '';
+}
+
 function extractBody(item) {
-  const candidates = [item.textPlain, item.text, item.textContent, item.textAsHtml, item.textHtml, item.htmlContent];
+  const candidates = [
+    item.textPlain,
+    item.text,
+    item.textContent,
+    item.textAsHtml,
+    item.textHtml,
+    item.htmlContent,
+    item.html,
+    item.body,
+  ];
   for (const candidate of candidates) {
     if (typeof candidate === 'string' && candidate.trim()) {
       const raw = candidate.includes('<') ? stripHtml(candidate) : candidate.trim();
-      return normalizeEmailText(raw);
+      const normalized = normalizeEmailText(raw);
+      if (normalized) return normalized;
     }
   }
+  const fromPayload = extractBodyFromGmailPayload(item.payload);
+  if (fromPayload) return fromPayload;
   return item.snippet ? normalizeEmailText(item.snippet) : '';
 }
 
@@ -246,8 +290,31 @@ function normalizeDueDate(value) {
 
 """ + SUBTASK_EXTRACTION_JS + r"""
 
+function normalizeAiSubtasks(input) {
+  if (!Array.isArray(input)) return [];
+  const out = [];
+  const seen = new Set();
+  for (const entry of input) {
+    let value = '';
+    if (typeof entry === 'string') value = entry;
+    else if (entry && typeof entry === 'object' && typeof entry.value === 'string') value = entry.value;
+    value = normalizeSubtaskValue(value);
+    if (!value) continue;
+    const key = value.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ value, checked: false });
+  }
+  return out;
+}
+
 const creatorName = normalizeCreatorName(parsed.creatorName) || parseFromDisplayName(fromRaw) || '';
-const subtasks = extractExplicitSubtasks(email.body);
+// Prefer deterministic extraction whenever a Subtask/Subtasks section exists.
+// AI subtasks are only a fallback for free-form emails without that section.
+const explicitSubtasks = extractExplicitSubtasks(email.body);
+const subtasks = explicitSubtasks.length
+  ? explicitSubtasks
+  : normalizeAiSubtasks(parsed.subtasks);
 
 return [{
   json: {
@@ -674,27 +741,37 @@ GMAIL_RFC_QUERY_ERR = (
     "=rfc822msgid:{{ $('Resolve Gmail label IDs (error)').item.json.searchRfcId }}"
 )
 GMAIL_NODE_VERSION = 2.1
-GMAIL_CRED = {"gmailOAuth2": {"id": "GMAIL_CREDENTIAL_ID", "name": "Gmail account"}}
-IMAP_CRED = {"imap": {"id": "IMAP_CREDENTIAL_ID", "name": "IMAP account"}}
-OPENAI_CRED = {"openAiApi": {"id": "OPENAI_CREDENTIAL_ID", "name": "OpenAI account"}}
-HTTP_CRED = {"httpHeaderAuth": {"id": "HTTP_HEADER_AUTH_ID", "name": "Header Auth account"}}
+GMAIL_CRED = {"gmailOAuth2": {"id": "15U509ehBEzJwEV9", "name": "Gmail account 3"}}
+IMAP_CRED = {"imap": {"id": "v6fJz0hh1XAMh9uB", "name": "IMAP account 3"}}
+OPENAI_CRED = {"openAiApi": {"id": "qXmdRSJivefpurUF", "name": "OpenAI account 2"}}
+HTTP_CRED = {"httpHeaderAuth": {"id": "HjH4uC7k7UHF6k0F", "name": "Header Auth account"}}
 
 AI_PROMPT = (
     "=You parse stakeholder emails into Kanban ticket fields for Join-Issue Collector.\n\n"
-    "Stakeholders often use this structure (each label on its own line):\n"
-    "- Description: main request text\n"
-    "- Subtask: optional subtasks (bullets or one item per line)\n"
-    "- Enddate: optional deadline in YYYY-MM-DD or DD.MM.YYYY\n\n"
-    "Ignore email signatures and company footers (contact lines like E-Mail, Tel, Webseite, "
-    "Adresse, HRB). Never put signature or footer content into description or subtasks.\n\n"
+    "Two email styles are common:\n"
+    "1) Create Request template with labels Description: / Subtask: / Enddate:\n"
+    "2) Free-form email from any mailbox, often with a short title, optional Subtasks: bullet list, "
+    "a deadline line like 'bis 27.7.26', then a greeting and sender name.\n\n"
+    "Rules:\n"
+    "- title: short summary (subject or first content line), max 80 chars\n"
+    "- description: the request text WITHOUT Subtask/Subtasks bullets, WITHOUT deadline lines, "
+    "WITHOUT greeting/signature/name\n"
+    "- subtasks: ONLY concrete action items from an explicit Subtask/Subtasks list "
+    "(bullets or numbered). Never include title, description prose, deadline lines "
+    "('bis …', dates), greetings ('Beste Grüße', 'LG'), or person names.\n"
+    "- If there is no Subtask/Subtasks section, return subtasks as [].\n"
+    "- dueDate: from Enddate or lines like 'bis 27.7.26' / 'bis zum 27.07.2026' as YYYY-MM-DD; "
+    "else empty string\n"
+    "- Ignore signatures and company footers.\n\n"
     "Return ONLY valid JSON with these keys:\n"
-    "- title (string, max 80 chars)\n"
-    "- description (string: only the Description section, without Subtask/Enddate/signature)\n"
+    "- title (string)\n"
+    "- description (string)\n"
     '- category: exactly "User Story" or "Technical Task"\n'
     '- priority: exactly "HighPriority", "MidPriority", or "LowPriority"\n'
-    '- dueDate: "YYYY-MM-DD" from Enddate when provided, otherwise empty string\n'
-    '- creatorName (string: first and last name from the email signature at the end of the body, '
-    'or from the sender display name; never an email address; never the word "Stakeholder")\n\n'
+    '- dueDate: "YYYY-MM-DD" or empty string\n'
+    "- subtasks (array of strings; empty array when none)\n"
+    "- creatorName (string: first and last name from signature or sender display name; "
+    'never an email address; never "Stakeholder")\n\n'
     "Email from: {{ $json.from }}\n"
     "Subject: {{ $json.subject }}\n"
     "Body:\n{{ $json.body }}"
@@ -1243,5 +1320,95 @@ workflow = {
     "tags": [],
 }
 
-OUT.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-print(f"Wrote {OUT} ({len(workflow['nodes'])} nodes)")
+def node_base_name(name: str) -> str:
+    return __import__("re").sub(r"\s*\d+$", "", str(name or "")).strip()
+
+
+def patch_existing_workflow(canonical: dict) -> dict | None:
+    """Merge logic/config fixes into the live export without dropping extra branches."""
+    if not OUT.exists():
+        return None
+    live = json.loads(OUT.read_text(encoding="utf-8"))
+    if not isinstance(live.get("nodes"), list):
+        return None
+
+    canonical_by_base = {
+        node_base_name(node["name"]): node for node in canonical["nodes"]
+    }
+    updated = 0
+
+    for node in live["nodes"]:
+        base = node_base_name(node["name"])
+        src = canonical_by_base.get(base)
+        if not src or src.get("type") != node.get("type"):
+            continue
+
+        src_params = src.get("parameters") or {}
+        node_params = node.setdefault("parameters", {})
+
+        if "jsCode" in src_params:
+            node_params["jsCode"] = src_params["jsCode"]
+            updated += 1
+        if "text" in src_params and "Parse ticket with AI" in base:
+            node_params["text"] = src_params["text"]
+            updated += 1
+        if base.startswith("Email Trigger (IMAP)"):
+            node_params["postProcessAction"] = "read"
+            options = node_params.setdefault("options", {})
+            options["customEmailConfig"] = '["UNSEEN"]'
+            options["forceReconnect"] = 15
+            updated += 1
+        if base.startswith("Schedule Trigger"):
+            node_params["rule"] = {"interval": [{"field": "minutes", "minutesInterval": 5}]}
+            updated += 1
+        if base.startswith("Fetch unread emails (Gmail)"):
+            node_params["resource"] = "message"
+            node_params["operation"] = "getAll"
+            node_params["returnAll"] = True
+            node_params["filters"] = {"readStatus": "unread", "labelIds": ["INBOX"]}
+            node_params.setdefault("options", {})["simplify"] = False
+            updated += 1
+        if "Find Gmail by RFC ID" in base:
+            node_params.setdefault("options", {})["simplify"] = False
+            updated += 1
+        if "notes" in src and not node.get("notes"):
+            node["notes"] = src["notes"]
+
+    # Ensure manual test entrypoint still exists and is wired.
+    has_manual = any(
+        node_base_name(n["name"]) == "When clicking 'Execute workflow'"
+        for n in live["nodes"]
+    )
+    sample = next(
+        (n for n in live["nodes"] if node_base_name(n["name"]) == "Sample stakeholder email"),
+        None,
+    )
+    if not has_manual and sample is not None:
+        live["nodes"].append(
+            {
+                "parameters": {},
+                "id": "n-manual-live",
+                "name": "When clicking 'Execute workflow'",
+                "type": "n8n-nodes-base.manualTrigger",
+                "typeVersion": 1,
+                "position": [sample["position"][0] - 240, sample["position"][1]],
+                "notes": "Manual test without real email.",
+            }
+        )
+        live.setdefault("connections", {})["When clicking 'Execute workflow'"] = {
+            "main": [[{"node": sample["name"], "type": "main", "index": 0}]]
+        }
+        updated += 1
+
+    live["active"] = True
+    print(f"Patched live workflow nodes/fields: {updated}")
+    return live
+
+
+patched = patch_existing_workflow(workflow)
+if patched is not None:
+    OUT.write_text(json.dumps(patched, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Updated live {OUT} ({len(patched['nodes'])} nodes, preserved extra branches)")
+else:
+    OUT.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Wrote {OUT} ({len(workflow['nodes'])} nodes)")
