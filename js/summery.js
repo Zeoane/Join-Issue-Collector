@@ -56,25 +56,23 @@ async function loadUserData() {
 }
 
 /**
+ * Applies guest-specific greeting tweaks (empty name/comma).
+ * @param {Object} user
+ * @param {string} formattedName
+ */
+function applySummaryGreeting(user, formattedName) {
+  setTextByIds(["userName", "userNameMobile"], formattedName);
+  if (user.guest) setTextByIds(["comma", "commaMobile"], "");
+}
+
+/**
  * Initializes the dashboard with the user's formatted name and greeting.
  * @returns {Promise<void>}
  */
 async function initSummaryPage() {
   const user = await loadUserData();
   const formattedName = user.guest ? "" : formatName(user?.name || "Unknown User");
-
-  ["userName", "userNameMobile"].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = formattedName;
-  });
-
-  if (user.guest) {
-    ["comma", "commaMobile"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.textContent = "";
-    });
-  }
-
+  applySummaryGreeting(user, formattedName);
   await showCurrentTime();
 }
 
@@ -236,30 +234,31 @@ function renderTaskCounts(counts, total, highPriority) {
 }
 
 /**
- * Displays the next upcoming high-priority deadline, if any.
- * Writes "No urgent deadlines" if the list is empty.
- * Expects an element with ID "nextDeadlineDate".
- *
- * @param {Date[]} dates - Upcoming urgent deadlines
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatDeadlineDate(date) {
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+/**
+ * Displays the next upcoming high-priority deadline.
+ * @param {Date[]} dates
  * @returns {void}
  */
 function renderNextDeadline(dates) {
   const elem = document.getElementById("nextDeadlineDate");
   if (!elem) return;
-
   if (dates.length === 0) {
     elem.innerText = "No urgent deadlines";
     return;
   }
-
-  const next = new Date(Math.min(...dates.map(date => date.getTime())));
-  const formatted = next.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric"
-  });
-
-  elem.innerText = formatted;
+  const next = new Date(Math.min(...dates.map((date) => date.getTime())));
+  elem.innerText = formatDeadlineDate(next);
 }
 
 /**
@@ -324,28 +323,12 @@ const MOBILE_GREETING_DISPLAY_MS = 2000;
 const MOBILE_GREETING_FADE_MS = 1000;
 
 /**
- * Shows the mobile greeting overlay after login (mobile only), then fades it out.
- * Requires an element with ID "MobileGreeting" and CSS classes "hidden" and "fade-out".
- *
- * Controlled by `sessionStorage.showMobileGreeting === "1"`.
- * Clears the storage flag after hiding the overlay.
- *
+ * Fades out and hides the mobile greeting overlay.
+ * @param {HTMLElement} overlay
  * @returns {Promise<void>}
  */
-async function showMobileGreetingIfNeeded() {
-  const overlay = document.getElementById("MobileGreeting");
-  const shouldShow = sessionStorage.getItem("showMobileGreeting") === "1";
-  const isMobile = window.matchMedia(MOBILE_GREETING_BREAKPOINT).matches;
-
-  if (!overlay || !shouldShow || !isMobile) {
-    if (shouldShow) sessionStorage.removeItem("showMobileGreeting");
-    return;
-  }
-
-  overlay.classList.remove("hidden");
-  document.body.style.visibility = "visible";
-
-  await new Promise((resolve) => {
+function fadeOutMobileGreeting(overlay) {
+  return new Promise((resolve) => {
     setTimeout(() => {
       overlay.classList.add("fade-out");
       setTimeout(() => {
@@ -356,4 +339,21 @@ async function showMobileGreetingIfNeeded() {
       }, MOBILE_GREETING_FADE_MS);
     }, MOBILE_GREETING_DISPLAY_MS);
   });
+}
+
+/**
+ * Shows the mobile greeting overlay after login, then fades it out.
+ * @returns {Promise<void>}
+ */
+async function showMobileGreetingIfNeeded() {
+  const overlay = document.getElementById("MobileGreeting");
+  const shouldShow = sessionStorage.getItem("showMobileGreeting") === "1";
+  const isMobile = window.matchMedia(MOBILE_GREETING_BREAKPOINT).matches;
+  if (!overlay || !shouldShow || !isMobile) {
+    if (shouldShow) sessionStorage.removeItem("showMobileGreeting");
+    return;
+  }
+  overlay.classList.remove("hidden");
+  document.body.style.visibility = "visible";
+  await fadeOutMobileGreeting(overlay);
 }

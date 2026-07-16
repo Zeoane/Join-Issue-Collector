@@ -1,9 +1,5 @@
 /**
- * Gemeinsame Hilfsfunktionen für Join-Issue Collector.
- */
-
-/**
- * Escaped HTML-Sonderzeichen gegen XSS.
+ * Escaped HTML - special characters against XSS.
  * @param {unknown} value
  * @returns {string}
  */
@@ -18,7 +14,7 @@ function escapeHtml(value) {
 }
 
 /**
- * Escaped Strings für JS-Einzeil-Attribute (onclick etc.).
+ * Escaped strings for inline JS attributes (onclick, etc.).
  * @param {unknown} value
  * @returns {string}
  */
@@ -116,33 +112,23 @@ function isGuestUser() {
 }
 
 /**
+ * @param {string} creatorEmail
+ * @param {string} creatorName
+ * @returns {{creatorEmail:string,creatorName:string,creatorType:"internal",aiGenerated:false}}
+ */
+function buildCreatorFields(creatorEmail, creatorName) {
+  return { creatorEmail, creatorName, creatorType: "internal", aiGenerated: false };
+}
+
+/**
  * Creator metadata for manually created board tasks.
  * @returns {{creatorEmail:string,creatorName:string,creatorType:"internal"|"external",aiGenerated:boolean}}
  */
 function getTaskCreatorFields() {
   const user = window.firebaseAuth?.currentUser;
-  if (!user) {
-    return {
-      creatorEmail: "",
-      creatorName: "Unknown",
-      creatorType: "internal",
-      aiGenerated: false,
-    };
-  }
-  if (isGuestUser()) {
-    return {
-      creatorEmail: "",
-      creatorName: "Guest",
-      creatorType: "internal",
-      aiGenerated: false,
-    };
-  }
-  return {
-    creatorEmail: user.email || "",
-    creatorName: "",
-    creatorType: "internal",
-    aiGenerated: false,
-  };
+  if (!user) return buildCreatorFields("", "Unknown");
+  if (isGuestUser()) return buildCreatorFields("", "Guest");
+  return buildCreatorFields(user.email || "", "");
 }
 
 /**
@@ -277,20 +263,27 @@ function normalizeDueDateValue(value) {
  * @param {unknown} value
  * @returns {string}
  */
+/**
+ * @param {string} year
+ * @param {string} month
+ * @param {string} day
+ * @returns {boolean}
+ */
+function isValidDateParts(year, month, day) {
+  if (!year || !month || !day) return false;
+  if (!/^\d{4}$/.test(year) || !/^\d{2}$/.test(month) || !/^\d{2}$/.test(day)) return false;
+  return !Number.isNaN(Number(year)) && !Number.isNaN(Number(month)) && !Number.isNaN(Number(day));
+}
+
+/**
+ * @param {unknown} value
+ * @returns {string}
+ */
 function formatDueDateForDisplay(value) {
   const normalized = normalizeDueDateValue(value);
   if (!normalized) return "";
-
-  const datePart = normalized.split("T")[0].trim();
-  const [year, month, day] = datePart.split("-");
-  if (!year || !month || !day) return "";
-  if (!/^\d{4}$/.test(year) || !/^\d{2}$/.test(month) || !/^\d{2}$/.test(day)) {
-    return "";
-  }
-  if (Number.isNaN(Number(year)) || Number.isNaN(Number(month)) || Number.isNaN(Number(day))) {
-    return "";
-  }
-
+  const [year, month, day] = normalized.split("T")[0].trim().split("-");
+  if (!isValidDateParts(year, month, day)) return "";
   return `${day}/${month}/${year}`;
 }
 

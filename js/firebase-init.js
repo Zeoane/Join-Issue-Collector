@@ -1,5 +1,5 @@
 /**
- * Initialisiert Firebase App, Auth und Database (Compat SDK).
+ * Initializes Firebase App, Auth and Database (Compat SDK).
  */
 (function initFirebase() {
   const config = window.FIREBASE_CONFIG;

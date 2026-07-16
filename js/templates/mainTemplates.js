@@ -14,45 +14,34 @@ const SEPARATOR_SVG  =`<svg width="2" height="24" viewBox="0 0 2 24" fill="none"
 const BOARD_SVG =`<svg width="31" height="26" viewBox="0 0 31 26" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M23.4544 2.77273L23.4545 23.2271C23.4538 23.8296 23.2142 24.4074 22.7881 24.8334C22.362 25.2595 21.7843 25.4992 21.1817 25.4998L16.6363 25.4998C16.0338 25.4992 15.456 25.2595 15.03 24.8334C14.6039 24.4074 14.3642 23.8296 14.3636 23.2271L14.3636 2.77273C14.3642 2.17015 14.6039 1.59243 15.03 1.16635C15.456 0.740262 16.0338 0.500623 16.6363 0.50002L21.1817 0.50002C21.7843 0.500623 22.362 0.740262 22.7881 1.16635C23.2142 1.59243 23.4538 2.17015 23.4544 2.77273ZM16.6363 23.2271L21.1817 23.2271L21.1817 2.77273L16.6363 2.77273L16.6363 23.2271ZM16.6363 2.77273L16.6363 23.2271C16.6357 23.8296 16.3961 24.4073 15.97 24.8334C15.5439 25.2595 14.9662 25.4991 14.3636 25.4997L9.81823 25.4997C9.21566 25.4991 8.63794 25.2595 8.21185 24.8334C7.78577 24.4073 7.54613 23.8296 7.54553 23.227L7.54553 2.7727C7.54613 2.17013 7.78577 1.59241 8.21185 1.16632C8.63793 0.740238 9.21566 0.500602 9.81823 0.5L14.3636 0.499999C14.9662 0.500602 15.5439 0.740238 15.97 1.16632C16.3961 1.59241 16.6357 2.17015 16.6363 2.77273ZM9.81823 23.227L14.3636 23.2271L14.3636 2.77273L9.81823 2.7727L9.81823 23.227ZM9.81823 2.7727L9.81823 23.227C9.81763 23.8296 9.57799 24.4073 9.15191 24.8334C8.72582 25.2595 8.1481 25.4991 7.54553 25.4997L3.00012 25.4997C2.39755 25.4991 1.81983 25.2595 1.39374 24.8334C0.967657 24.4073 0.728019 23.8296 0.727417 23.227L0.727416 2.7727C0.728018 2.17013 0.967656 1.59241 1.39374 1.16632C1.81982 0.740238 2.39755 0.500603 3.00012 0.5L7.54553 0.5C8.1481 0.500602 8.72582 0.740238 9.1519 1.16632C9.57799 1.59241 9.81763 2.17013 9.81823 2.7727ZM3.00012 23.227L7.54553 23.227L7.54553 2.7727L3.00012 2.7727L3.00012 23.227Z" fill="white"/><path d="M30.2726 2.77298L30.2726 23.2273C30.272 23.8299 30.0323 24.4076 29.6062 24.8337C29.1802 25.2598 28.6024 25.4994 27.9999 25.5L23.4545 25.5C22.8519 25.4994 22.2742 25.2598 21.8481 24.8337C21.422 24.4076 21.1824 23.8296 21.1817 23.2271L21.1817 2.77273C21.1823 2.17015 21.422 1.59268 21.8481 1.1666C22.2742 0.740514 22.8519 0.500876 23.4544 0.500274L27.9999 0.500273C28.6024 0.500876 29.1801 0.740514 29.6062 1.1666C30.0323 1.59268 30.272 2.1704 30.2726 2.77298ZM23.4545 23.2271L27.9999 23.2273L27.9999 2.77298L23.4544 2.77273L23.4545 23.2271Z" fill="white"/></svg>`;
 
 /**
- * Template für eine Drag-Area in einer Board-Spalte
- * @param {string} dragAreaId - Die ID der Drag-Area
- * @returns {string} HTML-Template für die Drag-Area
- */
-/**
  * Template for a drag placeholder area inside a board column.
- *
- * @param {string} dragAreaId - The unique ID of the drag area element.
- * @returns {string} HTML string for the drag area container.
+ * @param {string} dragAreaId
+ * @returns {string}
  */
 function dragAreaTemplate(dragAreaId) {
     return `<div class="drag-area display-none" id="${dragAreaId}"></div>`;
 }
 
+/**
+ * @returns {string}
+ */
+function renderHeaderUserMenuHtml() {
+    return `
+            <div class="flexC not-visible" id="menu">
+                <a class="helpMobileLink" href="help.html">Help</a>
+                <a href="../index/legal-notice.html" onclick="closeMenu(); hardNavigate(event, this.href)">Legal notice</a>
+                <a href="../index/privacy.html" onclick="closeMenu(); hardNavigate(event, this.href)">Privacy Policy</a>
+                <a onclick="logout(event)" href="login.html">Log Out</a>
+            </div>`;
+}
 
 /**
- * Renders the top header/navigation bar HTML depending on the current page.
- * Decides visibility of help/user menu elements per route.
- *
- * @returns {string} HTML string for the header content.
+ * @param {boolean} hideUserInfo
+ * @param {boolean} hideInfoHeader
+ * @returns {string}
  */
-function renderHeaderContent() {
-    const pagesToHideUserInfo = [
-        'legal-notice.html',
-        'privacy.html',
-        'legal-notice-login.html',
-        'privacy-login.html'
-    ];
-    const hideHelpLinkPages = [
-        'help.html'
-    ];
-    const currentPage = window.location.pathname.split('/').pop();
-
-    const hideUserInfo = pagesToHideUserInfo.includes(currentPage);
-    const hideInfoHeader = hideHelpLinkPages.includes(currentPage);
-
+function renderHeaderUserInfo(hideUserInfo, hideInfoHeader) {
     return `
-        <h3>Kanban Project Management Tool</h3>
-        <img class="joinM" src="../img/Capa 3.png" alt="">
         <div class="userInfo flexR gap-16 ${hideUserInfo ? 'hidden-userinfo' : ''}">
             <a href="help.html" id="helpLink" class="${hideInfoHeader ? 'hidden-userinfo' : ''}">
                 <img class="help" src="../img/SummaryUser/help.png" alt="" />
@@ -60,24 +49,25 @@ function renderHeaderContent() {
             <button onclick="toggleMenu()" id="userProfile" class="initials-button">
                 <span id="userInitials" class="contact-icon flexR"></span>
             </button>
-            <div class="flexC not-visible" id="menu">
-                <a class="helpMobileLink" href="help.html">Help</a>
-
-<a href="../index/legal-notice.html"
-   onclick="closeMenu(); hardNavigate(event, this.href)">Legal notice</a>
-
-<a href="../index/privacy.html"
-   onclick="closeMenu(); hardNavigate(event, this.href)">Privacy Policy</a>
-
-<a onclick="logout(event)" href="login.html">Log Out</a>
-
-            </div>
-        </div>
-    `;
+            ${renderHeaderUserMenuHtml()}
+        </div>`;
 }
 
+/**
+ * Renders the top header/navigation bar HTML.
+ * @returns {string}
+ */
+function renderHeaderContent() {
+    const pagesToHideUserInfo = ['legal-notice.html', 'privacy.html', 'legal-notice-login.html', 'privacy-login.html'];
+    const currentPage = window.location.pathname.split('/').pop();
+    const hideUserInfo = pagesToHideUserInfo.includes(currentPage);
+    const hideInfoHeader = currentPage === 'help.html';
+    return `
+        <h3>Kanban Project Management Tool</h3>
+        <img class="joinM" src="../img/Capa 3.png" alt="">
+        ${renderHeaderUserInfo(hideUserInfo, hideInfoHeader)}`;
+}
 
-// === Header Helpers (nur 1x deklarieren) ===
 /**
  * Toggles the visibility of the profile menu in the header (global singleton).
  */
@@ -89,7 +79,6 @@ if (!window.toggleMenu) {
   };
 }
 
-
 /**
  * Closes the profile menu in the header (global singleton).
  */
@@ -100,7 +89,6 @@ if (!window.closeMenu) {
     menu.classList.add('not-visible');
   };
 }
-
 
 /**
  * Forces navigation to a given href, even if other handlers preventDefault.
@@ -120,97 +108,108 @@ if (!window.hardNavigate) {
   };
 }
 
+/**
+ * @param {string} activePage
+ * @param {string} href
+ * @param {string} label
+ * @param {string} icon
+ * @param {string} pageKey
+ * @returns {string}
+ */
+function renderNavLink(activePage, href, label, icon, pageKey) {
+  return `
+        <a href="${href}" class="menuOption flexR${activePage === pageKey ? ' aktiveNav' : ''}">
+          <img class="icon" src="${icon}" alt=""><p>${label}</p>
+        </a>`;
+}
 
 /**
- * Renders the left navigation for authenticated pages, marking the active link.
- *
- * @param {string} activePage - One of 'summary'|'addTask'|'board'|'contacts'|'privacy'|'legal-notice'.
- * @returns {string} HTML for the left navigation area.
+ * @param {string} activePage
+ * @returns {string}
+ */
+function renderMainNavLinks(activePage) {
+  return `
+      <div class="width-100 flexC menu">
+        ${renderNavLink(activePage, 'summary.html', 'Summary', '../img/summary.png', 'summary')}
+        ${renderNavLink(activePage, 'addTask.html', 'Add Task', '../img/add-tasks.png', 'addTask')}
+        ${renderNavLink(activePage, 'board.html', 'Board', '../img/Board.png', 'board')}
+        ${renderNavLink(activePage, 'contacts.html', 'Contacts', '../img/contacts.png', 'contacts')}
+      </div>`;
+}
+
+/**
+ * Renders the left navigation for authenticated pages.
+ * @param {string} activePage
+ * @returns {string}
  */
 function linkesNav(activePage) {
-  const isGuest = localStorage.getItem("guestMode") === "true";
-
-  const privacyHref = "../index/privacy.html";
-  const legalHref = "../index/legal-notice.html";
-
   return `
     <div class="flexC nav-menu-top">
       <img class="join" src="../img/fav-icon.png" alt="">
-      <div class="width-100 flexC menu">
-        <a href="summary.html" class="flexR menuOption${activePage === 'summary' ? ' aktiveNav' : ''}">
-          <img class="icon" src="../img/summary.png" alt="">
-          <p>Summary</p>
-        </a>
-        <a href="addTask.html" class="menuOption flexR${activePage === 'addTask' ? ' aktiveNav' : ''}">
-          <img class="icon" src="../img/add-tasks.png" alt="">
-          <p>Add Task</p>
-        </a>
-        <a href="board.html" class="menuOption flexR${activePage === 'board' ? ' aktiveNav' : ''}">
-          <img class="icon" src="../img/Board.png" alt="">
-          <p>Board</p>
-        </a>
-        <a href="contacts.html" class="menuOption flexR${activePage === 'contacts' ? ' aktiveNav' : ''}">
-          <img class="icon" src="../img/contacts.png" alt="">
-          <p>Contacts</p>
-        </a>
-      </div>
+      ${renderMainNavLinks(activePage)}
     </div>
     <div class="legalLinks">
-      <a href="${privacyHref}" class="privacyPolicy${activePage === 'privacy' ? ' aktiveNav' : ''}">Privacy Policy</a>
-      <a href="${legalHref}" class="legalNotice${activePage === 'legal-notice' ? ' aktiveNav' : ''}">Legal notice</a>
-    </div>
-  `;
+      <a href="../index/privacy.html" class="privacyPolicy${activePage === 'privacy' ? ' aktiveNav' : ''}">Privacy Policy</a>
+      <a href="../index/legal-notice.html" class="legalNotice${activePage === 'legal-notice' ? ' aktiveNav' : ''}">Legal notice</a>
+    </div>`;
 }
 
+const LOGIN_NAV_SVG = `<svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.86686 16.3274C8.62131 16.3274 8.41547 16.2443 8.24936 16.0782C8.08325 15.9121 8.0002 15.7062 8.0002 15.4607C8.0002 15.2151 8.08325 15.0093 8.24936 14.8432C8.41547 14.6771 8.62131 14.594 8.86686 14.594H14.0669V2.46069H8.86686C8.62131 2.46069 8.41547 2.37763 8.24936 2.21152C8.08325 2.04541 8.0002 1.83958 8.0002 1.59402C8.0002 1.34847 8.08325 1.14263 8.24936 0.976523C8.41547 0.810412 8.62131 0.727356 8.86686 0.727356H14.0669C14.5435 0.727356 14.9516 0.897078 15.291 1.23652C15.6305 1.57597 15.8002 1.98402 15.8002 2.46069V14.594C15.8002 15.0707 15.6305 15.4787 15.291 15.8182C14.9516 16.1576 14.5435 16.3274 14.0669 16.3274H8.86686ZM7.28519 9.39402H1.06686C0.821306 9.39402 0.615473 9.31097 0.449362 9.14486C0.283251 8.97874 0.200195 8.77291 0.200195 8.52736C0.200195 8.2818 0.283251 8.07597 0.449362 7.90986C0.615473 7.74374 0.821306 7.66069 1.06686 7.66069H7.28519L5.6602 6.03569C5.50131 5.8768 5.42186 5.6818 5.42186 5.45069C5.42186 5.21958 5.50131 5.01736 5.6602 4.84402C5.81908 4.67069 6.02131 4.58041 6.26686 4.57319C6.51242 4.56597 6.72186 4.64902 6.8952 4.82236L9.99353 7.92069C10.1669 8.09402 10.2535 8.29624 10.2535 8.52736C10.2535 8.75847 10.1669 8.96069 9.99353 9.13402L6.8952 12.2324C6.72186 12.4057 6.51603 12.4887 6.2777 12.4815C6.03936 12.4743 5.83353 12.384 5.6602 12.2107C5.50131 12.0374 5.42547 11.8315 5.43269 11.5932C5.43992 11.3549 5.52297 11.1562 5.68186 10.9974L7.28519 9.39402Z" fill="#CDCDCD"/></svg>`;
 
 /**
- * Renders the left navigation for login pages with privacy/legal links.
- *
- * @param {string} activePage - One of 'privacy'|'privacy-login'|'legal-notice'|'legal-notice-login'.
- * @returns {string} HTML for the login left navigation.
+ * Renders the left navigation for login pages.
+ * @param {string} activePage
+ * @returns {string}
  */
 function linkesNavLogin(activePage) {
+    const privacyActive = activePage === 'privacy' || activePage === 'privacy-login' ? ' aktiveNav' : '';
+    const legalActive = activePage === 'legal-notice' || activePage === 'legal-notice-login' ? ' aktiveNav' : '';
     return `
     <div class="login-menu flexC">
         <img class="join" src="../img/fav-icon.png" alt="">
-        <a onclick="logout(event)" href="../index/login.html" class="login-link flexR">
-            <svg width="16" height="17" viewBox="0 0 16 17" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M8.86686 16.3274C8.62131 16.3274 8.41547 16.2443 8.24936 16.0782C8.08325 15.9121 8.0002 15.7062 8.0002 15.4607C8.0002 15.2151 8.08325 15.0093 8.24936 14.8432C8.41547 14.6771 8.62131 14.594 8.86686 14.594H14.0669V2.46069H8.86686C8.62131 2.46069 8.41547 2.37763 8.24936 2.21152C8.08325 2.04541 8.0002 1.83958 8.0002 1.59402C8.0002 1.34847 8.08325 1.14263 8.24936 0.976523C8.41547 0.810412 8.62131 0.727356 8.86686 0.727356H14.0669C14.5435 0.727356 14.9516 0.897078 15.291 1.23652C15.6305 1.57597 15.8002 1.98402 15.8002 2.46069V14.594C15.8002 15.0707 15.6305 15.4787 15.291 15.8182C14.9516 16.1576 14.5435 16.3274 14.0669 16.3274H8.86686ZM7.28519 9.39402H1.06686C0.821306 9.39402 0.615473 9.31097 0.449362 9.14486C0.283251 8.97874 0.200195 8.77291 0.200195 8.52736C0.200195 8.2818 0.283251 8.07597 0.449362 7.90986C0.615473 7.74374 0.821306 7.66069 1.06686 7.66069H7.28519L5.6602 6.03569C5.50131 5.8768 5.42186 5.6818 5.42186 5.45069C5.42186 5.21958 5.50131 5.01736 5.6602 4.84402C5.81908 4.67069 6.02131 4.58041 6.26686 4.57319C6.51242 4.56597 6.72186 4.64902 6.8952 4.82236L9.99353 7.92069C10.1669 8.09402 10.2535 8.29624 10.2535 8.52736C10.2535 8.75847 10.1669 8.96069 9.99353 9.13402L6.8952 12.2324C6.72186 12.4057 6.51603 12.4887 6.2777 12.4815C6.03936 12.4743 5.83353 12.384 5.6602 12.2107C5.50131 12.0374 5.42547 11.8315 5.43269 11.5932C5.43992 11.3549 5.52297 11.1562 5.68186 10.9974L7.28519 9.39402Z" fill="#CDCDCD"/>
-            </svg>
-
-            <p>Log in</p>
-        </a>
-
+        <a onclick="logout(event)" href="../index/login.html" class="login-link flexR">${LOGIN_NAV_SVG}<p>Log in</p></a>
     </div>
     <div class="legalLinks flexC">
-        <a href="../index/privacy-login.html" class="privacyPolicy ${activePage === 'privacy' || activePage === 'privacy-login' ? ' aktiveNav' : ''}">Privacy Policy</a>
-        <a href="../index/legal-notice-login.html" class="legalNotice ${activePage === 'legal-notice' || activePage === 'legal-notice-login' ? ' aktiveNav' : ''}">Legal notice</a>
-    </div>`
+        <a href="../index/privacy-login.html" class="privacyPolicy${privacyActive}">Privacy Policy</a>
+        <a href="../index/legal-notice-login.html" class="legalNotice${legalActive}">Legal notice</a>
+    </div>`;
 }
 
+/**
+ * @param {string} safeId
+ * @returns {string}
+ */
+function getTaskCardDragAttrs(safeId) {
+  return `draggable="true" ondragstart="startDragging(event, '${safeId}')" ondragend="stopDragging(event, '${safeId}')"`;
+}
 
 /**
- * Generates the task card markup for the board grid including DnD/mobile handlers.
- *
- * @param {Object} task - Task object with fields id,title,description,category,priority,assignee,subtasks.
- * @returns {string} HTML string representing the task card.
+ * @param {string} safeId
+ * @returns {string}
  */
-function taskCardTemplate(task) {
-    const safeId = escapeJsString(task.id);
-    return `
-        <div class="task-card width-100 flexC" id="${escapeHtml(task.id)}"
-              onclick="if(window.__mobileDragging){window.__mobileDragging=false; return false;} taskOverlay('${safeId}')"
-              draggable="true" ondragstart="startDragging(event, '${safeId}')"
-              ondragend="stopDragging(event, '${safeId}')"
-              ontouchstart="this._startX=event.touches[0].clientX; this._startY=event.touches[0].clientY; this._hasMoved=false; this._lpt=setTimeout(()=>{ window.__mobileDragging=true; try{ startDragging({dataTransfer:{setDragImage:()=>{}}}, '${safeId}'); }catch(e){ currentDraggedElement='${safeId}'; this.classList.add('dragging'); } }, 250)"
-              ontouchmove="const t=event.touches[0]; const deltaX=Math.abs(t.clientX-this._startX); const deltaY=Math.abs(t.clientY-this._startY); this._hasMoved=true; if(window.__mobileDragging){ const el=document.elementFromPoint(t.clientX,t.clientY); const col=el && el.closest('.board-column-bottom'); const map={triageColumn:'triageDragArea', todoColumn:'toDoDragArea', inProgressColumn:'inProgressDragArea', awaitFeedbackColumn:'awaitingFeedbackDragArea', doneColumn:'doneDragArea'}; Object.keys(map).forEach(k=>{ if(!col || k!==col.id) removeHighlight(map[k]); }); if(col && map[col.id]){ highlight(map[col.id]); } if(event.cancelable) event.preventDefault(); } else if(deltaX > deltaY && deltaX > 10) { clearTimeout(this._lpt); }"
-              ontouchend="clearTimeout(this._lpt); if(window.__mobileDragging){ const t=(event.changedTouches && event.changedTouches[0]) || (event.touches && event.touches[0]); if(t){ const el=document.elementFromPoint(t.clientX,t.clientY); const col=el && el.closest('.board-column-bottom'); if(col && col.id){ moveTo(col.id); } else { stopDragging(); ['triageDragArea','toDoDragArea','inProgressDragArea','awaitingFeedbackDragArea','doneDragArea'].forEach(id=>removeHighlight(id)); } } if(event.cancelable) event.preventDefault(); setTimeout(()=>{window.__mobileDragging=false;}, 250); }"
-              ontouchcancel="clearTimeout(this._lpt); if(window.__mobileDragging){ stopDragging(); ['triageDragArea','toDoDragArea','inProgressDragArea','awaitingFeedbackDragArea','doneDragArea'].forEach(id=>removeHighlight(id)); setTimeout(()=>{window.__mobileDragging=false;}, 250); }">
+function getTaskCardTouchAttrs(safeId) {
+  return `ontouchstart="this._startX=event.touches[0].clientX; this._startY=event.touches[0].clientY; this._hasMoved=false; this._lpt=setTimeout(()=>{ window.__mobileDragging=true; try{ startDragging({dataTransfer:{setDragImage:()=>{}}}, '${safeId}'); }catch(e){ currentDraggedElement='${safeId}'; this.classList.add('dragging'); } }, 250)" ontouchmove="const t=event.touches[0]; const deltaX=Math.abs(t.clientX-this._startX); const deltaY=Math.abs(t.clientY-this._startY); this._hasMoved=true; if(window.__mobileDragging){ const el=document.elementFromPoint(t.clientX,t.clientY); const col=el && el.closest('.board-column-bottom'); const map={triageColumn:'triageDragArea', todoColumn:'toDoDragArea', inProgressColumn:'inProgressDragArea', awaitFeedbackColumn:'awaitingFeedbackDragArea', doneColumn:'doneDragArea'}; Object.keys(map).forEach(k=>{ if(!col || k!==col.id) removeHighlight(map[k]); }); if(col && map[col.id]){ highlight(map[col.id]); } if(event.cancelable) event.preventDefault(); } else if(deltaX > deltaY && deltaX > 10) { clearTimeout(this._lpt); }" ontouchend="clearTimeout(this._lpt); if(window.__mobileDragging){ const t=(event.changedTouches && event.changedTouches[0]) || (event.touches && event.touches[0]); if(t){ const el=document.elementFromPoint(t.clientX,t.clientY); const col=el && el.closest('.board-column-bottom'); if(col && col.id){ moveTo(col.id); } else { stopDragging(); ['triageDragArea','toDoDragArea','inProgressDragArea','awaitingFeedbackDragArea','doneDragArea'].forEach(id=>removeHighlight(id)); } } if(event.cancelable) event.preventDefault(); setTimeout(()=>{window.__mobileDragging=false;}, 250); }" ontouchcancel="clearTimeout(this._lpt); if(window.__mobileDragging){ stopDragging(); ['triageDragArea','toDoDragArea','inProgressDragArea','awaitingFeedbackDragArea','doneDragArea'].forEach(id=>removeHighlight(id)); setTimeout(()=>{window.__mobileDragging=false;}, 250); }"`;
+}
+
+/**
+ * @param {Object} task
+ * @returns {string}
+ */
+function renderTaskCardHeader(task) {
+  return `
             <div class="task-card-header width-100 flexR">
                 <span id="${convertToCamelCase(task.category)}">${escapeHtml(task.category)}</span>
             </div>
             <h3>${escapeHtml(task.title)}</h3>
-            <p class="task-description ${getVisibilityClass(task.description)}" id="taskDescription">${escapeHtml(task.description)}</p>
+            <p class="task-description ${getVisibilityClass(task.description)}" id="taskDescription">${escapeHtml(task.description)}</p>`;
+}
+
+/**
+ * @param {Object} task
+ * @returns {string}
+ */
+function renderTaskCardFooter(task) {
+  return `
             <div class="subtasks flexR ${getVisibilityClass(Array.isArray(task.subtasks) && task.subtasks.length > 0)}" id="subtasks">
                 ${generateSubtaskProgress(task.subtasks)}
             </div>
@@ -221,10 +220,32 @@ function taskCardTemplate(task) {
                 <div class="${getVisibilityClass(task.priority)} task-priority width-100 flexR">
                     ${getPrioritySvg(task.priority)}
                 </div>
-            </div>
-        </div>`;
+            </div>`;
 }
 
+/**
+ * @param {Object} task
+ * @returns {string}
+ */
+function renderTaskCardBody(task) {
+  return `${renderTaskCardHeader(task)}${renderTaskCardFooter(task)}`;
+}
+
+/**
+ * Generates the task card markup for the board grid.
+ * @param {Object} task
+ * @returns {string}
+ */
+function taskCardTemplate(task) {
+    const safeId = escapeJsString(task.id);
+    return `
+        <div class="task-card width-100 flexC" id="${escapeHtml(task.id)}"
+              onclick="if(window.__mobileDragging){window.__mobileDragging=false; return false;} taskOverlay('${safeId}')"
+              ${getTaskCardDragAttrs(safeId)}
+              ${getTaskCardTouchAttrs(safeId)}>
+            ${renderTaskCardBody(task)}
+        </div>`;
+}
 
 /**
  * Template for the empty state card of a column.
@@ -238,7 +259,6 @@ function noTaskCardTemplate(columnName) {
             <p>No tasks ${columnName}</p>
         </div>`;
 }
-
 
 /**
  * Template for the assignee search dropdown when no matches found.
@@ -254,7 +274,6 @@ function noSearchResultsTemplate() {
             </div>`;
 }
 
-
 /**
  * Small avatar-like span displaying overflow count (e.g., +3).
  *
@@ -264,7 +283,6 @@ function noSearchResultsTemplate() {
 function extraCountSpanTemplate(count) {
     return `<span class="contact-icon extra-count flexR">+${count}</span>`;
 }
-
 
 /**
  * Avatar circle span for an assignee, filled with contact color.
@@ -277,7 +295,6 @@ function contactIconSpanTemplate(name) {
     return `
     <span class="contact-icon flexR" data-name="${escapeHtml(name)}" style="background-color: ${escapeHtml(color)};">${contactIconSpan(name)}</span>`;
 }
-
 
 /**
  * Subtasks progress bar and count template for task cards.
@@ -298,7 +315,6 @@ function handleSubtasksTemplate(progress, done, total) {
     `
 }
 
-
 /**
  * Renders the assignee display name span.
  * @param {string} name - Member full name.
@@ -307,7 +323,6 @@ function handleSubtasksTemplate(progress, done, total) {
 function memberNameTemplate(name) {
     return `<span class="member-name-text">${escapeHtml(name)}</span>`;
 }
-
 
 /**
  * Renders a row with avatar and member name for overlays.
@@ -321,7 +336,6 @@ function memberWithNameTemplate(name){
           ${memberNameTemplate(name)}
         </div>`;
 }
-
 
 /**
  * Template for a selectable assignee option in the dropdown.

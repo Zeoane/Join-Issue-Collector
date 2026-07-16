@@ -1,4 +1,3 @@
-
 /**
  * @returns {string}
  */
@@ -12,8 +11,7 @@ let currentEditKey = null;
 let activeContactKey = null;
 
 /**
- * Loads contacts and the signed-in user's own contact, then renders UI.
- * Initializes global `contactsData` and triggers initial render.
+ * Loads contacts and own contact, then renders the contacts page.
  */
 async function initContactsPage() {
   await init();
@@ -21,20 +19,25 @@ async function initContactsPage() {
   if (!user) return;
   syncSessionFromUser(user);
   await setUserInitials();
-
   try {
-    await ensureUserContactsIfEmpty();
-    const contacts = await loadData(getContactsBasePath());
-    const ownContact = await loadData(`users/${window.USERKEY}`);
-    contactsData = contacts || {};
-    renderContacts(contactsData);
-    if (ownContact) {
-      ownContact.color = await ensureUserColor(ownContact);
-      renderOwnContact(ownContact);
-    }
+    await loadAndRenderContactsPage();
   } catch (error) {
     console.error("Error loading contacts page:", error);
   }
+}
+
+/**
+ * Ensures contacts exist, then loads and renders list + own contact.
+ */
+async function loadAndRenderContactsPage() {
+  await ensureUserContactsIfEmpty();
+  const contacts = await loadData(getContactsBasePath());
+  const ownContact = await loadData(`users/${window.USERKEY}`);
+  contactsData = contacts || {};
+  renderContacts(contactsData);
+  if (!ownContact) return;
+  ownContact.color = await ensureUserColor(ownContact);
+  renderOwnContact(ownContact);
 }
 
 window.initContactsPage = initContactsPage;
@@ -96,7 +99,6 @@ function showSuccessOverlay(message = "Contact saved successfully!") {
   }, 1500);
 }
 
-
 /**
  * Submits the contact form: updates own contact or saves/updates regular contact.
  * @param {SubmitEvent} event - Form submit event.
@@ -112,7 +114,6 @@ async function submitContact(event) {
   toggleOverlay();
   showSuccessOverlay();
 }
-
 
 /**
  * Updates the signed-in user's own contact information in storage and UI.
@@ -131,7 +132,6 @@ async function updateOwnUserContact(formData) {
   editingOwnContact = false;
 }
 
-
 /**
  * Creates a new contact or updates an existing one depending on form state.
  * @param {{name:string,email:string,phone:string,contactKey?:string}} formData - Form data.
@@ -144,7 +144,6 @@ async function saveOrUpdateContact(formData) {
     await createNewContact(name, email, phone);
   }
 }
-
 
 /**
  * Updates an existing contact in Firebase and refreshes UI.
@@ -186,7 +185,6 @@ async function updateTasksAssigneeOnContactChange(oldName, newName) {
   if (typeof updateBoard === 'function') updateBoard();
 }
 
-
 /**
  * Creates a new contact in Firebase and activates its details view.
  * @param {string} name
@@ -205,7 +203,6 @@ async function createNewContact(name, email, phone) {
   document.getElementById("contactsDetails").classList.add("showDetails");
 }
 
-
 /**
  * Renders the own-contact card into the dedicated container.
  * @param {{name:string,email?:string,phone?:string,color?:string}} ownContact
@@ -217,9 +214,6 @@ function renderOwnContact(ownContact) {
   wireOwnCardClick(card, ownContact);
   container.appendChild(card);
 }
-
-
-
 
 /**
  * Displays details for the own contact in the details panel.
@@ -280,12 +274,9 @@ function appendLetterHeader(container, letter) {
   container.appendChild(separatorList);
 }
 
-
-
 document.getElementById("menuOverlay").addEventListener("click", () => {
   document.getElementById("menuOverlay").classList.remove("open");
 });
-
 
 /**
  * Displays the details for a selected contact in the details panel.

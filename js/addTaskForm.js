@@ -162,7 +162,7 @@ async function addTaskForm() {
 }
 
 /**
- * Initialisiert die Add-Task-Seite inkl. Header-Initialen.
+ * Initializes the add-task page including header initials.
  * @returns {Promise<void>}
  */
 async function initAddTaskPage() {
@@ -218,5 +218,3 @@ function tryShowNativeDatePicker(input) {
 }
 
 window.openDatePicker = openDatePicker;
-// Subtask handlers were extracted to `js/addTaskSubtasks.js`.
-

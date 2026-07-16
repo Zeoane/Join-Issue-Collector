@@ -1,9 +1,9 @@
 /**
- * Zentraler Auth-Guard für geschützte Seiten.
+ * Central auth guard for protected pages.
  */
 
 /**
- * Schnell-Check: nur gültig, wenn Firebase bereits einen User hat.
+ * Fast check: valid only if Firebase already has a user.
  * @param {string} [redirectUrl="../../index.html"]
  * @returns {boolean}
  */
@@ -12,21 +12,15 @@ function protectPageAccess(redirectUrl = "../../index.html") {
     syncSessionFromUser(window.firebaseAuth.currentUser);
     return true;
   }
-
-  if (window.firebaseAuth) {
-    return false;
-  }
-
+  if (window.firebaseAuth) return false;
   const userKey = window.USERKEY || localStorage.getItem("loggedInUserKey");
-  if (!userKey) {
-    window.location.href = redirectUrl;
-    return false;
-  }
-  return true;
+  if (userKey) return true;
+  window.location.href = redirectUrl;
+  return false;
 }
 
 /**
- * Wartet auf Firebase Auth und leitet um, wenn nicht angemeldet.
+ * Waits for Firebase Auth and redirects if not signed in.
  * @param {string} [redirectUrl="../../index.html"]
  * @returns {Promise<boolean>}
  */
@@ -36,7 +30,6 @@ function ensureAuthenticated(redirectUrl = "../../index.html") {
     window.location.href = redirectUrl;
     return Promise.resolve(false);
   }
-
   return waitForAuthUser().then((user) => {
     if (!user) {
       clearSessionStorage();
@@ -52,12 +45,11 @@ window.protectPageAccess = protectPageAccess;
 window.ensureAuthenticated = ensureAuthenticated;
 
 /**
- * Auto-Guard: Seiten mit data-auth="required" werden geschützt.
+ * Auto-guard: pages with data-auth="required" are protected.
  */
 (function autoGuardProtectedPages() {
   const body = document.body;
   if (!body || body.dataset.auth !== "required") return;
-
   const redirect = body.dataset.authRedirect || "../../index.html";
   ensureAuthenticated(redirect);
 })();

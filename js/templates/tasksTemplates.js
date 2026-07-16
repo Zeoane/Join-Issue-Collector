@@ -1,253 +1,287 @@
+/**
+ * @param {Object} task
+ * @returns {string}
+ */
+function renderMemberCreatorRow(task) {
+  return `
+    <div class="task-creator-row task-creator-row--member width-100 ${getVisibilityClass(true)}">
+      <img src="../img/Member-Taskcard.svg" alt="" class="task-creator-row__member-icon" width="93" height="22">
+      <div class="task-creator-row__meta width-100">
+        <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
+        <div class="task-creator-row__details">
+          <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
+          <img src="../img/Profile-Taskcard.svg" alt="" class="task-creator-row__profile-badge" width="63" height="24">
+        </div>
+      </div>
+    </div>`;
+}
 
 /**
- * Renders the creator row in the task overlay (member vs stakeholder layout).
- *
+ * @param {Object} task
+ * @returns {string}
+ */
+function renderExternalCreatorRow(task) {
+  return `
+    <div class="task-creator-row task-creator-row--external width-100 ${getVisibilityClass(true)}">
+      <img src="../img/Extern-Taskcard.svg" alt="" class="task-creator-row__type-icon" width="75" height="22">
+      <div class="task-creator-row__meta width-100">
+        <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
+        <div class="task-creator-row__details">
+          <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
+          <img src="../img/Email-Taskcard.svg" alt="" class="task-creator-row__email-badge" width="76" height="24">
+        </div>
+      </div>
+    </div>`;
+}
+
+/**
+ * Renders the creator row in the task overlay.
  * @param {Object} task
  * @returns {string}
  */
 function renderTaskCreatorRow(task) {
-    if (!taskHasCreator(task)) return "";
-
-    if (isInternalCreatorTask(task)) {
-        return `
-                <div class="task-creator-row task-creator-row--member width-100 ${getVisibilityClass(true)}">
-                    <img
-                        src="../img/Member-Taskcard.svg"
-                        alt=""
-                        class="task-creator-row__member-icon"
-                        width="93"
-                        height="22"
-                    >
-                    <div class="task-creator-row__meta width-100">
-                        <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
-                        <div class="task-creator-row__details">
-                            <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
-                            <img
-                                src="../img/Profile-Taskcard.svg"
-                                alt=""
-                                class="task-creator-row__profile-badge"
-                                width="63"
-                                height="24"
-                            >
-                        </div>
-                    </div>
-                </div>`;
-    }
-
-    return `
-                <div class="task-creator-row task-creator-row--external width-100 ${getVisibilityClass(true)}">
-                    <img
-                        src="../img/Extern-Taskcard.svg"
-                        alt=""
-                        class="task-creator-row__type-icon"
-                        width="75"
-                        height="22"
-                    >
-                    <div class="task-creator-row__meta width-100">
-                        <p class="task-overlay-headdings task-creator-row__label">Creator:</p>
-                        <div class="task-creator-row__details">
-                            <span class="task-creator-row__name">${escapeHtml(getCreatorPersonDisplayName(task))}</span>
-                            <img
-                                src="../img/Email-Taskcard.svg"
-                                alt=""
-                                class="task-creator-row__email-badge"
-                                width="76"
-                                height="24"
-                            >
-                        </div>
-                    </div>
-                </div>`;
-}
-
-function renderTaskDueDateRow(task) {
-    const dueDateDisplay = formatDueDateForDisplay(task?.dueDate);
-    if (!dueDateDisplay) return "";
-
-    return `
-                <div class="gap-25 flexR">
-                    <p class="task-overlay-headdings">Due Date:</p><span class="task-overlay-value">${escapeHtml(dueDateDisplay)}</span>
-                </div>`;
+  if (!taskHasCreator(task)) return "";
+  return isInternalCreatorTask(task)
+    ? renderMemberCreatorRow(task)
+    : renderExternalCreatorRow(task);
 }
 
 /**
- * Builds the task details overlay content including actions and edit form.
- *
- * @param {Object} task - Task object including id, title, description, dueDate, priority, assignee, subtasks.
- * @returns {string} HTML string for the overlay.
+ * @param {Object} task
+ * @returns {string}
  */
-function taskOverlayTemplate(task){
-    const safeId = escapeJsString(task.id);
-    const description = getTaskDescriptionForDisplay(task);
-    const showAiNotice = isAiGeneratedTask(task);
-    const externalOverlayClass = isInternalCreatorTask(task) ? '' : ' task-overlay-header--external';
-    return `
-        <div class="flexC gap-24 task-overlay-content width-100" id="taskOverlayContent" data-task-id="${escapeHtml(task.id)}">
-            <div class="space-between flexR">
-                <div class="task-category-row flexR">
-                    <span class="task-category" id="${convertToCamelCase(task.category)}">${escapeHtml(task.category)}</span>
-                    <img
-                        src="../img/Note%20_%20KI%20generiert.svg"
-                        alt=""
-                        class="task-ai-badge ${getVisibilityClass(showAiNotice)}"
-                        width="177"
-                        height="22"
-                    >
-                </div>
-                <button class="overlay-button" onclick="closeOverlay()">
-                    ${CLOSE_CANCEL_SVG}
-                </button>
-            </div>
-            <div class="task-overlay-header gap-24 flexC${externalOverlayClass}">
-                <h2>${escapeHtml(task.title)}</h2>
-                <p class="${getVisibilityClass(description)}" id="taskOverlayDescription">${escapeHtml(description)}</p>
-                ${renderTaskCreatorRow(task)}
-                ${renderTaskDueDateRow(task)}
-                <div class="flexR gap-25 ${getVisibilityClass(task.priority)}">
-                    <p class="task-overlay-headdings">Priority:</p><div class="flexR overlay-priority">
-                        ${handlePriority(task.priority)} 
-                        ${getPrioritySvg(task.priority)}
-                    </div>
-                </div>
-                <div class="assignee-container gap-8 flexC ${getVisibilityClass(task.assignee)}">
-                    <p class="task-overlay-headdings">Assignees:</p>
-                    <div class="flexC width-100">
-                    ${renderMembersWithName(task)}
-                    </div>
-                </div>
-                <div class="gap-8 flexC subtasks-overlay ${getVisibilityClass(task.subtasks)}">   
-                    <p class="task-overlay-headdings">Subtasks:</p>
-                    <div class="subtasks-overlay-list flexC width-100">
-                        ${task.subtasks && task.subtasks.length > 0 ? task.subtasks.map(subtask => `
-                            <div class="subtask-item-overlay gap-16 flexR">
-                                <button class="checkbox" onclick="toggleSubtask('${safeId}', '${escapeJsString(subtask.value)}')">
-                                    ${subtask.checked ? CHECKBOX_FILLED_DARK_SVG : CHECKBOX_SVG}
-                                </button>
-                                <span>${escapeHtml(subtask.value)}</span>
-                            </div>
-                        `).join('') : '<p>No subtasks available</p>'}
-                    </div>
-                </div>
-            </div>
-            <div class="task-overlay-footer gap-8 flexR">
-                <button class="task-footer-btn gap-8 flexR" onclick="deleteTask('${safeId}')">${DELETE_SVG} Delete</button>
-                ${SEPARATOR_SVG}
-                <button class="task-footer-btn gap-8 flexR" onclick="editTask('${safeId}')">${EDIT_SVG} Edit</button>
-            </div>
-        </div>
-        ${editTaskOverlayTemplate(task)}
-        `;
+function renderTaskDueDateRow(task) {
+  const dueDateDisplay = formatDueDateForDisplay(task?.dueDate);
+  if (!dueDateDisplay) return "";
+  return `
+    <div class="gap-25 flexR">
+      <p class="task-overlay-headdings">Due Date:</p>
+      <span class="task-overlay-value">${escapeHtml(dueDateDisplay)}</span>
+    </div>`;
 }
 
+/**
+ * @param {Object} task
+ * @param {string} safeId
+ * @returns {string}
+ */
+function renderOverlaySubtasks(task, safeId) {
+  if (!task.subtasks || task.subtasks.length === 0) {
+    return "<p>No subtasks available</p>";
+  }
+  return task.subtasks
+    .map(
+      (subtask) => `
+    <div class="subtask-item-overlay gap-16 flexR">
+      <button class="checkbox" onclick="toggleSubtask('${safeId}', '${escapeJsString(subtask.value)}')">
+        ${subtask.checked ? CHECKBOX_FILLED_DARK_SVG : CHECKBOX_SVG}
+      </button>
+      <span>${escapeHtml(subtask.value)}</span>
+    </div>`
+    )
+    .join("");
+}
 
 /**
- * Template for the edit task form fields within the overlay.
- *
- * @param {Object} task - Task object to prefill the edit form.
- * @returns {string} HTML for the edit form fields.
+ * @param {Object} task
+ * @param {string} description
+ * @param {boolean} showAiNotice
+ * @returns {string}
+ */
+function renderTaskOverlayTop(task, description, showAiNotice) {
+  const externalClass = isInternalCreatorTask(task) ? "" : " task-overlay-header--external";
+  return `
+    <div class="space-between flexR">
+      <div class="task-category-row flexR">
+        <span class="task-category" id="${convertToCamelCase(task.category)}">${escapeHtml(task.category)}</span>
+        <img src="../img/Note%20_%20KI%20generiert.svg" alt="" class="task-ai-badge ${getVisibilityClass(showAiNotice)}" width="177" height="22">
+      </div>
+      <button class="overlay-button" onclick="closeOverlay()">${CLOSE_CANCEL_SVG}</button>
+    </div>
+    <div class="task-overlay-header gap-24 flexC${externalClass}">
+      <h2>${escapeHtml(task.title)}</h2>
+      <p class="${getVisibilityClass(description)}" id="taskOverlayDescription">${escapeHtml(description)}</p>
+      ${renderTaskCreatorRow(task)}
+      ${renderTaskDueDateRow(task)}`;
+}
+
+/**
+ * @param {Object} task
+ * @param {string} safeId
+ * @returns {string}
+ */
+function renderTaskOverlayMeta(task, safeId) {
+  return `
+      <div class="flexR gap-25 ${getVisibilityClass(task.priority)}">
+        <p class="task-overlay-headdings">Priority:</p>
+        <div class="flexR overlay-priority">${handlePriority(task.priority)} ${getPrioritySvg(task.priority)}</div>
+      </div>
+      <div class="assignee-container gap-8 flexC ${getVisibilityClass(task.assignee)}">
+        <p class="task-overlay-headdings">Assignees:</p>
+        <div class="flexC width-100">${renderMembersWithName(task)}</div>
+      </div>
+      <div class="gap-8 flexC subtasks-overlay ${getVisibilityClass(task.subtasks)}">
+        <p class="task-overlay-headdings">Subtasks:</p>
+        <div class="subtasks-overlay-list flexC width-100">${renderOverlaySubtasks(task, safeId)}</div>
+      </div>
+    </div>`;
+}
+
+/**
+ * Builds the task details overlay content.
+ * @param {Object} task
+ * @returns {string}
+ */
+function taskOverlayTemplate(task) {
+  const safeId = escapeJsString(task.id);
+  const description = getTaskDescriptionForDisplay(task);
+  const showAiNotice = isAiGeneratedTask(task);
+  return `
+    <div class="flexC gap-24 task-overlay-content width-100" id="taskOverlayContent" data-task-id="${escapeHtml(task.id)}">
+      ${renderTaskOverlayTop(task, description, showAiNotice)}
+      ${renderTaskOverlayMeta(task, safeId)}
+      <div class="task-overlay-footer gap-8 flexR">
+        <button class="task-footer-btn gap-8 flexR" onclick="deleteTask('${safeId}')">${DELETE_SVG} Delete</button>
+        ${SEPARATOR_SVG}
+        <button class="task-footer-btn gap-8 flexR" onclick="editTask('${safeId}')">${EDIT_SVG} Edit</button>
+      </div>
+    </div>
+    ${editTaskOverlayTemplate(task)}`;
+}
+
+/**
+ * @param {Object} task
+ * @returns {string}
+ */
+function renderEditTitleDescriptionFields(task) {
+  return `
+    <div class="gap-8 width-100 flexC">
+      <label class="width-100" for="editedTaskTitle">Title</label>
+      <input class="inputs change-onfoucus requierd-input" oninput="hideValidationErrors()" type="text" id="editedTaskTitle" value="${escapeHtml(task.title)}" placeholder="Enter a title">
+      <span class="required-span width-100 display-none">This field is required</span>
+    </div>
+    <div class="gap-8 width-100 flexC">
+      <label class="width-100" for="editedTaskDescription">Description</label>
+      <textarea class="inputs change-onfoucus" id="editedTaskDescription" name="taskDescription" placeholder="Enter Task description">${escapeHtml(getTaskDescriptionForDisplay(task))}</textarea>
+    </div>`;
+}
+
+/**
+ * @param {Object} task
+ * @returns {string}
+ */
+function renderEditDueDateField(task) {
+  return `
+    <div class="gap-8 width-100 flexC">
+      <label class="width-100" for="editedTaskDueDate">Due date<span class="highlight">*</span></label>
+      <div class="date-input-wrapper width-100">
+        <input class="inputs change-onfoucus requierd-input" value="${formatDueDateInputValue(task.dueDate)}" type="date" id="editedTaskDueDate" name="taskDueDate" min="" onfocus="this.min=new Date().toISOString().split('T')[0]">
+        <button type="button" class="date-input-icon-btn" onclick="openDatePicker('editedTaskDueDate', event)" aria-label="Choose date">
+          <img class="date-input-icon" src="../img/calender.svg" alt="" aria-hidden="true">
+        </button>
+      </div>
+      <span class="required-span width-100 display-none">This field is required</span>
+    </div>`;
+}
+
+/**
+ * @param {Object} task
+ * @returns {string}
+ */
+function renderEditPriorityButtons(task) {
+  const active = (p) => (task.priority === p ? "active" : "");
+  return `
+    <div class="gap-8 width-100 flexC">
+      <span class="width-100 prio-style">Priority</span>
+      <div class="flexR priority-select width-100 gap-16">
+        <button type="button" class="edit-priority-button gap-8 width-100 flexR HighPriority ${active("HighPriority")}" onclick="priorityHandler('high'); event.stopPropagation();"><span class="priority-text">Urgent</span>${HIGH_PRIORITY_SVG}</button>
+        <button type="button" class="edit-priority-button gap-8 width-100 flexR MidPriority ${active("MidPriority")}" onclick="priorityHandler('medium'); event.stopPropagation();"><span class="priority-text">Medium</span>${MID_PRIORITY_SVG}</button>
+        <button type="button" class="edit-priority-button gap-8 width-100 flexR LowPriority ${active("LowPriority")}" onclick="priorityHandler('low'); event.stopPropagation();"><span class="priority-text">Low</span>${LOW_PRIORITY_SVG}</button>
+      </div>
+    </div>`;
+}
+
+/**
+ * @param {Object} task
+ * @returns {string}
+ */
+function renderEditAssigneeField(task) {
+  const icons =
+    task.assignee && task.assignee.length > 0
+      ? task.assignee.map((name) => contactIconSpanTemplate(name)).join("")
+      : "";
+  return `
+    <div class="flexC gap-8 width-100">
+      <label class="width-100" for="editedTaskAssignee">Assigned To</label>
+      <div class="input-svg-wrapper width-100 flexC">
+        <input class="inputs change-onfoucus" oninput="toggleAssigneeOptions()" type="text" id="editedTaskAssignee" placeholder="Select Contacts to assign" onclick="toggleAssigneeOptions(); event.stopPropagation();">
+        <div id="assigneeOptions" class="assignee-options width-100 display-none"></div>
+      </div>
+      <div class="selected-assignee width-100 gap-8 flexR ${icons ? "" : "display-none"}" id="editedAssignee">${icons}</div>
+    </div>`;
+}
+
+/**
+ * @param {Object} task
+ * @returns {string}
+ */
+function renderEditSubtasksInputBox() {
+  return `
+      <div class="inputs change-onfoucus space-between flexR" id="inputBox">
+        <input type="text" id="editedSubtasks" placeholder="add new subtask" oninput="checkSubtask(this.value.length, this.value, document.getElementById('editedSubtasksList'))" onfocus="showAddCancelBtns()" onkeydown="onEnterAddSubTask(event, 'editedSubtasks')">
+        <button class="plus-button overlay-button" id="subtaskPlusBtn" type="button" onclick="showAddCancelBtns()">${PLUS_SVG}</button>
+        <div class="add-cancel-btns flexR display-none gap-8" id="addCancelBtns">
+          <button class="cancel-subtask-button overlay-button" type="button" onclick="cancelSubtask()">${CLOSE_CANCEL_SVG}</button>
+          ${SEPARATOR_SVG}
+          <button class="add-subtask-button overlay-button" type="button" onclick="addSubtask('editedSubtasks')">${SUBMIT_SVG}</button>
+        </div>
+      </div>`;
+}
+
+function renderEditSubtasksField(task) {
+  const list =
+    task.subtasks && Array.isArray(task.subtasks)
+      ? task.subtasks.map((subtask, index) => addSubTaskTemplate(subtask.value, index)).join("")
+      : "";
+  return `
+    <div class="gap-8 width-100 flexC">
+      <label class="width-100" for="editedSubtasks">Subtasks</label>
+      ${renderEditSubtasksInputBox()}
+      <span id="subtaskHintMessage" class="width-100 display-none">Please type a clear subtask</span>
+      <ul class="flexC width-100 ${list ? "" : "display-none"}" id="editedSubtasksList">${list}</ul>
+    </div>`;
+}
+
+/**
+ * Template for the edit task form fields.
+ * @param {Object} task
+ * @returns {string}
  */
 function taskEditTemplate(task) {
-    return `
-        <div class="flexC width-100 gap-24">
-            <div class="gap-8 width-100 flexC">
-                <label class="width-100" for="editedTaskTitle">Title</label>
-                <input class="inputs change-onfoucus requierd-input" oninput="hideValidationErrors()" type="text" id="editedTaskTitle" value="${escapeHtml(task.title)}" placeholder="Enter a title" >
-                <span class="required-span width-100 display-none">This field is required</span>
-            </div>
-            <div class="gap-8 width-100 flexC">
-                <label class="width-100" for="editedTaskDescription">Description</label>
-                <textarea class="inputs change-onfoucus" id="editedTaskDescription" name="taskDescription" placeholder="Enter Task description">${escapeHtml(getTaskDescriptionForDisplay(task))}</textarea>
-            </div>
-            <div class="gap-8 width-100 flexC">
-                <label class="width-100" for="editedTaskDueDate">Due date<span class="highlight">*</span></label>
-                <div class="date-input-wrapper width-100">
-                    <input class="inputs change-onfoucus requierd-input" value="${formatDueDateInputValue(task.dueDate)}" type="date" id="editedTaskDueDate" name="taskDueDate" min="" onfocus="this.min=new Date().toISOString().split('T')[0]">
-                    <button type="button" class="date-input-icon-btn" onclick="openDatePicker('editedTaskDueDate', event)" aria-label="Choose date">
-                        <img class="date-input-icon" src="../img/calender.svg" alt="" aria-hidden="true">
-                    </button>
-                </div>
-                <span class="required-span width-100 display-none">This field is required</span>
-            </div>
-            <div class="gap-8 width-100 flexC">
-                <span class="width-100 prio-style">Priority</span>
-                <div class="flexR priority-select width-100 gap-16">
-        <button type="button" class="edit-priority-button gap-8 width-100 flexR HighPriority ${task.priority === 'HighPriority' ? 'active' : ''}" 
-          onclick="priorityHandler('high'); event.stopPropagation();">
-                        <span class="priority-text">Urgent</span>
-                        ${HIGH_PRIORITY_SVG}
-                    </button>
-        <button type="button" class="edit-priority-button gap-8 width-100 flexR MidPriority ${task.priority === 'MidPriority' ? 'active' : ''}" 
-          onclick="priorityHandler('medium'); event.stopPropagation();">
-                        <span class="priority-text">Medium</span>
-                        ${MID_PRIORITY_SVG}
-                    </button>
-        <button type="button" class="edit-priority-button gap-8 width-100 flexR LowPriority ${task.priority === 'LowPriority' ? 'active' : ''}" 
-          onclick="priorityHandler('low'); event.stopPropagation();">
-                        <span class="priority-text">Low</span>
-                        ${LOW_PRIORITY_SVG}
-                    </button>
-                </div>
-            </div>
-            <div class="flexC gap-8 width-100">
-                <label class="width-100" for="editedTaskAssignee">Assigned To</label>
-                <div class="input-svg-wrapper width-100 flexC">
-                    <input  class="inputs change-onfoucus" oninput="toggleAssigneeOptions()" type="text" id="editedTaskAssignee" placeholder="Select Contacts to assign"
-                            onclick="toggleAssigneeOptions(); event.stopPropagation(); ">
-                    <div id="assigneeOptions" class="assignee-options width-100 display-none">
-                        <!-- Dynamically generated assignee options will be inserted here -->
-                    </div>
-                </div>
-                <div class="selected-assignee width-100 gap-8 flexR ${task.assignee && task.assignee.length > 0 ? '' : 'display-none'}" id="editedAssignee">
-                    ${task.assignee && task.assignee.length > 0 ? task.assignee.map(name => contactIconSpanTemplate(name)).join('') : ''}
-                </div>
-            </div>
-            <div class="gap-8 width-100 flexC">
-                <label class="width-100" for="editedSubtasks">Subtasks</label>
-                <div class="inputs change-onfoucus space-between flexR" id="inputBox">
-                    <input type="text" id="editedSubtasks" placeholder="add new subtask" oninput="checkSubtask(this.value.length, this.value, document.getElementById('editedSubtasksList'))" onfocus="showAddCancelBtns()" onkeydown="onEnterAddSubTask(event, 'editedSubtasks')">
-                    <button class="plus-button overlay-button" id="subtaskPlusBtn" type="button" onclick="showAddCancelBtns()">
-                            ${PLUS_SVG}
-                    </button>
-                    <div class="add-cancel-btns flexR display-none gap-8" id="addCancelBtns">
-                        <button class="cancel-subtask-button overlay-button" type="button" onclick="cancelSubtask()">
-                            ${CLOSE_CANCEL_SVG}
-                        </button>
-                        ${SEPARATOR_SVG}
-                        <button class="add-subtask-button overlay-button" type="button" onclick="addSubtask('editedSubtasks')">
-                            ${SUBMIT_SVG}
-                        </button>
-                    </div>
-                </div>
-                <span id="subtaskHintMessage" class="width-100 display-none">Please type a clear subtask</span>
-                <ul class="flexC width-100 ${task.subtasks && task.subtasks.length > 0 ? '' : 'display-none'}" id="editedSubtasksList">
-                    ${task.subtasks && Array.isArray(task.subtasks) ? task.subtasks.map((subtask, index) => addSubTaskTemplate(subtask.value, index)).join('') : ''}
-                </ul>
-            </div>
-        </div>`;
+  return `
+    <div class="flexC width-100 gap-24">
+      ${renderEditTitleDescriptionFields(task)}
+      ${renderEditDueDateField(task)}
+      ${renderEditPriorityButtons(task)}
+      ${renderEditAssigneeField(task)}
+      ${renderEditSubtasksField(task)}
+    </div>`;
 }
 
-
 /**
- * Wraps the edit task form with header/footer inside the overlay container.
- *
- * @param {Object} task - Task object to edit.
- * @returns {string} HTML for the edit overlay container.
+ * Wraps the edit task form with header/footer.
+ * @param {Object} task
+ * @returns {string}
  */
 function editTaskOverlayTemplate(task) {
-    return `
+  return `
     <div class="display-none flexC gap-24 width-100" id="taskEditForm">
-        <div class="flexR width-100 flex-end">
-            <button class="overlay-button" onclick="closeOverlay()">
-                    ${CLOSE_CANCEL_SVG}
-            </button>
-        </div>
-        <div class="flexC edit-task-div width-100 gap-24">
-            ${taskEditTemplate(task)}
-        </div>
-        <div class="flexR width-100 flex-end">
-            <button class="submit-edit btn-shadow" onclick="submitEdit()">
-                Ok
-                ${SUBMIT_LIGHT_SVG}
-            </button>
-        </div>
+      <div class="flexR width-100 flex-end">
+        <button class="overlay-button" onclick="closeOverlay()">${CLOSE_CANCEL_SVG}</button>
+      </div>
+      <div class="flexC edit-task-div width-100 gap-24">${taskEditTemplate(task)}</div>
+      <div class="flexR width-100 flex-end">
+        <button class="submit-edit btn-shadow" onclick="submitEdit()">Ok ${SUBMIT_LIGHT_SVG}</button>
+      </div>
     </div>`;
 }

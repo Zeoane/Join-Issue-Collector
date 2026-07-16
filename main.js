@@ -1,5 +1,5 @@
 /**
- * Join-Issue Collector – globale Konfiguration und gemeinsame UI-Funktionen.
+ * Join-Issue Collector – global config and shared UI helpers.
  */
 
 window.BASE_URL = "https://join-issue-collector-70cb7-default-rtdb.europe-west1.firebasedatabase.app/";
@@ -25,6 +25,18 @@ const demoContacts = [
 ];
 
 /**
+ * Closes the profile menu when clicking outside it.
+ * @param {MouseEvent} e
+ * @param {HTMLElement} menu
+ */
+function closeMenuOnOutsideClick(e, menu) {
+  const userProfile = document.getElementById("userProfile");
+  if (menu.contains(e.target) || userProfile?.contains(e.target)) return;
+  menu.classList.add("not-visible");
+  document.body.onclick = null;
+}
+
+/**
  * Toggles the visibility of the profile menu.
  * @returns {void}
  */
@@ -32,19 +44,8 @@ function toggleMenu() {
   const menu = document.getElementById("menu");
   if (!menu) return;
   menu.classList.toggle("not-visible");
-
   document.body.onclick = !menu.classList.contains("not-visible")
-    ? (e) => {
-        const userProfile = document.getElementById("userProfile");
-        if (
-          !menu.contains(e.target) &&
-          userProfile &&
-          !userProfile.contains(e.target)
-        ) {
-          menu.classList.add("not-visible");
-          document.body.onclick = null;
-        }
-      }
+    ? (e) => closeMenuOnOutsideClick(e, menu)
     : null;
 }
 
@@ -55,7 +56,6 @@ function linkesNavMenuVersion() {
   const page = window.location.pathname.split("/").pop().split(".")[0];
   const navMenu = document.getElementById("linkesNavMenu");
   if (!navMenu) return;
-
   if (page === "legal-notice-login" || page === "privacy-login") {
     navMenu.innerHTML = linkesNavLogin(page);
   } else {
@@ -64,20 +64,34 @@ function linkesNavMenuVersion() {
 }
 
 /**
- * @returns {void}
+ * @returns {string}
  */
-function showHideHelpAndUser() {
-  const page = window.location.pathname.split("/").pop().split(".")[0];
-  const helpLink = document.getElementById("helpLink");
-  const userProfile = document.getElementById("userProfile");
-  if (!helpLink || !userProfile) return;
+function getCurrentPageName() {
+  return window.location.pathname.split("/").pop().split(".")[0];
+}
 
-  if (
+/**
+ * @param {string} page
+ * @returns {boolean}
+ */
+function isLegalOrPrivacyPage(page) {
+  return (
     page === "legal-notice-login" ||
     page === "privacy-login" ||
     page === "privacy" ||
     page === "legal-notice"
-  ) {
+  );
+}
+
+/**
+ * @returns {void}
+ */
+function showHideHelpAndUser() {
+  const page = getCurrentPageName();
+  const helpLink = document.getElementById("helpLink");
+  const userProfile = document.getElementById("userProfile");
+  if (!helpLink || !userProfile) return;
+  if (isLegalOrPrivacyPage(page)) {
     helpLink.classList.add("displayNone");
     userProfile.classList.add("displayNone");
   } else if (page === "help") {
@@ -110,44 +124,65 @@ async function init() {
 }
 
 /**
+ * @param {HTMLElement} initialsEl
+ */
+function applyUnknownInitials(initialsEl) {
+  initialsEl.innerText = "?";
+  initialsEl.style.backgroundColor = "";
+  initialsEl.classList.remove("contact-icon", "flexR");
+}
+
+/**
+ * @param {HTMLElement} initialsEl
+ * @param {{name:string,color?:string}} user
+ */
+async function applyUserInitials(initialsEl, user) {
+  const color = await ensureUserColor(user);
+  initialsEl.innerText = contactIconSpan(user.name);
+  initialsEl.style.backgroundColor = color;
+  initialsEl.classList.add("contact-icon", "flexR");
+}
+
+/**
+ * Ensures USERKEY is set from the current Firebase user if needed.
+ */
+async function ensureSessionUserKey() {
+  if (window.USERKEY || typeof waitForAuthUser !== "function") return;
+  const authUser = await waitForAuthUser();
+  if (authUser && typeof syncSessionFromUser === "function") {
+    syncSessionFromUser(authUser);
+  }
+}
+
+/**
+ * @returns {Promise<void>}
+ */
+/**
+ * @param {HTMLElement} initialsEl
+ */
+async function loadAndApplyUserInitials(initialsEl) {
+  try {
+    const user = await loadData(`users/${window.USERKEY}`);
+    if (user?.name) await applyUserInitials(initialsEl, user);
+    else applyUnknownInitials(initialsEl);
+  } catch (error) {
+    console.error("Fehler beim Laden der Userdaten:", error);
+    applyUnknownInitials(initialsEl);
+  }
+}
+
+/**
  * @returns {Promise<void>}
  */
 async function setUserInitials() {
   const initialsEl = document.getElementById("userInitials");
   if (!initialsEl) return;
-
-  if (!window.USERKEY && typeof waitForAuthUser === "function") {
-    const authUser = await waitForAuthUser();
-    if (authUser && typeof syncSessionFromUser === "function") {
-      syncSessionFromUser(authUser);
-    }
-  }
-
+  await ensureSessionUserKey();
   if (!window.USERKEY) {
-    initialsEl.innerText = "?";
-    initialsEl.style.backgroundColor = "";
-    initialsEl.classList.remove("contact-icon", "flexR");
+    applyUnknownInitials(initialsEl);
     return;
   }
-
-  try {
-    const user = await loadData(`users/${window.USERKEY}`);
-    if (user?.name) {
-      const color = await ensureUserColor(user);
-      initialsEl.innerText = contactIconSpan(user.name);
-      initialsEl.style.backgroundColor = color;
-      initialsEl.classList.add("contact-icon", "flexR");
-    } else {
-      initialsEl.innerText = "?";
-      initialsEl.style.backgroundColor = "";
-      initialsEl.classList.remove("contact-icon", "flexR");
-    }
-  } catch (error) {
-    console.error("Fehler beim Laden der Userdaten:", error);
-    initialsEl.innerText = "?";
-    initialsEl.style.backgroundColor = "";
-    initialsEl.classList.remove("contact-icon", "flexR");
-  }
+  await loadAndApplyUserInitials(initialsEl);
 }
 
 window.setUserInitials = setUserInitials;
@@ -167,9 +202,8 @@ window.addEventListener("join-auth-ready", (event) => {
 async function logout(event) {
   event?.preventDefault();
   try {
-    if (typeof signOutUser === "function") {
-      await signOutUser();
-    } else {
+    if (typeof signOutUser === "function") await signOutUser();
+    else {
       localStorage.clear();
       window.USERKEY = null;
     }

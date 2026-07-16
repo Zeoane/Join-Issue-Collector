@@ -6,7 +6,6 @@
 let currentDraggedElement;
 let originalColumn;
 
-
 /**
  * Sets up event handlers for drag and drop on columns
  * @param {HTMLElement} column 
@@ -22,7 +21,6 @@ function setupColumnEventHandlers(column, columnId, dragAreaId) {
     };
     column.ondragleave = () => removeHighlight(dragAreaId);
 }
-
 
 /**
  * Checks if columns are empty and displays appropriate messages
@@ -43,7 +41,6 @@ function checkEmptyColumn() {
     });
 }
 
-
 /**
  * Allows drop operation by preventing default behavior
  * @param {DragEvent} ev
@@ -52,7 +49,6 @@ function checkEmptyColumn() {
 function allowDrop(ev) {
     ev.preventDefault();
 }
-
 
 /**
  * Initiates drag operation for a task card
@@ -70,7 +66,6 @@ function startDragging(event, id) {
     taskCard.classList.add('dragging');
 }
 
-
 /**
  * Stops drag operation and removes dragging visual state
  * @returns {void}
@@ -83,7 +78,6 @@ function stopDragging() {
     currentDraggedElement = null;
     originalColumn = null;
 }
-
 
 /**
  * Moves the currently dragged task to a new column
@@ -103,7 +97,6 @@ function moveTo(column) {
         .then(() => { updateBoard(); currentDraggedElement = null; originalColumn = null; });
 }
 
-
 /**
  * Sets the height of a drag area to match the dragged task
  * @param {HTMLElement} element 
@@ -117,7 +110,6 @@ function setDragAreaHeight(element) {
         element.style.height = taskHeight + 'px';
     }
 }
-
 
 /**
  * Highlights a drag area when a task is dragged over it
@@ -135,7 +127,6 @@ function highlight(id) {
         checkEmptyColumn();
     }
 }
-
 
 /**
  * Removes highlight from a drag area

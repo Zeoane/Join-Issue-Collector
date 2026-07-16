@@ -248,7 +248,7 @@ h1 {
 }
 
 .row--deadline-email .item2 {
-    --summary-separator-gap: 11px;
+    --summary-separator-gap: 8px;
     display: flex;
     align-items: center;
     gap: var(--summary-separator-gap);
@@ -263,20 +263,20 @@ h1 {
 }
 
 .row--deadline-email .item2 .d-flex {
-    flex: 1 1 0;
+    flex: 0 1 auto;
     width: auto;
     max-width: none;
     min-width: 0;
     height: auto;
-    gap: 10px;
+    gap: 6px;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     overflow: visible;
     box-sizing: border-box;
 }
 
 .row--deadline-email .item2 .d-flex .d-colum {
-    flex: 1 1 0;
+    flex: 0 1 auto;
     min-width: 0;
     align-items: center;
     justify-content: center;

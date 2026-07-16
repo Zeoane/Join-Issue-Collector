@@ -13,13 +13,9 @@
     gap: 24px;
   }
 
-  .into h1 {
-    font-size: 49px;
-  }
+  .into h1 { font-size: 49px; }
 
-  h1 {
-    font-size: 49px;
-  }
+  h1 { font-size: 49px; }
 
   .separater {
     height: 47px;
@@ -39,18 +35,14 @@
     gap: 64px;
   }
 
-  .greetings {
-    gap: 2px;
-  }
+  .greetings { gap: 2px; }
 
   #greetingText,
   #comma {
     font-size: 38px;
   }
 
-  .name {
-    font-size: 51px;
-  }
+  .name { font-size: 51px; }
 }
 
 @media (max-width: 1399px) and (min-width: 801px) {
@@ -97,13 +89,9 @@
     gap: 20px;
   }
 
-  .into h1 {
-    font-size: 40px;
-  }
+  .into h1 { font-size: 40px; }
 
-  h1 {
-    font-size: 40px;
-  }
+  h1 { font-size: 40px; }
 
   .separater {
     height: 38px;
@@ -123,18 +111,14 @@
     gap: 54px;
   }
 
-  .greetings {
-    gap: 1.5px;
-  }
+  .greetings { gap: 1.5px; }
 
   #greetingText,
   #comma {
     font-size: 33px;
   }
 
-  .name {
-    font-size: 45px;
-  }
+  .name { font-size: 45px; }
 }
 
 @media (max-width: 1099px) and (min-width: 801px) {
@@ -184,9 +168,7 @@
     transition: opacity 1s ease;
   }
 
-  .MobileGreeting.fade-out {
-    opacity: 0;
-  }
+  .MobileGreeting.fade-out { opacity: 0; }
 
   .greetingsMobile {
     display: flex;
@@ -233,9 +215,7 @@
     white-space: normal;
   }
 
-  .separater {
-    display: none;
-  }
+  .separater { display: none; }
 
   .separaterM {
     display: flex;
@@ -243,18 +223,15 @@
     width: 90px;
   }
 
-  .greetings {
-    display: none !important;
+  .greetings { display: none !important;
   }
 
-  .hidden {
-    display: none;
+  .hidden { display: none;
   }
 
   .nameAndToDoParent {
-    --summary-scale: 0.8302;
     width: 100%;
-    max-width: calc(560px * var(--summary-scale));
+    max-width: clamp(286.016px, calc(100vw - 34px), 464.912px);
     max-height: none;
     align-items: flex-start;
   }
@@ -263,151 +240,169 @@
     justify-content: flex-start;
     align-items: flex-start;
     width: 100%;
-    max-width: calc(560px * var(--summary-scale));
+    max-width: clamp(286.016px, calc(100vw - 34px), 464.912px);
     gap: 0;
   }
 
   .row-grid {
-    --summary-scale: 0.8302;
+    display: flex;
+    flex-direction: column;
     width: 100%;
-    max-width: calc(560px * var(--summary-scale));
-    height: calc(562px * var(--summary-scale));
+    max-width: clamp(286.016px, calc(100vw - 34px), 464.912px);
     min-width: 0;
-    --summary-row-stack-gap: calc(28px * var(--summary-scale));
-    --summary-row-inline-gap: calc(32px * var(--summary-scale));
-    --summary-deadline-row-gap: calc(28px * var(--summary-scale));
-    --summary-number-size: calc(64px * var(--summary-scale));
-    --summary-label-size: calc(20px * var(--summary-scale));
-    --summary-deadline-strong-size: calc(20px * var(--summary-scale));
-    --summary-deadline-normal-size: calc(16px * var(--summary-scale));
-    --summary-deadline-text-size: calc(16px * var(--summary-scale));
-    --summary-circle-size: calc(69px * var(--summary-scale));
+    height: auto;
+    gap: clamp(14.308px, calc((100vw - 34px) * 28 / 560), 23.246px);
+    --summary-number-size: clamp(32.704px, calc((100vw - 34px) * 64 / 560), 53.133px);
+    --summary-label-size: clamp(10.22px, calc((100vw - 34px) * 20 / 560), 16.604px);
+    --summary-deadline-strong-size: clamp(10.22px, calc((100vw - 34px) * 20 / 560), 16.604px);
+    --summary-deadline-normal-size: clamp(8.176px, calc((100vw - 34px) * 16 / 560), 13.283px);
+    --summary-deadline-text-size: clamp(8.176px, calc((100vw - 34px) * 16 / 560), 13.283px);
+    --summary-circle-size: clamp(35.259px, calc((100vw - 34px) * 69 / 560), 57.284px);
+  }
+
+  .row-grid > .row:first-child,
+  .row--deadline-email,
+  .row-grid > .row:last-child {
+    display: grid;
+    width: 100%;
+    max-width: 100%;
+    max-height: none;
+    align-items: stretch;
   }
 
   .row-grid > .row:first-child {
-    width: calc(560px * var(--summary-scale));
-    max-width: 100%;
-    height: calc(168px * var(--summary-scale));
-    max-height: calc(168px * var(--summary-scale));
-    gap: calc(32px * var(--summary-scale));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    height: clamp(85.848px, calc((100vw - 34px) * 168 / 560), 139.474px);
+    gap: clamp(16.352px, calc((100vw - 34px) * 32 / 560), 26.566px);
   }
 
   .row--deadline-email {
-    width: calc(560px * var(--summary-scale));
-    max-width: 100%;
-    height: calc(168px * var(--summary-scale));
-    max-height: calc(168px * var(--summary-scale));
-    gap: calc(28px * var(--summary-scale));
+    grid-template-columns: minmax(0, 364fr) minmax(0, 168fr);
+    height: clamp(85.848px, calc((100vw - 34px) * 168 / 560), 139.474px);
+    gap: clamp(14.308px, calc((100vw - 34px) * 28 / 560), 23.246px);
   }
 
   .row-grid > .row:last-child {
-    width: calc(560px * var(--summary-scale));
-    max-width: 100%;
-    height: calc(170px * var(--summary-scale));
-    max-height: calc(170px * var(--summary-scale));
-    gap: calc(28px * var(--summary-scale));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    height: clamp(86.87px, calc((100vw - 34px) * 170 / 560), 141.134px);
+    gap: clamp(14.308px, calc((100vw - 34px) * 28 / 560), 23.246px);
   }
 
   .row {
-    max-height: calc(168px * var(--summary-scale));
+    max-height: none;
     height: auto;
   }
 
+  .row-grid .row a.item1,
+  .row-grid .row a.item3,
+  .row-grid .row--deadline-email a.item2,
+  .row-grid .row--deadline-email a.item-email-requests {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    flex: none;
+    box-sizing: border-box;
+  }
+
   .item1 {
-    width: calc(264px * var(--summary-scale));
-    max-width: calc(264px * var(--summary-scale));
-    height: calc(168px * var(--summary-scale));
-    min-height: calc(168px * var(--summary-scale));
-    max-height: calc(168px * var(--summary-scale));
-    border-radius: calc(30px * var(--summary-scale));
-    gap: calc(18px * var(--summary-scale));
-    padding: calc(38px * var(--summary-scale)) calc(19px * var(--summary-scale));
+    border-radius: clamp(15.33px, calc((100vw - 34px) * 30 / 560), 24.906px);
+    gap: clamp(9.198px, calc((100vw - 34px) * 18 / 560), 14.944px);
+    padding: clamp(19.418px, calc((100vw - 34px) * 38 / 560), 31.548px)
+      clamp(9.709px, calc((100vw - 34px) * 19 / 560), 15.774px);
   }
 
   .item1 + .item1 {
-    padding: calc(38px * var(--summary-scale)) calc(58px * var(--summary-scale));
+    padding: clamp(19.418px, calc((100vw - 34px) * 38 / 560), 31.548px)
+      clamp(9.709px, calc((100vw - 34px) * 19 / 560), 15.774px);
   }
 
   .item3 {
-    width: calc(168px * var(--summary-scale));
-    max-width: calc(168px * var(--summary-scale));
-    min-width: calc(168px * var(--summary-scale));
-    height: calc(168px * var(--summary-scale));
-    min-height: calc(168px * var(--summary-scale));
-    max-height: calc(168px * var(--summary-scale));
-    flex: 0 0 calc(168px * var(--summary-scale));
-    border-radius: calc(30px * var(--summary-scale));
-    gap: calc(13px * var(--summary-scale));
-    padding: calc(25px * var(--summary-scale)) 0;
+    border-radius: clamp(15.33px, calc((100vw - 34px) * 30 / 560), 24.906px);
+    gap: clamp(6.643px, calc((100vw - 34px) * 13 / 560), 10.793px);
+    padding: clamp(12.775px, calc((100vw - 34px) * 25 / 560), 20.755px) 0;
   }
 
   .row--deadline-email .item2 {
-    --summary-separator-gap: calc(11px * var(--summary-scale));
-    flex: 0 0 calc(364px * var(--summary-scale));
-    width: calc(364px * var(--summary-scale));
-    min-width: calc(364px * var(--summary-scale));
-    max-width: calc(364px * var(--summary-scale));
-    height: calc(168px * var(--summary-scale));
-    padding: 0 calc(18px * var(--summary-scale));
-    border-radius: calc(30px * var(--summary-scale));
+    --summary-separator-gap: clamp(5.621px, calc((100vw - 34px) * 11 / 560), 9.132px);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: var(--summary-separator-gap);
+    padding: 0 clamp(9.198px, calc((100vw - 34px) * 18 / 560), 14.944px);
+    border-radius: clamp(15.33px, calc((100vw - 34px) * 30 / 560), 24.906px);
   }
 
   .row--deadline-email .item2 .d-flex {
     flex: 1 1 0;
     width: auto;
     max-width: none;
-    gap: calc(10px * var(--summary-scale));
+    min-width: 0;
+    gap: clamp(5.11px, calc((100vw - 34px) * 10 / 560), 8.302px);
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+  }
+
+  .row--deadline-email .item2 .d-flex .d-colum {
+    flex: 1 1 0;
+    min-width: 0;
+    align-items: center;
     justify-content: center;
   }
 
+  .row--deadline-email .item2 .d-flex .To-do {
+    white-space: nowrap;
+  }
+
   .row--deadline-email .item2 .d-flex .img1 {
-    width: calc(60px * var(--summary-scale));
-    height: calc(60px * var(--summary-scale));
+    width: clamp(30.66px, calc((100vw - 34px) * 60 / 560), 49.812px);
+    height: clamp(30.66px, calc((100vw - 34px) * 60 / 560), 49.812px);
+    flex-shrink: 0;
   }
 
   .row--deadline-email .item2 .separator2 {
-    height: calc(102px * var(--summary-scale));
+    flex: 0 0 2px;
+    width: 2px;
+    height: clamp(52.122px, calc((100vw - 34px) * 102 / 560), 84.68px);
+    margin: 0;
+    align-self: center;
   }
 
   .row--deadline-email .item2 .deadline {
-    gap: calc(13px * var(--summary-scale));
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+    width: auto;
+    gap: clamp(6.643px, calc((100vw - 34px) * 13 / 560), 10.793px);
+    overflow: hidden;
+  }
+
+  .row--deadline-email .item2 .deadline .p-strong,
+  .row--deadline-email .item2 .deadline .p-normal {
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .row--deadline-email .item-email-requests {
-    flex: 0 0 calc(168px * var(--summary-scale));
-    width: calc(168px * var(--summary-scale));
-    min-width: calc(168px * var(--summary-scale));
-    max-width: calc(168px * var(--summary-scale));
-    height: calc(168px * var(--summary-scale));
-    border-radius: calc(30px * var(--summary-scale));
-    gap: calc(13px * var(--summary-scale));
-    padding: calc(25px * var(--summary-scale)) 0;
+    border-radius: clamp(15.33px, calc((100vw - 34px) * 30 / 560), 24.906px);
+    gap: clamp(6.643px, calc((100vw - 34px) * 13 / 560), 10.793px);
+    padding: clamp(12.775px, calc((100vw - 34px) * 25 / 560), 20.755px) 0;
   }
 
   .To-do--offset {
-    transform: translateY(calc(8px * var(--summary-scale)));
+    transform: translateY(clamp(4.088px, calc((100vw - 34px) * 8 / 560), 6.642px));
   }
 }
 
-/* Ab 500px: gleiches Layout wie bei 800px, Scale flüssig und einheitlos bis 320px */
 @media (max-width: 500px) {
-  .nameAndToDoParent,
-  .nameAndToDo,
   .row-grid {
-    /* (100vw - padding) / 560 → unitless; bei 500px ≈ 0.83, bei 320px ≈ 0.511 */
-    --summary-scale: clamp(0.511, calc((100vw - 34px) / 560px), 0.8302);
-  }
-
-  .row-grid {
-    --summary-label-size: max(16px, calc(20px * var(--summary-scale)));
-    --summary-deadline-strong-size: max(14px, calc(20px * var(--summary-scale)));
-    --summary-deadline-normal-size: max(14px, calc(16px * var(--summary-scale)));
-    --summary-deadline-text-size: max(14px, calc(16px * var(--summary-scale)));
-  }
-
-  /* Done-Card: großes Desktop-Padding (58px) quetscht bei min. 16px-Label → Umbruch/Sprung */
-  .item1 + .item1 {
-    padding: calc(38px * var(--summary-scale)) calc(19px * var(--summary-scale));
+    --summary-label-size: clamp(16px, calc((100vw - 34px) * 20 / 560), 16.604px);
+    --summary-deadline-strong-size: clamp(14px, calc((100vw - 34px) * 20 / 560), 16.604px);
+    --summary-deadline-normal-size: clamp(14px, calc((100vw - 34px) * 16 / 560), 16px);
+    --summary-deadline-text-size: clamp(14px, calc((100vw - 34px) * 16 / 560), 16px);
   }
 
   .item1 .To-do {
@@ -415,9 +410,5 @@
     overflow-wrap: normal;
     word-break: normal;
     padding: 0;
-  }
-
-  .row--deadline-email .item2 .d-flex .number-priority {
-    font-size: var(--summary-number-size, 64px);
   }
 }

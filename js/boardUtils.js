@@ -3,7 +3,6 @@
  * Helper functions for board functionality
  */
 
-
 /**
  * Converts a string to camelCase format
  * @param {string} word 
@@ -13,7 +12,6 @@ function convertToCamelCase(word) {
     if (!word) return '';
     return (word.charAt(0).toLowerCase() + word.slice(1)).replace(' ', '');
 }
-
 
 /**
  * Returns the appropriate SVG icon for a given priority level
@@ -33,7 +31,6 @@ function getPrioritySvg(priority) {
     }
 }
 
-
 /**
  * Generates HTML for subtask progress display
  * @param {Array<Object>} subtasks 
@@ -51,7 +48,6 @@ function generateSubtaskProgress(subtasks) {
     return handleSubtasksTemplate(progressPercentage, completedSubtasks, totalSubtasks);
 }
 
-
 /**
  * Returns a string showing completed vs total subtasks count
  * @param {Array<Object>} subtasks 
@@ -64,7 +60,6 @@ function getSubtasksCount(subtasks) {
     return '';
 }
 
-
 /**
  * Returns appropriate CSS class for conditional visibility
  * @param {boolean} condition
@@ -73,7 +68,6 @@ function getSubtasksCount(subtasks) {
 function getVisibilityClass(condition) {
     return condition ? '' : ' display-none';
 }
-
 
 /**
  * Checks if a task has footer data (assignees or priority)

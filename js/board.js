@@ -10,7 +10,6 @@ function getSelectedPriority() {
     return priorityBtn ? priorityBtn.classList[priorityBtn.classList.length - 2] : '';
 }
 
-
 /**
  * Gets the assigned contacts from the form
  * @returns {Array<string>} Array of assigned contact names
@@ -19,7 +18,6 @@ function getAssignedContacts() {
     return Array.from(document.querySelectorAll('#selectedAssignee .contact-icon'))
         .map(span => span.dataset.name);
 }
-
 
 /**
  * Gets the subtasks from the form
@@ -80,7 +78,6 @@ async function pushTaskToDatabase(columnId) {
     const payload = await resolveCreatorNameForSave(taskData);
     return postData(getUserTasksUrl(), payload);
 }
-
 
 /**
  * Groups tasks by columns and sorts them by movedAt timestamp
@@ -160,7 +157,6 @@ async function updateColumns(tasks) {
     renderColumns(columnData);
 }
 
-
 /**
  * Fetches all board data from Firebase database
  * @function fetchBoardData
@@ -199,7 +195,7 @@ async function updateBoard() {
 }
 
 /**
- * Initialisiert die Board-Seite erst nach Firebase-Auth.
+ * Initializes the board page after Firebase auth.
  * @returns {Promise<void>}
  */
 async function initBoardPage() {

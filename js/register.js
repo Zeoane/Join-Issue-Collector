@@ -1,5 +1,4 @@
 /**
- * Detects if a click is within the toggle icon area on the right.
  * @param {MouseEvent} event
  * @param {HTMLInputElement} inputEl
  * @returns {boolean}
@@ -9,11 +8,7 @@ function clickedToggleArea(event, inputEl) {
   return event.clientX > rightEdge - 40;
 }
 
-
-/**
- * Adds listeners that validate password match live and clears error on focus.
- * @returns {void}
- */
+/** Adds live password-match validation listeners. */
 function setupLivePasswordValidation() {
   const password1 = document.getElementById('password');
   const password2 = document.getElementById('password2');
@@ -26,9 +21,7 @@ function setupLivePasswordValidation() {
   password2.addEventListener('focus', () => password2.classList.remove('input-error'));
 }
 
-
 /**
- * Checks if passwords match and toggles error styling and message.
  * @param {HTMLInputElement} password1
  * @param {HTMLInputElement} password2
  * @param {HTMLElement} messageBox
@@ -39,10 +32,7 @@ function validateMatch(password1, password2, messageBox) {
   messageBox.textContent = isMatch ? '' : 'Your passwords don’t match. Please try again.';
 }
 
-
-/**
- * Clears the password mismatch error styling and message.
- */
+/** Clears password mismatch error UI. */
 function resetPasswordError() {
   const password2 = document.getElementById('password2');
   const messageBox = document.getElementById('msgBox');
@@ -50,9 +40,7 @@ function resetPasswordError() {
   if (messageBox) messageBox.textContent = '';
 }
 
-
 /**
- * Checks passwords equality or marks the confirmation field with an error.
  * @param {string} password1
  * @param {string} password2
  * @returns {boolean}
@@ -66,10 +54,7 @@ function validatePasswords(password1, password2) {
   return false;
 }
 
-
-/**
- * Shows sign-up success overlay briefly, then redirects to login page.
- */
+/** Shows signup success overlay, then redirects to login. */
 function showSignUpSuccessOverlay() {
   const overlay = document.getElementById('signUpSuccess');
   if (!overlay) return;
@@ -84,9 +69,7 @@ function showSignUpSuccessOverlay() {
   }, 3000);
 }
 
-
 /**
- * Reads, trims, and returns an input value by element id.
  * @param {string} id
  * @returns {string}
  */
@@ -98,9 +81,8 @@ function getTrimmedValue(id) {
 /** Back-compat alias (typo): getTrimedValue -> getTrimmedValue */
 function getTrimedValue(id) { return getTrimmedValue(id); }
 
-
 /**
- * Zeigt eine Fehlermeldung im Signup-Formular an.
+ * Shows a signup form error message.
  * @param {string} message
  */
 function showSignupGlobalError(message) {
@@ -111,7 +93,7 @@ function showSignupGlobalError(message) {
 }
 
 /**
- * Entfernt die globale Signup-Fehlermeldung.
+ * Clears the global signup error message.
  */
 function clearSignupGlobalError() {
   const globalError = document.getElementById("globalError");
@@ -121,17 +103,29 @@ function clearSignupGlobalError() {
 }
 
 /**
- * Orchestrates the sign-up flow: validation, user creation, preload, and redirect.
+ * Runs signup after validation: create user, preload, redirect.
  */
 async function signUp() {
   resetPasswordError();
   clearSignupGlobalError();
   const { name, email, password1, password2, acceptChecked } = readSignUpFormValues();
   if (!checkSignupPreconditions(password1, password2, acceptChecked)) return;
-
   const signUpBtn = document.getElementById("signUpBtn");
   if (signUpBtn) signUpBtn.disabled = true;
+  try {
+    await executeSignUp(name, email, password1);
+  } finally {
+    if (signUpBtn) signUpBtn.disabled = false;
+  }
+}
 
+/**
+ * Creates the user account and seeds starter data.
+ * @param {string} name
+ * @param {string} email
+ * @param {string} password1
+ */
+async function executeSignUp(name, email, password1) {
   try {
     const result = await signUpWithEmail(name, email, password1);
     if (!result.success) {
@@ -143,8 +137,6 @@ async function signUp() {
   } catch (err) {
     console.error("SignUp error:", err);
     showSignupGlobalError("Registrierung fehlgeschlagen. Bitte versuche es erneut.");
-  } finally {
-    if (signUpBtn) signUpBtn.disabled = false;
   }
 }
 
@@ -161,12 +153,6 @@ function checkSignupPreconditions(password1, password2, acceptChecked) {
   return ok;
 }
 
-/**
- * Creates user, sets session, preloads contacts, seeds tasks, shows success.
- * @param {string} name
- * @param {string} email
- * @param {string} password
- */
 /**
  * Reads current values from the sign-up form controls.
  * @returns {{name:string,email:string,password1:string,password2:string,acceptChecked:boolean}}
@@ -211,10 +197,7 @@ async function preloadContacts(userKey) {
   await Promise.all(requests);
 }
 
-/**
- * Renders contacts grouped by initial letter into the container.
- * @param {Record<string, any>|Array<any>} data
- */
+/** @param {Record<string, any>|Array<any>} data */
 function renderContacts(data) {
   const container = document.getElementById('contactCardsContainer');
   if (!container) return;
@@ -226,7 +209,6 @@ function renderContacts(data) {
 }
 
 /**
- * Builds a document fragment of contact sections and cards.
  * @param {Array<[string, any]>} entries
  * @returns {DocumentFragment}
  */
@@ -349,24 +331,36 @@ function createAvatar(name, color) {
 function createMeta(email, phone) {
   const meta = document.createElement('div');
   meta.className = 'contact-meta';
-  if (email) {
-    const anchor = document.createElement('a');
-    anchor.className = 'contact-email';
-    anchor.href = `mailto:${email}`;
-    anchor.textContent = email;
-    meta.appendChild(anchor);
-  }
-  if (phone) {
-    const tel = document.createElement('a');
-    tel.className = 'contact-phone';
-    tel.href = `tel:${safeTel(phone)}`;
-    tel.textContent = phone;
-    meta.appendChild(tel);
-  }
+  if (email) meta.appendChild(createMailLink(email));
+  if (phone) meta.appendChild(createPhoneLink(phone));
   return meta;
 }
 
-/** Initials – nutzt globale getInitials aus utils.js */
+/**
+ * @param {string} email
+ * @returns {HTMLAnchorElement}
+ */
+function createMailLink(email) {
+  const anchor = document.createElement('a');
+  anchor.className = 'contact-email';
+  anchor.href = `mailto:${email}`;
+  anchor.textContent = email;
+  return anchor;
+}
+
+/**
+ * @param {string} phone
+ * @returns {HTMLAnchorElement}
+ */
+function createPhoneLink(phone) {
+  const tel = document.createElement('a');
+  tel.className = 'contact-phone';
+  tel.href = `tel:${safeTel(phone)}`;
+  tel.textContent = phone;
+  return tel;
+}
+
+/** Initials – uses global getInitials from utils.js */
 function getInitialsLocal(name) {
   if (typeof window.getInitials === "function") return window.getInitials(name);
   return "";
@@ -380,7 +374,6 @@ function getInitialsLocal(name) {
 function safeTel(phone) {
   return String(phone).replace(/\s+/g, '');
 }
-
 
 /**
  * Repositions cursor after password field update.

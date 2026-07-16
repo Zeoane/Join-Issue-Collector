@@ -7,7 +7,6 @@
    */
   const $ = (id) => document.getElementById(id);
 
-
   /**
    * Gets the input's container element (wrapper) used for styling and errors.
    * @param {HTMLElement} inputEl - Input element.
@@ -17,7 +16,6 @@
     return inputEl.closest('.input-field') || inputEl.parentElement;
   }
 
-
   /**
    * Resolves the error text node for a given container.
    * @param {HTMLElement|null} container - Input container element.
@@ -26,7 +24,6 @@
   function getErrorSlot(container) {
     return container?.querySelector(':scope > .error-text') || null;
   }
-
 
   /**
    * Displays an error message and invalid state for an input.
@@ -40,7 +37,6 @@
     if (slot) { slot.textContent = msg || ''; slot.style.visibility = 'visible'; }
   }
 
-
   /**
    * Clears error message and removes invalid state from an input.
    * @param {HTMLElement} inputEl - The input element.
@@ -51,7 +47,6 @@
     inputEl.removeAttribute('aria-invalid');
     if (slot) { slot.textContent = ''; slot.style.visibility = 'hidden'; }
   }
-
 
   /**
    * Validates the name input value.
@@ -65,7 +60,6 @@
     return "";
   }
 
-
   /**
    * Splits an email string into local and domain parts.
    * @param {string} str - Email string.
@@ -77,7 +71,6 @@
     const m = v.match(/^([A-Za-z0-9._%+-]{1,64})@([A-Za-z0-9.-]{1,253})$/);
     return m ? { local:m[1], domain:m[2] } : null;
   }
-
 
   /**
    * Checks email domain for basic structural validity.
@@ -95,7 +88,6 @@
     );
   }
 
-
   /**
    * Validates if an email has a plausible format.
    * @param {string} str - Email string.
@@ -106,7 +98,6 @@
     if (!parts) return false;
     return hasValidDomain(parts.domain);
   }
-
 
   /**
    * Validates the email input value.
@@ -119,7 +110,6 @@
     if (!isPlausibleEmail(v)) return "Please enter a valid email";
     return "";
   }
-
 
   /**
    * Validates the phone input value.
@@ -136,7 +126,6 @@
       return "Phone should be 6–15 digits (e.g., +491712345678).";
     return "";
   }
-
 
   /**
    * Validates name/email/phone fields and shows inline errors.
@@ -157,7 +146,6 @@
     return true;
   }
 
-
   /**
    * Binds input/blur events to show/hide validation errors live.
    * @returns {void}
@@ -170,7 +158,6 @@
     phoneEl?.addEventListener('input', () => { if(!validatePhone(phoneEl)) clearError(phoneEl); });
     phoneEl?.addEventListener('blur',  () => { const m=validatePhone(phoneEl); m?showError(phoneEl,m):clearError(phoneEl); });
   }
-
 
   /**
    * Binds native form submit with validation gate.
@@ -187,7 +174,6 @@
     });
   }
 
-
   /**
    * Wraps an existing global submit handler to enforce validation.
    * @returns {void}
@@ -203,7 +189,6 @@
     };
   }
 
-
   document.addEventListener('DOMContentLoaded', () => {
     bindLiveValidation();
     bindSubmitA();          
@@ -211,7 +196,6 @@
     bindPhoneSanitizer();
   });
 })();
-
 
 /**
  * Adds dynamic active border effects on the name field.
@@ -227,7 +211,6 @@ function addActiveBorderInteractions() {
   document.getElementById('submitBtn')?.addEventListener('click', reset);
 }
 
-
 /**
  * Cleans invalid characters from phone input values (allow + and digits).
  * @param {HTMLInputElement} el - Phone input element.
@@ -242,7 +225,6 @@ function cleanPhoneInput(el) {
   if (s !== old) { el.value = s; }
 }
 
-
 /**
  * Binds phone input to automatically sanitize its content on input.
  * @returns {void}
@@ -252,9 +234,8 @@ function bindPhoneSanitizer() {
   phoneEl.addEventListener('input', () => cleanPhoneInput(phoneEl));
 }
 
-
 /**
- * Entfernt alle Fehlzustände & Meldungen im Formular.
+ * Clears all validation errors and messages in the form.
  * @param {string} [formId="contactForm"] - Ziel-Formular-ID.
  * @returns {void}
  */

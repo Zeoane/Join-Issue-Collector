@@ -1,5 +1,5 @@
 /**
- * Firebase Realtime Database – zentraler CRUD-Layer mit Auth-Token.
+ * Firebase Realtime Database – central CRUD layer with auth token.
  */
 
 /**
@@ -95,7 +95,6 @@ async function deleteData(path = "") {
 }
 
 window.parseJsonResponse = parseJsonResponse;
-
 window.authFetch = authFetch;
 window.authFetchUrl = authFetch;
 window.loadData = loadData;

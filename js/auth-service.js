@@ -41,7 +41,7 @@ const AUTH_ERROR_MESSAGES = {
 };
 
 /**
- * Entfernt lokale Session-Daten.
+ * Clears local session data.
  * @returns {void}
  */
 function clearSessionStorage() {
@@ -62,6 +62,28 @@ function getAuthErrorMessage(code, flow = "login") {
   return flow === "signup"
     ? "Registrierung fehlgeschlagen. Bitte versuche es erneut."
     : "Anmeldung fehlgeschlagen. Bitte E-Mail und Passwort prüfen.";
+}
+
+/**
+ * @param {"signup"|"login"} flow
+ * @returns {{success:false,error:string,message:string}}
+ */
+function firebaseNotConfiguredResult(flow) {
+  return {
+    success: false,
+    error: "firebase-not-configured",
+    message: getAuthErrorMessage("firebase-not-configured", flow),
+  };
+}
+
+/**
+ * @param {unknown} err
+ * @param {"signup"|"login"} flow
+ * @returns {{success:false,error:string,message:string}}
+ */
+function authFailureResult(err, flow) {
+  const error = err?.code || "auth-error";
+  return { success: false, error, message: getAuthErrorMessage(error, flow) };
 }
 
 /**
@@ -95,22 +117,31 @@ window.syncSessionFromUser = syncSessionFromUser;
  */
 async function signInWithEmail(email, password) {
   try {
-    if (!window.firebaseAuth) {
-      return {
-        success: false,
-        error: "firebase-not-configured",
-        message: getAuthErrorMessage("firebase-not-configured", "login"),
-      };
-    }
+    if (!window.firebaseAuth) return firebaseNotConfiguredResult("login");
     localStorage.removeItem("guestMode");
     const credential = await window.firebaseAuth.signInWithEmailAndPassword(email, password);
     syncSessionFromUser(credential.user);
     return { success: true };
   } catch (err) {
     console.error("Login-Fehler:", err);
-    const error = err.code || "auth-error";
-    return { success: false, error, message: getAuthErrorMessage(error, "login") };
+    return authFailureResult(err, "login");
   }
+}
+
+/**
+ * Persists a new user profile after Firebase signup.
+ * @param {firebase.User} user
+ * @param {string} name
+ * @param {string} email
+ */
+async function persistSignedUpUser(user, name, email) {
+  await putData(`users/${user.uid}`, {
+    name,
+    email,
+    guest: false,
+    color: getRandomColor(),
+  });
+  syncSessionFromUser(user);
 }
 
 /**
@@ -121,28 +152,19 @@ async function signInWithEmail(email, password) {
  */
 async function signUpWithEmail(name, email, password) {
   try {
-    if (!window.firebaseAuth) {
-      return {
-        success: false,
-        error: "firebase-not-configured",
-        message: getAuthErrorMessage("firebase-not-configured", "signup"),
-      };
-    }
+    if (!window.firebaseAuth) return firebaseNotConfiguredResult("signup");
     localStorage.removeItem("guestMode");
     const credential = await window.firebaseAuth.createUserWithEmailAndPassword(email, password);
-    const uid = credential.user.uid;
-    await putData(`users/${uid}`, { name, email, guest: false, color: getRandomColor() });
-    syncSessionFromUser(credential.user);
+    await persistSignedUpUser(credential.user, name, email);
     return { success: true };
   } catch (err) {
     console.error("Signup-Fehler:", err);
-    const error = err.code || "auth-error";
-    return { success: false, error, message: getAuthErrorMessage(error, "signup") };
+    return authFailureResult(err, "signup");
   }
 }
 
 /**
- * @returns {Promise<string|null>} UID des Gastes
+ * @returns {Promise<string|null>} Guest UID
  */
 async function signInAsGuest() {
   if (!window.firebaseAuth) throw new Error("Firebase nicht konfiguriert");
@@ -160,25 +182,26 @@ async function signInAsGuest() {
 }
 
 /**
- * Meldet den Benutzer ab und löscht Gast-Daten.
+ * Deletes guest user data when logging out as guest.
+ */
+async function deleteGuestDataIfNeeded() {
+  const isGuest = localStorage.getItem("guestMode") === "true";
+  const uid = window.USERKEY || localStorage.getItem("loggedInUserKey");
+  if (!isGuest || !uid) return;
+  try {
+    await deleteData(`users/${uid}`);
+  } catch (err) {
+    console.error("Gast-Daten konnten nicht gelöscht werden:", err);
+  }
+}
+
+/**
+ * Signs the user out and clears guest data.
  * @returns {Promise<void>}
  */
 async function signOutUser() {
-  const isGuest = localStorage.getItem("guestMode") === "true";
-  const uid = window.USERKEY || localStorage.getItem("loggedInUserKey");
-
-  if (isGuest && uid) {
-    try {
-      await deleteData(`users/${uid}`);
-    } catch (err) {
-      console.error("Gast-Daten konnten nicht gelöscht werden:", err);
-    }
-  }
-
-  if (window.firebaseAuth) {
-    await window.firebaseAuth.signOut();
-  }
-
+  await deleteGuestDataIfNeeded();
+  if (window.firebaseAuth) await window.firebaseAuth.signOut();
   localStorage.clear();
   window.USERKEY = null;
 }

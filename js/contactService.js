@@ -1,69 +1,64 @@
-// js/services/contactService.js
-
 /**
- * Orchestrates the fetching and processing of all assignable people.
- * This is the main entry point function.
+ * Main entry: fetch and process all assignable people.
+ * @param {string} userKey
+ * @returns {Promise<Array<object>>}
  */
 async function getAssignablePeople(userKey) {
   if (!userKey) { console.error("UserKey required"); return []; }
   try {
     const [allUsersData, personalContactsData, ownUser] = await fetchPeopleData(userKey);
     const peopleMap = new Map();
-
     processUsersInMap(peopleMap, allUsersData);
-
-    // Eigener User immer hinzufügen (falls vorhanden)
-    if (ownUser) {
-      const eml = (ownUser.email || "").trim().toLowerCase();
-      const key = eml || (ownUser.name || "").trim().toLowerCase();
-      if (key) {
-        peopleMap.set(key, {
-          name: ownUser.name || extractNameFromEmail(eml),
-          email: eml,
-          color: ownUser.color || getRandomColor()
-        });
-      }
-    }
-
+    addOwnUserToPeopleMap(peopleMap, ownUser);
     processContactsInMap(peopleMap, personalContactsData);
-
-    const out = finalizePeopleList(peopleMap);
-    return out;
+    return finalizePeopleList(peopleMap);
   } catch (e) {
     console.error("Error loading assignable people:", e);
     return [];
   }
 }
 
-
-
 /**
- * Fetches global users and personal contacts data in parallel.
- * @param {string} userKey 
- * @returns {Promise<[object, object]>}
+ * Fetches global users, personal contacts, and own user in parallel.
+ * @param {string} userKey
+ * @returns {Promise<[object, object, object]>}
  */
 async function fetchPeopleData(userKey) {
   return await Promise.all([
-    loadData('users'),                    // alle Nutzer (global)
-    loadData(`users/${userKey}/contacts`),// deine Kontakte
-    loadData(`users/${userKey}`)          // dein eigenes User-Objekt
+    loadData('users'),
+    loadData(`users/${userKey}/contacts`),
+    loadData(`users/${userKey}`)
   ]);
 }
 
+/**
+ * Adds the signed-in user to the people map.
+ * @param {Map<string, object>} peopleMap
+ * @param {object|null|undefined} ownUser
+ */
+function addOwnUserToPeopleMap(peopleMap, ownUser) {
+  if (!ownUser) return;
+  const eml = (ownUser.email || "").trim().toLowerCase();
+  const key = eml || (ownUser.name || "").trim().toLowerCase();
+  if (!key) return;
+  peopleMap.set(key, {
+    name: ownUser.name || extractNameFromEmail(eml),
+    email: eml,
+    color: ownUser.color || getRandomColor()
+  });
+}
 
 /**
- * Processes the list of global users and adds them to the map.
- * @param {Map<string, object>} peopleMap 
+ * Adds global users to the people map.
+ * @param {Map<string, object>} peopleMap
  * @param {object} allUsersData
  */
 function processUsersInMap(peopleMap, allUsersData) {
   if (!allUsersData) return;
-
   Object.values(allUsersData).forEach(user => {
     const eml = (user?.email || "").trim().toLowerCase();
     if (!eml) return;
-    const key = eml;
-    peopleMap.set(key, {
+    peopleMap.set(eml, {
       name: extractNameFromEmail(eml),
       email: eml,
       color: user.color || getRandomColor()
@@ -71,39 +66,41 @@ function processUsersInMap(peopleMap, allUsersData) {
   });
 }
 
-
 /**
- * Processes the list of personal contacts and adds or updates them in the map.
- * @param {Map<string, object>} peopleMap 
- * @param {object} personalContactsData 
+ * Upserts a single contact into the people map.
+ * @param {Map<string, object>} peopleMap
+ * @param {object} contact
  */
-function processContactsInMap(peopleMap, personalContactsData) {
-  if (!personalContactsData) return;
-
-  Object.values(personalContactsData).forEach(contact => {
-    const name  = (contact?.name || "").trim();
-    const email = (contact?.email || "").trim().toLowerCase();
-
-    // Key darf Email ODER Name sein (falls Email fehlt)
-    const key = (email || name).toLowerCase();
-    if (!key) return;
-
-    const existing = peopleMap.get(key) || {};
-    peopleMap.set(key, {
-      name:  name || extractNameFromEmail(email),
-      email: email, // kann leer bleiben
-      phone: contact.phone || "",
-      color: contact.color || existing.color || getRandomColor()
-    });
+function upsertContactInMap(peopleMap, contact) {
+  const name = (contact?.name || "").trim();
+  const email = (contact?.email || "").trim().toLowerCase();
+  const key = (email || name).toLowerCase();
+  if (!key) return;
+  const existing = peopleMap.get(key) || {};
+  peopleMap.set(key, {
+    name: name || extractNameFromEmail(email),
+    email: email,
+    phone: contact.phone || "",
+    color: contact.color || existing.color || getRandomColor()
   });
 }
 
-
+/**
+ * Adds or updates personal contacts in the people map.
+ * @param {Map<string, object>} peopleMap
+ * @param {object} personalContactsData
+ */
+function processContactsInMap(peopleMap, personalContactsData) {
+  if (!personalContactsData) return;
+  Object.values(personalContactsData).forEach((contact) => {
+    upsertContactInMap(peopleMap, contact);
+  });
+}
 
 /**
- * Converts the final map of people into a sorted array.
- * @param {Map<string, object>} peopleMap 
- * @returns {Array<object>} 
+ * Converts the people map into a sorted array.
+ * @param {Map<string, object>} peopleMap
+ * @returns {Array<object>}
  */
 function finalizePeopleList(peopleMap) {
   const finalList = Array.from(peopleMap.values());
@@ -111,10 +108,8 @@ function finalizePeopleList(peopleMap) {
   return finalList;
 }
 
-// --- Utility functions that moved here from addTask.js ---
-
 /**
-* Extracts and formats a name from an email address.
+ * Extracts and formats a name from an email address.
  * @param {string} email
  * @returns {string}
  */
@@ -128,9 +123,8 @@ function extractNameFromEmail(email) {
     .join(" ");
 }
 
-
 /**
- * Builds the element for the own contact card and wires click behavior.
+ * Builds the own-contact card element.
  * @param {{name:string,email?:string}} contact
  * @returns {{card: HTMLElement, initials: string}}
  */
@@ -144,7 +138,7 @@ function buildOwnContactCardElement(contact) {
 }
 
 /**
- * Adds the standard click listener for own-contact display and activation.
+ * Wires click behavior for the own-contact card.
  * @param {HTMLElement} card
  * @param {{name:string,email?:string,phone?:string}} contact
  */
@@ -159,7 +153,7 @@ function wireOwnCardClick(card, contact) {
 }
 
 /**
- * Creates a contact list card element with common attributes filled.
+ * Creates a contact list card element.
  * @param {string} key
  * @param {{name:string,email?:string,color?:string}} contact
  * @returns {HTMLElement}
@@ -174,7 +168,7 @@ function createContactCardElement(key, contact) {
 }
 
 /**
- * Applies the mobile-specific setup for showing details of a contact.
+ * Applies mobile setup when showing contact details.
  * @param {string} key
  */
 function applyMobileDetailsSetup(key) {
@@ -186,12 +180,10 @@ function applyMobileDetailsSetup(key) {
   document.getElementById("mobileBtnIcon").src = "../img/more_vert.png";
 }
 
-
-
 /**
  * Deletes a contact from Firebase and updates the UI.
- * @param {string} key - Contact key
- * @param {boolean} [closeOverlay=false] - Whether to close the overlay afterward.
+ * @param {string} key
+ * @param {boolean} [closeOverlay=false]
  */
 async function deleteContact(key, closeOverlay = false) {
   await deleteData(`${getContactsBasePath()}/${key}`);
@@ -199,13 +191,10 @@ async function deleteContact(key, closeOverlay = false) {
   document.getElementById("contactsDetails").innerHTML = "";
   document.getElementById("contactsDetails").classList.remove("showDetails");
   await loadDataAfterSave();
-  if (closeOverlay) {
-    toggleOverlay();
-  }
-  closeMobileDetails()
+  if (closeOverlay) toggleOverlay();
+  closeMobileDetails();
   showSuccessOverlay("Contact deleted!");
 }
-
 
 /**
  * Reloads contacts from Firebase and re-renders the list.
@@ -221,7 +210,8 @@ async function loadDataAfterSave() {
  */
 function handleEditMobile() {
   if (editingOwnContact === true) {
-    loadData(`users/${window.USERKEY}`).then((ownContact) => {      editOwnContact(ownContact);
+    loadData(`users/${window.USERKEY}`).then((ownContact) => {
+      editOwnContact(ownContact);
     });
     toggleMobileMenu();
     return;
@@ -243,9 +233,8 @@ function handleDeleteMobile() {
   closeMobileDetails();
 }
 
-
 /**
- * Prefill edit form fields.
+ * Prefills edit form fields.
  * @param {{name:string,email?:string,phone?:string}} contact
  * @param {string} key
  */
@@ -257,7 +246,7 @@ function prefillFormWithContactData(contact, key) {
 }
 
 /**
- * Render the edit avatar with initials.
+ * Renders the edit avatar with initials.
  * @param {{name:string,color?:string}} contact
  */
 function renderEditAvatar(contact) {
@@ -272,7 +261,7 @@ function renderEditAvatar(contact) {
 }
 
 /**
- * Adjust UI for own-contact details on mobile.
+ * Adjusts UI for own-contact details on mobile.
  */
 function showOwnContactDetailsMobile() {
   const container = document.querySelector(".contactsContainer");
@@ -283,7 +272,7 @@ function showOwnContactDetailsMobile() {
 }
 
 /**
- * Toggle mobile menu overlay.
+ * Toggles the mobile menu overlay.
  */
 function toggleMobileMenu() {
   const menu = document.getElementById("menuOverlay");
@@ -291,23 +280,22 @@ function toggleMobileMenu() {
 }
 
 /**
- * Close mobile details and reset FAB.
+ * Closes mobile details and resets the FAB.
  */
 function closeMobileDetails() {
   const container = document.querySelector(".contactsContainer");
   if (window.matchMedia("(max-width: 899px)").matches && container) {
-  container.style.display = "none";
-}
+    container.style.display = "none";
+  }
   deactivateAllContactCards();
   const btn = document.getElementById("mobileAddBtn");
   btn.setAttribute("onclick", "openNewContactForm()");
   document.getElementById("mobileBtnIcon").src = "../img/person_add.png";
 }
 
-
 /**
- * Creates a single contact list card.
- * @param {string} key - Contact key
+ * Creates a single contact list card with click handling.
+ * @param {string} key
  * @param {{name:string,email?:string,color?:string}} contact
  * @returns {HTMLElement}
  */
@@ -317,11 +305,8 @@ function createContactCard(key, contact) {
     activeContactKey = key;
     deactivateAllContactCards();
     activateContactCard(card);
-    if (window.innerWidth < 799) {
-      applyMobileDetailsSetup(key);
-    } else {
-      showcontactCardDetails(key);
-    }
+    if (window.innerWidth < 799) applyMobileDetailsSetup(key);
+    else showcontactCardDetails(key);
   });
   return card;
 }

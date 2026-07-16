@@ -37,7 +37,6 @@ function clearError(inputEl) {
   inputEl.removeAttribute('aria-invalid');
 }
 
-
 /**
  * Validates the "name" field.
  * @param {HTMLInputElement} el - Name input.

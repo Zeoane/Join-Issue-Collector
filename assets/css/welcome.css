@@ -396,3 +396,15 @@ body.welcome-page-active {
         gap: 10px;
     }
 }
+
+/* iPhone SE & similar short viewports */
+@media (max-width: 375px) and (max-height: 670px) {
+    .welcome-screen__body {
+        justify-content: flex-start;
+        padding-top: 132px;
+    }
+
+    .welcome-mobile-logo {
+        top: max(45px, env(safe-area-inset-top));
+    }
+}

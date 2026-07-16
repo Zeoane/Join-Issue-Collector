@@ -212,22 +212,29 @@ async function updateTaskInFirebase(taskId, updatedTaskData) {
     }
 }
 
+/**
+ * Persists edited task data and refreshes overlay/board.
+ * @param {string} taskId
+ * @param {Object} editedTaskData
+ */
+function persistEditedTask(taskId, editedTaskData) {
+    updateTaskInFirebase(taskId, editedTaskData)
+        .then(() => {
+            updateBoard();
+            taskOverlay(taskId);
+        })
+        .catch((error) => {
+            console.error('Failed to update task:', error);
+        });
+}
+
 /** Submits the edited task to Firebase and updates the board. */
 function submitEdit() {
     const editedTaskData = editedTask();
     const taskId = window.currentEditingTask.id;
-
     if (!editedTaskData.title || !editedTaskData.dueDate) {
         showValidationErrors();
         return null;
-    } else {
-        updateTaskInFirebase(taskId, editedTaskData)
-            .then(() => {
-                updateBoard();
-                taskOverlay(taskId);
-            })
-            .catch(error => {
-                console.error('Failed to update task:', error);
-            });
     }
+    persistEditedTask(taskId, editedTaskData);
 }
