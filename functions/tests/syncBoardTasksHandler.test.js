@@ -17,6 +17,10 @@ vi.mock("firebase-admin/auth", () => ({
   }),
 }));
 
+vi.mock("../src/firebaseAdmin.js", () => ({
+  ensureFirebaseAdmin: vi.fn(),
+}));
+
 vi.mock("../src/taskRepository.js", () => ({
   syncMissingTasksFromSource,
 }));

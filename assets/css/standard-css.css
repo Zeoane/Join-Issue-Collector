@@ -11,29 +11,21 @@
 }
 
 :root {
-    --sb-track-color: white;
-    --sb-thumb-color: #d1d1d1;
-    --sb-size: 5px;
+    --sb-track-color: transparent;
+    --sb-thumb-color: transparent;
+    --sb-size: 0px;
+}
+
+* {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 
 *::-webkit-scrollbar {
-  width: var(--sb-size);
-}
-*::-webkit-scrollbar-track {
-  background: var(--sb-track-color);
-  border-radius: 8px;
-}
-*::-webkit-scrollbar-thumb {
-  background: var(--sb-thumb-color);
-  border-radius: 8px;
-  box-sizing: border-box;
-}
-
-@supports not selector(::-webkit-scrollbar) {
-  * {
-      scrollbar-color: var(--sb-thumb-color) var(--sb-track-color);
-      scrollbar-width: thin;
-  }
+    display: none;
+    width: 0;
+    height: 0;
+    background: transparent;
 }
 
 html, body {
@@ -43,6 +35,7 @@ html, body {
     display: flex;
     flex-direction: row;
     background: #F6F7F8;
+    overflow-x: hidden;
 }
 main{
     width: 100%;
@@ -50,6 +43,8 @@ main{
     justify-content: flex-start;
     align-items: flex-start !important;
     height: 100vh;
+    min-width: 0;
+    overflow-x: hidden;
     padding-left: 232px;
 }
 

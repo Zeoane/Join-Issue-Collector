@@ -129,7 +129,6 @@ h1 {
   gap: var(--board-col-gap);
   overflow-x: auto;
   overflow-y: hidden;
-  scrollbar-width: thin;
   box-sizing: border-box;
 }
 

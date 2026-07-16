@@ -3,24 +3,114 @@
   "nodes": [
     {
       "parameters": {
-        "postProcessAction": "read",
+        "httpMethod": "POST",
+        "path": "join-task-moved",
+        "options": {}
+      },
+      "id": "eb95fad7-6957-4b94-9a9b-30f09e3f934f",
+      "name": "Webhook task moved1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -8288,
+        3472
+      ],
+      "webhookId": "1b7b72a6-4cdc-43ca-8f0b-7725c34835e0",
+      "notes": "Receives task column-change events from Firebase Function notifyTaskCreatorOnColumnChange."
+    },
+    {
+      "parameters": {
+        "jsCode": "const incoming = $input.item.json;\n\nlet payload = incoming;\nif (incoming && typeof incoming.body === 'object' && incoming.body) {\n  payload = incoming.body;\n}\nif (typeof payload === 'string') {\n  try {\n    payload = JSON.parse(payload);\n  } catch (_) {\n    payload = {};\n  }\n}\n\nconst movedAtRaw = Number(payload.movedAt || 0);\nconst movedAtIso = Number.isFinite(movedAtRaw) && movedAtRaw > 0\n  ? new Date(movedAtRaw).toISOString()\n  : '';\n\nreturn [{\n  json: {\n    eventType: String(payload.eventType || '').trim(),\n    uid: String(payload.uid || '').trim(),\n    taskId: String(payload.taskId || '').trim(),\n    title: String(payload.title || 'Ticket').trim(),\n    creatorName: String(payload.creatorName || '').trim(),\n    creatorEmail: String(payload.creatorEmail || '').trim(),\n    previousColumn: String(payload.previousColumn || '').trim(),\n    previousColumnLabel: String(payload.previousColumnLabel || payload.previousColumn || '').trim(),\n    newColumn: String(payload.newColumn || '').trim(),\n    newColumnLabel: String(payload.newColumnLabel || payload.newColumn || '').trim(),\n    movedAt: Number.isFinite(movedAtRaw) && movedAtRaw > 0 ? movedAtRaw : 0,\n    movedAtIso,\n  },\n}];"
+      },
+      "id": "8ac0c6a3-82a5-43a0-96b4-f32575f602b1",
+      "name": "Normalize task moved payload1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -8064,
+        3472
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "creator-email-present",
+              "leftValue": "={{ $json.creatorEmail }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7c7cfa77-8ea8-4a83-b878-80b10fbd1522",
+      "name": "IF creator email available1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -7856,
+        3472
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.creatorEmail }}",
+        "subject": "={{ 'Update zu Ihrem Ticket: ' + ($json.title || 'Ticket') }}",
+        "emailType": "text",
+        "message": "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n' + 'Ihr Ticket wurde im Join Task Board in eine neue Spalte verschoben.\\n\\n' + 'Ticket: ' + ($json.title || 'Ticket') + '\\n' + 'Von: ' + ($json.previousColumnLabel || $json.previousColumn || 'Unbekannt') + '\\n' + 'Nach: ' + ($json.newColumnLabel || $json.newColumn || 'Unbekannt') + ($json.movedAtIso ? ('\\nZeitpunkt: ' + $json.movedAtIso) : '') + '\\n\\n' + 'Viele Gruesse\\nJoin Team' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "cf96254c-2995-44ea-9157-1acef09000da",
+      "name": "Send task moved response1",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -7568,
+        3456
+      ],
+      "webhookId": "390263f7-6157-4aa4-8d9f-20f638908ca8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Sends an email notification when a task changes board column."
+    },
+    {
+      "parameters": {
         "options": {
           "customEmailConfig": "[\"UNSEEN\"]",
           "forceReconnect": 15
         }
       },
-      "id": "n-imap-trigger",
-      "name": "Email Trigger (IMAP)",
+      "id": "ad82657f-df3f-403c-a3ca-dd4d1afb9917",
+      "name": "Email Trigger (IMAP)1",
       "type": "n8n-nodes-base.emailReadImap",
       "typeVersion": 2,
       "position": [
-        0,
-        0
+        -8752,
+        2720
       ],
       "credentials": {
         "imap": {
-          "id": "IMAP_CREDENTIAL_ID",
-          "name": "IMAP account"
+          "id": "v6fJz0hh1XAMh9uB",
+          "name": "IMAP account 3"
         }
       },
       "notes": "Realtime IMAP. Marks UNSEEN mail as read after trigger."
@@ -30,61 +120,45 @@
         "rule": {
           "interval": [
             {
-              "field": "minutes",
-              "minutesInterval": 5
+              "field": "minutes"
             }
           ]
         }
       },
-      "id": "n-schedule",
-      "name": "Schedule Trigger (every 5 min)",
+      "id": "922db743-269f-4510-86f8-980adefdf46b",
+      "name": "Schedule Trigger (every 5 min)1",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        0,
-        208
+        -8752,
+        2928
       ],
       "notes": "Polls unread Gmail inbox every 5 minutes."
     },
     {
-      "parameters": {},
-      "id": "n-manual",
-      "name": "When clicking 'Execute workflow'",
-      "type": "n8n-nodes-base.manualTrigger",
-      "typeVersion": 1,
-      "position": [
-        0,
-        416
-      ],
-      "notes": "Manual test without real email."
-    },
-    {
       "parameters": {
-        "resource": "message",
         "operation": "getAll",
         "returnAll": true,
         "filters": {
-          "readStatus": "unread",
           "labelIds": [
             "INBOX"
-          ]
-        },
-        "options": {
-          "simplify": false
+          ],
+          "readStatus": "unread"
         }
       },
-      "id": "n-fetch-gmail",
-      "name": "Fetch unread emails (Gmail)",
+      "id": "36494ce6-d8c5-4497-adc7-9615c23408c9",
+      "name": "Fetch unread emails (Gmail)1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        240,
-        208
+        -8576,
+        2928
       ],
+      "webhookId": "47ff329e-e8a3-4174-9213-36fb1016735a",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       }
     },
@@ -92,26 +166,26 @@
       "parameters": {
         "jsCode": "const data = $input.item.json;\n\nfunction formatAddress(entry) {\n  if (!entry) return '';\n  if (typeof entry === 'string') return entry;\n  if (entry.text) return entry.text;\n  if (entry.value) return entry.value;\n  if (entry.address) {\n    return entry.name ? `${entry.name} <${entry.address}>` : entry.address;\n  }\n  return '';\n}\n\nfunction extractFrom(item) {\n  if (typeof item.from === 'string' && item.from) return item.from;\n  if (item.from) return formatAddress(item.from);\n  if (item.From) return formatAddress(item.From);\n  const fromList = item.envelope?.from;\n  if (Array.isArray(fromList) && fromList.length) return formatAddress(fromList[0]);\n  if (item.headers?.from) {\n    return Array.isArray(item.headers.from) ? item.headers.from[0] : item.headers.from;\n  }\n  return '';\n}\n\nfunction extractSubject(item) {\n  const subject =\n    item.subject ||\n    item.Subject ||\n    item.envelope?.subject ||\n    item.headers?.subject?.[0] ||\n    item.headers?.subject ||\n    '';\n  return normalizeEmailText(subject);\n}\n\nfunction stripHtml(value) {\n  return String(value || '')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<\\/p>/gi, '\\n')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/\\u00a0/g, ' ')\n    .replace(/\\r/g, '')\n    .trim();\n}\n\nfunction decodeHtmlEntities(value) {\n  function fromCodePointOrRaw(raw, codePoint) {\n    if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff) return raw;\n    try { return String.fromCodePoint(codePoint); } catch (_) { return raw; }\n  }\n  const named = {\n    nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '\"', apos: \"'\",\n    Auml: 'Ä', Ouml: 'Ö', Uuml: 'Ü', auml: 'ä', ouml: 'ö', uuml: 'ü', szlig: 'ß',\n  };\n  return String(value || '')\n    .replace(/&#(\\d+);/g, (raw, dec) => fromCodePointOrRaw(raw, Number(dec)))\n    .replace(/&#x([0-9a-f]+);/gi, (raw, hex) => fromCodePointOrRaw(raw, parseInt(hex, 16)))\n    .replace(/&([a-zA-Z]+);/g, (match, key) => named[key] ?? match);\n}\n\nfunction decodeMimeWords(value) {\n  return String(value || '').replace(/=\\?([^?]+)\\?([bqBQ])\\?([^?]*)\\?=/g, (_, charset, encoding, content) => {\n    try {\n      let bytes;\n      if (String(encoding).toUpperCase() === 'B') {\n        bytes = Buffer.from(content, 'base64');\n      } else {\n        const qp = content\n          .replace(/_/g, ' ')\n          .replace(/=([0-9A-F]{2})/gi, (__unused, hex) => String.fromCharCode(parseInt(hex, 16)));\n        bytes = Buffer.from(qp, 'latin1');\n      }\n      const label = String(charset || 'utf-8').toLowerCase();\n      const latin = label.includes('iso-8859-1') || label.includes('latin1') || label.includes('windows-1252');\n      return bytes.toString(latin ? 'latin1' : 'utf8');\n    } catch (_) {\n      return content;\n    }\n  });\n}\n\nfunction looksQuotedPrintable(value) {\n  const text = String(value || '');\n  if (/=\\r?\\n/.test(text)) return true;\n  const matches = text.match(/=[0-9A-F]{2}/gi);\n  return Array.isArray(matches) && matches.length >= 2;\n}\n\nfunction decodeQuotedPrintable(value) {\n  const input = String(value || '');\n  if (!looksQuotedPrintable(input)) return input;\n  const unfolded = input.replace(/=\\r?\\n/g, '');\n  return unfolded.replace(/=([0-9A-F]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));\n}\n\nfunction repairMojibake(value) {\n  const input = String(value || '');\n  if (!/[ÃÂâ][\\x80-\\xBF]/.test(input)) return input;\n  try {\n    const repaired = Buffer.from(input, 'latin1').toString('utf8');\n    return repaired.includes('�') ? input : repaired;\n  } catch (_) {\n    return input;\n  }\n}\n\nfunction normalizeEmailText(value) {\n  let text = decodeMimeWords(value);\n  text = decodeQuotedPrintable(text);\n  text = repairMojibake(text);\n  text = decodeHtmlEntities(text);\n  return String(text || '').replace(/\\r/g, '').trim();\n}\n\nfunction extractBody(item) {\n  const candidates = [item.textPlain, item.text, item.textContent, item.textAsHtml, item.textHtml, item.htmlContent];\n  for (const candidate of candidates) {\n    if (typeof candidate === 'string' && candidate.trim()) {\n      const raw = candidate.includes('<') ? stripHtml(candidate) : candidate.trim();\n      return normalizeEmailText(raw);\n    }\n  }\n  return item.snippet ? normalizeEmailText(item.snippet) : '';\n}\n\nfunction extractMessageId(item) {\n  const header = item.headers?.['message-id'];\n  if (Array.isArray(header) && header[0]) return String(header[0]).trim();\n  if (typeof header === 'string' && header.trim()) return header.trim();\n  return String(item.id || item.messageId || '').trim();\n}\n\nreturn [{\n  json: {\n    from: normalizeEmailText(extractFrom(data)),\n    subject: extractSubject(data),\n    body: extractBody(data),\n    messageId: extractMessageId(data),\n    gmailId: data.id || '',\n    emailSource: 'gmail',\n  },\n}];"
       },
-      "id": "n-norm-gmail",
-      "name": "Normalize scheduled email",
+      "id": "547b546a-0d2c-49d3-9551-545265591589",
+      "name": "Normalize scheduled email1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        480,
-        208
+        -8400,
+        2928
       ]
     },
     {
       "parameters": {
         "jsCode": "const data = $input.item.json;\n\nfunction formatAddress(entry) {\n  if (!entry) return '';\n  if (typeof entry === 'string') return entry;\n  if (entry.text) return entry.text;\n  if (entry.value) return entry.value;\n  if (entry.address) {\n    return entry.name ? `${entry.name} <${entry.address}>` : entry.address;\n  }\n  return '';\n}\n\nfunction extractFrom(item) {\n  if (typeof item.from === 'string' && item.from) return item.from;\n  if (item.from) return formatAddress(item.from);\n  if (item.From) return formatAddress(item.From);\n  const fromList = item.envelope?.from;\n  if (Array.isArray(fromList) && fromList.length) return formatAddress(fromList[0]);\n  if (item.headers?.from) {\n    return Array.isArray(item.headers.from) ? item.headers.from[0] : item.headers.from;\n  }\n  return '';\n}\n\nfunction extractSubject(item) {\n  const subject =\n    item.subject ||\n    item.Subject ||\n    item.envelope?.subject ||\n    item.headers?.subject?.[0] ||\n    item.headers?.subject ||\n    '';\n  return normalizeEmailText(subject);\n}\n\nfunction stripHtml(value) {\n  return String(value || '')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<\\/p>/gi, '\\n')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/\\u00a0/g, ' ')\n    .replace(/\\r/g, '')\n    .trim();\n}\n\nfunction decodeHtmlEntities(value) {\n  function fromCodePointOrRaw(raw, codePoint) {\n    if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff) return raw;\n    try { return String.fromCodePoint(codePoint); } catch (_) { return raw; }\n  }\n  const named = {\n    nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '\"', apos: \"'\",\n    Auml: 'Ä', Ouml: 'Ö', Uuml: 'Ü', auml: 'ä', ouml: 'ö', uuml: 'ü', szlig: 'ß',\n  };\n  return String(value || '')\n    .replace(/&#(\\d+);/g, (raw, dec) => fromCodePointOrRaw(raw, Number(dec)))\n    .replace(/&#x([0-9a-f]+);/gi, (raw, hex) => fromCodePointOrRaw(raw, parseInt(hex, 16)))\n    .replace(/&([a-zA-Z]+);/g, (match, key) => named[key] ?? match);\n}\n\nfunction decodeMimeWords(value) {\n  return String(value || '').replace(/=\\?([^?]+)\\?([bqBQ])\\?([^?]*)\\?=/g, (_, charset, encoding, content) => {\n    try {\n      let bytes;\n      if (String(encoding).toUpperCase() === 'B') {\n        bytes = Buffer.from(content, 'base64');\n      } else {\n        const qp = content\n          .replace(/_/g, ' ')\n          .replace(/=([0-9A-F]{2})/gi, (__unused, hex) => String.fromCharCode(parseInt(hex, 16)));\n        bytes = Buffer.from(qp, 'latin1');\n      }\n      const label = String(charset || 'utf-8').toLowerCase();\n      const latin = label.includes('iso-8859-1') || label.includes('latin1') || label.includes('windows-1252');\n      return bytes.toString(latin ? 'latin1' : 'utf8');\n    } catch (_) {\n      return content;\n    }\n  });\n}\n\nfunction looksQuotedPrintable(value) {\n  const text = String(value || '');\n  if (/=\\r?\\n/.test(text)) return true;\n  const matches = text.match(/=[0-9A-F]{2}/gi);\n  return Array.isArray(matches) && matches.length >= 2;\n}\n\nfunction decodeQuotedPrintable(value) {\n  const input = String(value || '');\n  if (!looksQuotedPrintable(input)) return input;\n  const unfolded = input.replace(/=\\r?\\n/g, '');\n  return unfolded.replace(/=([0-9A-F]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));\n}\n\nfunction repairMojibake(value) {\n  const input = String(value || '');\n  if (!/[ÃÂâ][\\x80-\\xBF]/.test(input)) return input;\n  try {\n    const repaired = Buffer.from(input, 'latin1').toString('utf8');\n    return repaired.includes('�') ? input : repaired;\n  } catch (_) {\n    return input;\n  }\n}\n\nfunction normalizeEmailText(value) {\n  let text = decodeMimeWords(value);\n  text = decodeQuotedPrintable(text);\n  text = repairMojibake(text);\n  text = decodeHtmlEntities(text);\n  return String(text || '').replace(/\\r/g, '').trim();\n}\n\nfunction extractBody(item) {\n  const candidates = [item.textPlain, item.text, item.textContent, item.textAsHtml, item.textHtml, item.htmlContent];\n  for (const candidate of candidates) {\n    if (typeof candidate === 'string' && candidate.trim()) {\n      const raw = candidate.includes('<') ? stripHtml(candidate) : candidate.trim();\n      return normalizeEmailText(raw);\n    }\n  }\n  return item.snippet ? normalizeEmailText(item.snippet) : '';\n}\n\nfunction extractMessageId(item) {\n  const header = item.headers?.['message-id'];\n  if (Array.isArray(header) && header[0]) return String(header[0]).trim();\n  if (typeof header === 'string' && header.trim()) return header.trim();\n  if (item.metadata?.['message-id']) return String(item.metadata['message-id']).trim();\n  const uid = item.attributes?.uid || item.uid;\n  return uid ? `imap-${uid}` : '';\n}\n\nreturn [{\n  json: {\n    from: normalizeEmailText(extractFrom(data)),\n    subject: extractSubject(data),\n    body: extractBody(data),\n    messageId: extractMessageId(data),\n    gmailId: '',\n    emailSource: 'imap',\n  },\n}];"
       },
-      "id": "n-norm-imap",
-      "name": "Normalize IMAP email",
+      "id": "e5758eb7-77b5-46ea-9ea9-74a1d9e51a38",
+      "name": "Normalize IMAP email1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        480,
-        0
+        -8528,
+        2720
       ]
     },
     {
@@ -158,13 +232,13 @@
         },
         "options": {}
       },
-      "id": "n-sample",
-      "name": "Sample stakeholder email",
+      "id": "e4e70e85-47be-4150-9e9b-51ca1690d635",
+      "name": "Sample stakeholder email1",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        240,
-        416
+        -8512,
+        3136
       ],
       "notes": "Sample data for manual test path."
     },
@@ -173,13 +247,13 @@
         "promptType": "define",
         "text": "=You parse stakeholder emails into Kanban ticket fields for Join-Issue Collector.\n\nStakeholders often use this structure (each label on its own line):\n- Description: main request text\n- Subtask: optional subtasks (bullets or one item per line)\n- Enddate: optional deadline in YYYY-MM-DD or DD.MM.YYYY\n\nIgnore email signatures and company footers (contact lines like E-Mail, Tel, Webseite, Adresse, HRB). Never put signature or footer content into description or subtasks.\n\nReturn ONLY valid JSON with these keys:\n- title (string, max 80 chars)\n- description (string: only the Description section, without Subtask/Enddate/signature)\n- category: exactly \"User Story\" or \"Technical Task\"\n- priority: exactly \"HighPriority\", \"MidPriority\", or \"LowPriority\"\n- dueDate: \"YYYY-MM-DD\" from Enddate when provided, otherwise empty string\n- creatorName (string: first and last name from the email signature at the end of the body, or from the sender display name; never an email address; never the word \"Stakeholder\")\n\nEmail from: {{ $json.from }}\nSubject: {{ $json.subject }}\nBody:\n{{ $json.body }}"
       },
-      "id": "n-ai-parse",
-      "name": "Parse ticket with AI",
+      "id": "077c93d8-6e13-4e84-bf9d-9066391212bd",
+      "name": "Parse ticket with AI1",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.5,
       "position": [
-        760,
-        208
+        -8144,
+        2928
       ]
     },
     {
@@ -193,18 +267,18 @@
           "temperature": 0.2
         }
       },
-      "id": "n-openai",
-      "name": "OpenAI Chat Model",
+      "id": "e2fca58e-49aa-4e13-bca4-05d7892c0cdc",
+      "name": "OpenAI Chat Model1",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        760,
-        432
+        -8144,
+        3136
       ],
       "credentials": {
         "openAiApi": {
-          "id": "OPENAI_CREDENTIAL_ID",
-          "name": "OpenAI account"
+          "id": "qXmdRSJivefpurUF",
+          "name": "OpenAI account 2"
         }
       }
     },
@@ -212,27 +286,26 @@
       "parameters": {
         "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst aiItem = $input.item.json;\nconst email = readNodeJson(\n  [\n    'Normalize scheduled email',\n    'Normalize IMAP email',\n    'Sample stakeholder email',\n    'Format for OpenAI chat',\n  ],\n  (candidate) => Boolean(candidate?.from || candidate?.subject || candidate?.body)\n);\n\nif (!email) {\n  throw new Error(\n    'No stakeholder email context found. Expected output from Normalize scheduled email, Normalize IMAP email, or Sample stakeholder email.'\n  );\n}\n\nlet aiText = aiItem.text ?? aiItem.response ?? aiItem.output ?? '';\nif (typeof aiText !== 'string') aiText = JSON.stringify(aiText);\naiText = aiText.replace(/```json\\s*/gi, '').replace(/```\\s*/g, '').trim();\n\nlet parsed;\ntry {\n  parsed = JSON.parse(aiText);\n} catch (_) {\n  parsed = {\n    title: email.subject || 'Stakeholder request',\n    description: email.body || '',\n    category: 'User Story',\n    priority: 'MidPriority',\n    dueDate: '',\n    creatorName: '',\n  };\n}\n\nconst validCategories = new Set(['User Story', 'Technical Task']);\nconst validPriorities = new Set(['HighPriority', 'MidPriority', 'LowPriority']);\nconst fromRaw = String(email.from || '');\nconst creatorEmail = fromRaw.match(/<([^>]+)>/)?.[1] || fromRaw.trim();\n\nfunction parseFromDisplayName(fromValue) {\n  const trimmed = String(fromValue || '').trim();\n  const match = trimmed.match(/^([^<]+)</);\n  if (!match) return '';\n  const name = match[1].trim().replace(/^[\"']|[\"']$/g, '');\n  return name && !name.includes('@') ? name : '';\n}\n\nfunction normalizeCreatorName(value) {\n  const name = String(value || '').trim().replace(/\\s+/g, ' ');\n  if (!name || name.includes('@') || /^(stakeholder|unknown|guest|n\\/a|na)$/i.test(name)) return '';\n  return name;\n}\n\nfunction normalizeDueDate(value) {\n  if (typeof value !== 'string') return '';\n  const trimmed = value.trim();\n  if (!trimmed || /^(undefined|null|n\\/a|na)$/i.test(trimmed)) return '';\n  return trimmed;\n}\n\nconst SECTION_MARKERS =\n  '(?:subtasks?|sub-tasks?|unteraufgaben?|teilaufgaben?|to-?dos?|schritte|n(?:ä|ae)chste\\\\s+schritte|folgende\\\\s+aufgaben(?:\\\\s+beachten)?)';\n\nconst NON_SUBTASK_SECTION_MARKERS =\n  '(?:description|beschreibung|enddate|end\\\\s*date|f(?:ä|ae)llig(?:keitsdatum)?|deadline|due\\\\s*date)';\n\nconst SIGNATURE_START_MARKERS = [\n  /^--\\s*$/,\n  /^_{3,}$/,\n  /^mit\\s+freundlichen\\s+gr(?:ü|u)(?:ß|ss)en/i,\n  /^freundliche\\s+gr(?:ü|u)(?:ß|ss)e/i,\n  /^viele\\s+gr(?:ü|u)(?:ß|ss)e/i,\n  /^best\\s+regards/i,\n  /^kind\\s+regards/i,\n  /^regards/i,\n  /^sent\\s+from\\s+my/i,\n];\n\nconst SIGNATURE_LINE_PATTERN =\n  /^(?:e-?mail|mail|tel(?:efon)?|phone|fax|mobil(?:e)?|webseite|website|homepage|adresse|address|anschrift|linkedin|xing|instagram|facebook|twitter|amtsgericht|hrb|ust-?id|gesch(?:ä|ae)ftsf(?:ü|u)hrer|ceo|cto|firma|company)\\s*:/i;\n\nfunction parseListItem(line) {\n  const match = String(line || '')\n    .trim()\n    .match(/^(?:[-*•‣▪–—]\\s+|\\d{1,2}[.)]\\s+(?!\\d)|\\[\\s?[xX]?\\s?\\]\\s+)(.+)$/);\n  if (!match) return '';\n  return String(match[1] || '').trim();\n}\n\nfunction normalizeSubtaskValue(value) {\n  let text = String(value || '').replace(/\\s+/g, ' ').trim();\n  text = text\n    .replace(/^[-*•‣▪–—]\\s+/, '')\n    .replace(/^\\d{1,2}[.)]\\s+/, '')\n    .replace(/^\\[\\s?[xX]?\\s?\\]\\s+/, '')\n    .replace(/[;,\\.\\s?]+$/g, '')\n    .trim();\n  if (!text || SIGNATURE_LINE_PATTERN.test(text)) return '';\n  return text.length >= 3 ? text : '';\n}\n\nfunction isSignatureLikeLine(line) {\n  const trimmed = String(line || '').trim();\n  if (!trimmed) return false;\n  if (SIGNATURE_LINE_PATTERN.test(trimmed)) return true;\n  if (/^https?:\\/\\//i.test(trimmed)) return true;\n  if (/^www\\./i.test(trimmed)) return true;\n  if (/@[\\w.-]+\\.[a-z]{2,}$/i.test(trimmed) && !trimmed.includes(' ')) return true;\n  return false;\n}\n\nfunction stripEmailSignature(bodyText) {\n  const lines = String(bodyText || '').split('\\n');\n  const kept = [];\n\n  for (const rawLine of lines) {\n    const line = String(rawLine || '').trim();\n    if (line && SIGNATURE_START_MARKERS.some((pattern) => pattern.test(line))) {\n      break;\n    }\n    kept.push(rawLine);\n  }\n\n  return kept.join('\\n');\n}\n\nfunction matchSectionHeader(line) {\n  const trimmed = String(line || '').trim();\n  if (!trimmed) return null;\n  if (new RegExp(`^${NON_SUBTASK_SECTION_MARKERS}\\\\s*:?\\\\s*(.*)$`, 'i').test(trimmed)) {\n    return { endSection: true };\n  }\n  if (new RegExp(`^${SECTION_MARKERS}\\\\s*:?\\\\s*$`, 'i').test(trimmed)) {\n    return { inline: '' };\n  }\n  const match = trimmed.match(new RegExp(`^${SECTION_MARKERS}\\\\s*:\\\\s*(.*)$`, 'i'));\n  if (match) return { inline: String(match[1] || '').trim() };\n  return null;\n}\n\nfunction findInlineSectionContent(line) {\n  const trimmed = String(line || '').trim();\n  if (new RegExp(`(?:^|\\\\s)${NON_SUBTASK_SECTION_MARKERS}\\\\s*:`, 'i').test(trimmed)) {\n    return null;\n  }\n  const match = trimmed.match(new RegExp(`(?:^|\\\\s)${SECTION_MARKERS}\\\\s*:\\\\s*(.+)$`, 'i'));\n  return match ? String(match[1] || '').trim() : '';\n}\n\nfunction splitInlineTasks(text) {\n  const raw = String(text || '').trim();\n  if (!raw) return [];\n  const listItem = parseListItem(raw);\n  if (listItem) return [listItem];\n  return raw\n    .split(/\\?(?:\\s+(?:Und|und)\\s*:\\s*|\\s*$)|(?:^|\\s+)(?:Und|und)\\s*:\\s*/i)\n    .map((part) => part.replace(/[;,\\.\\s?]+$/g, '').trim())\n    .filter((part) => part.length >= 3 && !isSignatureLikeLine(part));\n}\n\nfunction extractExplicitSubtasks(bodyText) {\n  const lines = stripEmailSignature(bodyText).split('\\n');\n  const seen = new Set();\n  const subtasks = [];\n  let inMarkedSection = false;\n\n  function addSubtask(raw) {\n    const value = normalizeSubtaskValue(raw);\n    if (!value) return;\n    const key = value.toLowerCase();\n    if (seen.has(key)) return;\n    seen.add(key);\n    subtasks.push({ value, checked: false });\n  }\n\n  function appendToLastSubtask(fragment) {\n    if (!subtasks.length || isSignatureLikeLine(fragment)) return false;\n    const last = subtasks.pop();\n    seen.delete(last.value.toLowerCase());\n    addSubtask(`${last.value} ${fragment}`.trim());\n    return true;\n  }\n\n  for (const rawLine of lines) {\n    const line = String(rawLine || '').trim();\n    if (!line) {\n      inMarkedSection = false;\n      continue;\n    }\n\n    if (isSignatureLikeLine(line)) {\n      inMarkedSection = false;\n      continue;\n    }\n\n    const inlineSection = findInlineSectionContent(line);\n    if (inlineSection) {\n      inMarkedSection = true;\n      for (const task of splitInlineTasks(inlineSection)) addSubtask(task);\n      continue;\n    }\n\n    const header = matchSectionHeader(line);\n    if (header) {\n      if (header.endSection) {\n        inMarkedSection = false;\n        continue;\n      }\n      inMarkedSection = true;\n      if (header.inline) {\n        for (const task of splitInlineTasks(header.inline)) addSubtask(task);\n      }\n      continue;\n    }\n\n    if (!inMarkedSection) continue;\n\n    const listItem = parseListItem(line);\n    if (listItem) {\n      addSubtask(listItem);\n      continue;\n    }\n    if (appendToLastSubtask(line)) continue;\n    inMarkedSection = false;\n  }\n\n  return subtasks;\n}\n\n\nconst creatorName = normalizeCreatorName(parsed.creatorName) || parseFromDisplayName(fromRaw) || '';\nconst subtasks = extractExplicitSubtasks(email.body);\n\nreturn [{\n  json: {\n    title: String(parsed.title || email.subject || 'Stakeholder request').trim(),\n    description: String(parsed.description || email.body || '').trim(),\n    category: validCategories.has(parsed.category) ? parsed.category : 'User Story',\n    priority: validPriorities.has(parsed.priority) ? parsed.priority : 'MidPriority',\n    dueDate: normalizeDueDate(parsed.dueDate),\n    column: 'triageColumn',\n    creatorName,\n    creatorEmail,\n    creatorType: 'external',\n    aiGenerated: true,\n    sourceMessageId: String(email.messageId || '').trim(),\n    emailSource: String(email.emailSource || 'unknown').trim(),\n    gmailId: String(email.gmailId || '').trim(),\n    subtasks,\n  },\n}];"
       },
-      "id": "n-build",
-      "name": "Build Join payload",
+      "id": "b4bf80f6-3241-41c6-8058-bdd05f6af682",
+      "name": "Build Join payload1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1000,
-        208
+        -7840,
+        2928
       ]
     },
     {
       "parameters": {
-        "mode": "runOnceForAllItems",
         "jsCode": "const AUTO_CAP = 10;\nconst TOTAL_CAP = 15;\nconst items = $input.all();\nconst today = new Date().toISOString().slice(0, 10);\nconst hasStaticDataApi = typeof $getWorkflowStaticData === 'function';\n\nlet autoProcessedToday = 0;\nlet totalProcessedToday = 0;\nlet staticData = null;\nlet autoBatchProcessed = 0;\nlet totalBatchProcessed = 0;\n\nif (hasStaticDataApi) {\n  staticData = $getWorkflowStaticData('global');\n  if (staticData.capDate !== today) {\n    staticData.capDate = today;\n    staticData.autoCapDate = today;\n    staticData.totalCapDate = today;\n    staticData.autoCapCount = 0;\n    staticData.totalCapCount = 0;\n  }\n  if (!Number.isInteger(staticData.autoCapCount) || staticData.autoCapCount < 0) {\n    staticData.autoCapCount = 0;\n  }\n  if (!Number.isInteger(staticData.totalCapCount) || staticData.totalCapCount < 0) {\n    staticData.totalCapCount = 0;\n  }\n  autoProcessedToday = staticData.autoCapCount;\n  totalProcessedToday = staticData.totalCapCount;\n}\n\nreturn items.map((item, index) => {\n  const source = String(item.json.emailSource || '').trim().toLowerCase();\n  const isManual = source === 'manual';\n  let skipTaskCreation = false;\n  let skipReason = '';\n\n  if (!isManual) {\n    if (hasStaticDataApi) {\n      if (totalProcessedToday >= TOTAL_CAP) {\n        skipTaskCreation = true;\n        skipReason = 'TOTAL_EMAIL_CAP_REACHED';\n      } else {\n        totalProcessedToday += 1;\n        if (staticData) staticData.totalCapCount = totalProcessedToday;\n        if (autoProcessedToday >= AUTO_CAP) {\n          skipTaskCreation = true;\n          skipReason = 'AUTO_EMAIL_CAP_REACHED';\n        } else {\n          autoProcessedToday += 1;\n          if (staticData) staticData.autoCapCount = autoProcessedToday;\n        }\n      }\n    } else if (totalBatchProcessed >= TOTAL_CAP) {\n      skipTaskCreation = true;\n      skipReason = 'TOTAL_EMAIL_CAP_REACHED';\n    } else {\n      totalBatchProcessed += 1;\n      totalProcessedToday = totalBatchProcessed;\n      if (autoBatchProcessed >= AUTO_CAP) {\n        skipTaskCreation = true;\n        skipReason = 'AUTO_EMAIL_CAP_REACHED';\n      } else {\n        autoBatchProcessed += 1;\n        autoProcessedToday = autoBatchProcessed;\n      }\n    }\n  }\n\n  return {\n    json: {\n      ...item.json,\n      autoCap: AUTO_CAP,\n      totalCap: TOTAL_CAP,\n      autoCapDate: today,\n      totalCapDate: today,\n      autoProcessedToday,\n      totalProcessedToday,\n      batchIndex: index + 1,\n      batchCount: items.length,\n      skipTaskCreation,\n      skipReason,\n      capBypassedForManual: isManual,\n      capMode: hasStaticDataApi ? 'daily' : 'batch-fallback',\n    },\n  };\n});"
       },
-      "id": "n-cap-limit",
-      "name": "Apply auto email cap (max 10)",
+      "id": "e3e5e625-0a0c-41f9-921b-2e51b696d2fd",
+      "name": "Apply auto email cap (max 10)1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1240,
-        320
+        -7680,
+        2928
       ],
       "notes": "Daily caps: max 15 accepted emails/day in Join Collector, of which max 10 are auto-processed into board tasks."
     },
@@ -260,13 +333,13 @@
         },
         "options": {}
       },
-      "id": "n-if-cap",
-      "name": "IF within auto cap",
+      "id": "f8e68fc2-cf81-4884-bc16-47c6fbfe505b",
+      "name": "IF within auto cap1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1480,
-        320
+        -7520,
+        2928
       ]
     },
     {
@@ -296,17 +369,17 @@
           }
         }
       },
-      "id": "n-create",
-      "name": "Create task in Triage",
+      "id": "0ca90617-36b9-485a-aac2-c1501d1e99a3",
+      "name": "Create task in Triage1",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1240,
-        208
+        -7312,
+        2816
       ],
       "credentials": {
         "httpHeaderAuth": {
-          "id": "HTTP_HEADER_AUTH_ID",
+          "id": "HjH4uC7k7UHF6k0F",
           "name": "Header Auth account"
         }
       },
@@ -316,13 +389,13 @@
       "parameters": {
         "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst http = $input.item.json;\nconst payload = readNodeJson(['Build Join payload'], (candidate) => Boolean(candidate?.title));\nif (!payload) {\n  throw new Error('Build Join payload output not found.');\n}\nconst statusCode = Number(http.statusCode || 0);\nlet body = http.body ?? http;\nif (typeof body === 'string') {\n  try { body = JSON.parse(body || '{}'); } catch (_) { body = {}; }\n}\nconst createdId =\n  typeof body?.id === 'string' && body.id.trim() ? body.id.trim() : '';\nconst ok =\n  statusCode === 201 ||\n  (statusCode === 200 && (body?.duplicate === true || Boolean(createdId)));\n\nreturn [{\n  json: {\n    ok,\n    statusCode,\n    duplicate: Boolean(body?.duplicate),\n    createdId,\n    title: payload.title || '',\n    creatorName: payload.creatorName || '',\n    creatorEmail: payload.creatorEmail || '',\n    sourceMessageId: payload.sourceMessageId || '',\n    gmailId: payload.gmailId || '',\n    emailSource: payload.emailSource || 'unknown',\n  },\n}];"
       },
-      "id": "n-eval",
-      "name": "Evaluate create result",
+      "id": "2de8a051-6c21-44bb-bd68-bd22ca1a8ba4",
+      "name": "Evaluate create result1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1480,
-        208
+        -7152,
+        2816
       ]
     },
     {
@@ -349,26 +422,26 @@
         },
         "options": {}
       },
-      "id": "n-if-ok",
-      "name": "IF task created",
+      "id": "cd9b8ae6-f1ca-491d-bc83-f896001c4f23",
+      "name": "IF task created1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1720,
-        208
+        -6992,
+        2816
       ]
     },
     {
       "parameters": {
         "jsCode": "const ctx = $input.item.json;\nconst gmailId = String(ctx.gmailId || '').trim();\nconst searchRfcId = String(ctx.sourceMessageId || '').replace(/^<|>$/g, '').trim();\nreturn [{\n  json: {\n    ...ctx,\n    archiveGmailId: gmailId,\n    searchRfcId,\n    useDirectId: Boolean(gmailId),\n  },\n}];"
       },
-      "id": "n-prep-ok",
-      "name": "Prepare success archive",
+      "id": "28419e8e-fabf-488d-8542-f021a7d02ab6",
+      "name": "Prepare success archive1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1960,
-        80
+        -6784,
+        2800
       ]
     },
     {
@@ -395,20 +468,18 @@
         },
         "options": {}
       },
-      "id": "n-if-not-manual-ok",
-      "name": "IF not manual test",
+      "id": "45cd2e44-2704-41c2-962d-41e4f97e78e5",
+      "name": "IF not manual test1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2200,
-        80
+        -6544,
+        2800
       ],
       "notes": "Skips Gmail archive for manual test runs."
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "send",
         "sendTo": "={{ $json.creatorEmail }}",
         "subject": "={{ 'Bestaetigung: Ticket in Triage angelegt - ' + ($json.title || 'Anfrage') }}",
         "emailType": "text",
@@ -417,18 +488,19 @@
           "appendAttribution": false
         }
       },
-      "id": "n-mail-success",
-      "name": "Send success response",
+      "id": "21948cd7-e8a2-4630-8759-4d7f2c108082",
+      "name": "Send success response1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        2440,
-        -16
+        -6320,
+        2784
       ],
+      "webhookId": "86f66e51-fb4e-4c9a-ae6f-18c73d2cf608",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       },
       "continueOnFail": true,
@@ -437,21 +509,21 @@
     {
       "parameters": {
         "resource": "label",
-        "operation": "getAll",
         "returnAll": true
       },
-      "id": "n-get-labels-ok",
-      "name": "Get Gmail labels",
+      "id": "271ff5e9-0d86-443f-8fae-81a69f7b04e1",
+      "name": "Get Gmail labels1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        2440,
-        80
+        -6160,
+        2784
       ],
+      "webhookId": "46d39102-eb78-400a-8bef-86738f287c9d",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       },
       "notes": "Loads label IDs for Erledigt / zu bearbeiten."
@@ -460,13 +532,13 @@
       "parameters": {
         "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst ctx = readNodeJson(['Prepare success archive'], () => true);\nif (!ctx) {\n  throw new Error('Prepare success archive output not found.');\n}\nconst labels = $input.all().map((item) => item.json);\n\nfunction findLabelId(...names) {\n  for (const wanted of names) {\n    const hit = labels.find(\n      (label) => String(label.name || '').trim().toLowerCase() === wanted.toLowerCase()\n    );\n    if (hit?.id) return hit.id;\n  }\n  return '';\n}\n\nconst erledigtLabelId = findLabelId('Erledigt', 'erledigt');\nconst zuBearbeitenLabelId = findLabelId('zu bearbeiten', 'Zu bearbeiten');\n\nreturn [{\n  json: {\n    ...ctx,\n    erledigtLabelId,\n    zuBearbeitenLabelId,\n    labelsResolved: Boolean(erledigtLabelId),\n  },\n}];"
       },
-      "id": "n-resolve-labels-ok",
-      "name": "Resolve Gmail label IDs",
+      "id": "78ce64c4-0ecb-4353-a4e1-383b99db2308",
+      "name": "Resolve Gmail label IDs1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2680,
-        80
+        -5968,
+        2784
       ],
       "notes": "Maps Gmail label names Erledigt / zu bearbeiten to Label_… IDs."
     },
@@ -482,7 +554,7 @@
           "conditions": [
             {
               "id": "erledigt-label",
-              "leftValue": "={{ $('Resolve Gmail label IDs').item.json.erledigtLabelId }}",
+              "leftValue": "={{ $('Resolve Gmail label IDs1').item.json.erledigtLabelId }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -494,13 +566,13 @@
         },
         "options": {}
       },
-      "id": "n-if-label-ok",
-      "name": "IF Erledigt label found",
+      "id": "11f2b5aa-f8a8-4458-8263-157fe0d62914",
+      "name": "IF Erledigt label found1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2920,
-        80
+        -5792,
+        2784
       ],
       "notes": "Stops archive if Gmail label Erledigt is missing."
     },
@@ -528,109 +600,105 @@
         },
         "options": {}
       },
-      "id": "n-if-direct",
-      "name": "IF direct Gmail ID",
+      "id": "97e488c1-4d9e-42d3-b4d5-2fbb4366035a",
+      "name": "IF direct Gmail ID1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3160,
-        80
+        -5584,
+        2800
       ]
     },
     {
       "parameters": {
-        "resource": "message",
         "operation": "markAsRead",
-        "messageId": "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId || $('Pick Gmail ID for archive').item.json.archiveGmailId || $('Prepare success archive').item.json.archiveGmailId }}"
+        "messageId": "={{ $('Resolve Gmail label IDs1').item.json.archiveGmailId || $('Pick Gmail ID for archive1').item.json.archiveGmailId || $('Prepare success archive1').item.json.archiveGmailId }}"
       },
-      "id": "n-mark-read",
-      "name": "Mark Gmail read",
+      "id": "c484fde3-77d8-4a1a-9ab6-2eb9abae1660",
+      "name": "Mark Gmail read1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        3400,
-        -16
+        -5296,
+        2640
       ],
+      "webhookId": "f53595de-1364-4fef-806d-567c5857def2",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       }
     },
     {
       "parameters": {
-        "resource": "message",
         "operation": "addLabels",
-        "messageId": "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId || $('Pick Gmail ID for archive').item.json.archiveGmailId || $('Prepare success archive').item.json.archiveGmailId }}",
-        "labelIds": "={{ $('Resolve Gmail label IDs').item.json.erledigtLabelId }}"
+        "messageId": "={{ $('Resolve Gmail label IDs1').item.json.archiveGmailId || $('Pick Gmail ID for archive1').item.json.archiveGmailId || $('Prepare success archive1').item.json.archiveGmailId }}",
+        "labelIds": "={{ $('Resolve Gmail label IDs1').item.json.erledigtLabelId }}"
       },
-      "id": "n-add-erledigt",
-      "name": "Add Erledigt label",
+      "id": "7568824c-1794-4645-9b76-b287b88656a1",
+      "name": "Add Erledigt label1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        3640,
-        -16
+        -5104,
+        2640
       ],
+      "webhookId": "faa2dfc5-7b05-45dc-9e27-370a08bae87f",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       },
       "notes": "Uses Label_… ID from Resolve Gmail label IDs (not display name Erledigt)."
     },
     {
       "parameters": {
-        "resource": "message",
         "operation": "removeLabels",
-        "messageId": "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId || $('Pick Gmail ID for archive').item.json.archiveGmailId || $('Prepare success archive').item.json.archiveGmailId }}",
+        "messageId": "={{ $('Resolve Gmail label IDs1').item.json.archiveGmailId || $('Pick Gmail ID for archive1').item.json.archiveGmailId || $('Prepare success archive1').item.json.archiveGmailId }}",
         "labelIds": [
           "INBOX",
           "UNREAD"
         ]
       },
-      "id": "n-rm-inbox",
-      "name": "Remove from Inbox",
+      "id": "56644b39-3613-4a06-a5f4-d15695cdf811",
+      "name": "Remove from Inbox1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        3880,
-        -16
+        -4912,
+        2640
       ],
+      "webhookId": "c1769be4-dac9-4289-965b-060be9e78b9a",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       }
     },
     {
       "parameters": {
-        "resource": "message",
         "operation": "getAll",
-        "returnAll": false,
         "limit": 1,
         "filters": {
-          "q": "=rfc822msgid:{{ $('Resolve Gmail label IDs').item.json.searchRfcId }}"
-        },
-        "options": {
-          "simplify": false
+          "q": "=rfc822msgid:{{ $('Resolve Gmail label IDs1').item.json.searchRfcId }}"
         }
       },
-      "id": "n-find-rfc",
-      "name": "Find Gmail by RFC ID",
+      "id": "ba73e1bd-432a-4046-aac4-f51b121dc9ab",
+      "name": "Find Gmail by RFC ID1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        3400,
-        176
+        -5296,
+        2880
       ],
+      "webhookId": "e4a37083-d381-4d7d-8113-9b7870a5b4b9",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       },
       "continueOnFail": true
@@ -639,13 +707,13 @@
       "parameters": {
         "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst ctx = readNodeJson(['Resolve Gmail label IDs'], () => true);\nif (!ctx) {\n  throw new Error('Resolve Gmail label IDs output not found.');\n}\nconst found = $input.item.json;\nconst archiveGmailId = String(found.id || '').trim();\nif (!archiveGmailId) {\n  return [{ json: { ...ctx, archiveSkipped: true, skipReason: 'Gmail message not found for archive' } }];\n}\nreturn [{ json: { ...ctx, archiveGmailId, archiveSkipped: false } }];\n"
       },
-      "id": "n-pick-rfc",
-      "name": "Pick Gmail ID for archive",
+      "id": "29f4f2d0-c45b-422b-a3bb-b24860585b67",
+      "name": "Pick Gmail ID for archive1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3400,
-        176
+        -5104,
+        2880
       ]
     },
     {
@@ -672,26 +740,26 @@
         },
         "options": {}
       },
-      "id": "n-if-can-archive",
-      "name": "IF archive ID found",
+      "id": "f2488cbe-92e6-4195-8d0e-edd11767e9c4",
+      "name": "IF archive ID found1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3640,
-        176
+        -4880,
+        2880
       ]
     },
     {
       "parameters": {
         "jsCode": "const ctx = $input.item.json;\nconst gmailId = String(ctx.gmailId || '').trim();\nconst searchRfcId = String(ctx.sourceMessageId || '').replace(/^<|>$/g, '').trim();\nreturn [{\n  json: {\n    ...ctx,\n    archiveGmailId: gmailId,\n    searchRfcId,\n    useDirectId: Boolean(gmailId),\n  },\n}];"
       },
-      "id": "n-prep-err",
-      "name": "Prepare error archive",
+      "id": "5768ba9d-afe6-4583-8bc0-44075c3959fe",
+      "name": "Prepare error archive1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1960,
-        336
+        -6832,
+        3008
       ]
     },
     {
@@ -718,13 +786,13 @@
         },
         "options": {}
       },
-      "id": "n-if-not-manual-err",
-      "name": "IF not manual test (error)",
+      "id": "68903c9b-01a9-41fe-bcee-d4ed3f54aede",
+      "name": "IF not manual test (error)1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2200,
-        336
+        -6656,
+        3008
       ]
     },
     {
@@ -751,20 +819,18 @@
         },
         "options": {}
       },
-      "id": "n-if-cap-reached",
-      "name": "IF cap reached",
+      "id": "505f9235-32b7-4b54-8d6e-91c763ada5ef",
+      "name": "IF cap reached1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2440,
-        336
+        -6448,
+        2992
       ],
       "notes": "Distinguishes daily limit response from generic processing errors."
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "send",
         "sendTo": "={{ $json.creatorEmail }}",
         "subject": "={{ $json.skipReason === 'TOTAL_EMAIL_CAP_REACHED' ? 'Hinweis: Tageslimit fuer E-Mail-Eingang im Join Collector erreicht' : 'Hinweis: Tageslimit fuer automatische Ticket-Erstellung erreicht' }}",
         "emailType": "text",
@@ -773,18 +839,19 @@
           "appendAttribution": false
         }
       },
-      "id": "n-mail-cap",
-      "name": "Send cap reached response",
+      "id": "34d26e4c-669f-4434-bfd5-394eb915b11f",
+      "name": "Send cap reached response1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        2680,
-        272
+        -6240,
+        2976
       ],
+      "webhookId": "1b771c73-4578-4a7c-98c3-651e4c5a0dd5",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       },
       "continueOnFail": true,
@@ -792,8 +859,6 @@
     },
     {
       "parameters": {
-        "resource": "message",
-        "operation": "send",
         "sendTo": "={{ $json.creatorEmail }}",
         "subject": "={{ 'Hinweis: E-Mail erhalten - manuelle Rueckmeldung folgt' }}",
         "emailType": "text",
@@ -802,18 +867,19 @@
           "appendAttribution": false
         }
       },
-      "id": "n-mail-error",
-      "name": "Send processing error response",
+      "id": "69f68932-ec88-4c41-bec9-386d2dcfdf3d",
+      "name": "Send processing error response1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        2680,
-        400
+        -6240,
+        3200
       ],
+      "webhookId": "5e9fad0c-d6dd-4f82-a50f-6edb1c555f02",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       },
       "continueOnFail": true,
@@ -822,21 +888,21 @@
     {
       "parameters": {
         "resource": "label",
-        "operation": "getAll",
         "returnAll": true
       },
-      "id": "n-get-labels-err",
-      "name": "Get Gmail labels (error)",
+      "id": "202d24be-c383-4dd0-972c-2ea5c77d525d",
+      "name": "Get Gmail labels (error)1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        2920,
-        336
+        -6032,
+        3040
       ],
+      "webhookId": "2643af55-20e7-4406-be54-98620fe54391",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       }
     },
@@ -844,13 +910,13 @@
       "parameters": {
         "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst ctx = readNodeJson(['Prepare error archive'], () => true);\nif (!ctx) {\n  throw new Error('Prepare error archive output not found.');\n}\nconst labels = $input.all().map((item) => item.json);\n\nfunction findLabelId(...names) {\n  for (const wanted of names) {\n    const hit = labels.find(\n      (label) => String(label.name || '').trim().toLowerCase() === wanted.toLowerCase()\n    );\n    if (hit?.id) return hit.id;\n  }\n  return '';\n}\n\nconst erledigtLabelId = findLabelId('Erledigt', 'erledigt');\nconst zuBearbeitenLabelId = findLabelId('zu bearbeiten', 'Zu bearbeiten');\n\nreturn [{\n  json: {\n    ...ctx,\n    erledigtLabelId,\n    zuBearbeitenLabelId,\n    labelsResolved: Boolean(zuBearbeitenLabelId),\n  },\n}];"
       },
-      "id": "n-resolve-labels-err",
-      "name": "Resolve Gmail label IDs (error)",
+      "id": "2ee06444-3eee-43be-865b-6bcd2c4c5cc6",
+      "name": "Resolve Gmail label IDs (error)1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2680,
-        336
+        -5872,
+        3040
       ],
       "notes": "Maps Gmail label zu bearbeiten to Label_… ID."
     },
@@ -866,7 +932,7 @@
           "conditions": [
             {
               "id": "zb-label",
-              "leftValue": "={{ $('Resolve Gmail label IDs (error)').item.json.zuBearbeitenLabelId }}",
+              "leftValue": "={{ $('Resolve Gmail label IDs (error)1').item.json.zuBearbeitenLabelId }}",
               "rightValue": "",
               "operator": {
                 "type": "string",
@@ -878,13 +944,13 @@
         },
         "options": {}
       },
-      "id": "n-if-label-err",
-      "name": "IF zu bearbeiten label found",
+      "id": "f177b271-4d8b-4cbb-a3e2-78488004210f",
+      "name": "IF zu bearbeiten label found1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2920,
-        336
+        -5728,
+        3040
       ],
       "notes": "Stops error archive if Gmail label zu bearbeiten is missing."
     },
@@ -912,63 +978,59 @@
         },
         "options": {}
       },
-      "id": "n-if-direct-err",
-      "name": "IF direct Gmail ID (error)",
+      "id": "11f043db-380b-45f6-b9b8-28a5eeb6d86f",
+      "name": "IF direct Gmail ID (error)1",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3160,
-        336
+        -5552,
+        3040
       ]
     },
     {
       "parameters": {
-        "resource": "message",
         "operation": "addLabels",
-        "messageId": "={{ $('Resolve Gmail label IDs (error)').item.json.archiveGmailId || $('Pick Gmail ID for error').item.json.archiveGmailId || $('Prepare error archive').item.json.archiveGmailId }}",
-        "labelIds": "={{ $('Resolve Gmail label IDs (error)').item.json.zuBearbeitenLabelId }}"
+        "messageId": "={{ $('Resolve Gmail label IDs (error)1').item.json.archiveGmailId || $('Pick Gmail ID for error1').item.json.archiveGmailId || $('Prepare error archive1').item.json.archiveGmailId }}",
+        "labelIds": "={{ $('Resolve Gmail label IDs (error)1').item.json.zuBearbeitenLabelId }}"
       },
-      "id": "n-add-zb",
-      "name": "Add zu bearbeiten label",
+      "id": "47136893-3fe7-40be-af7f-3a1f878d1313",
+      "name": "Add zu bearbeiten label1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        3400,
-        336
+        -4832,
+        3104
       ],
+      "webhookId": "427ac334-8400-4d51-b9c1-c2427b2d8d52",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       },
       "notes": "Uses Label_… ID from Resolve Gmail label IDs (error)."
     },
     {
       "parameters": {
-        "resource": "message",
         "operation": "getAll",
-        "returnAll": false,
         "limit": 1,
         "filters": {
-          "q": "=rfc822msgid:{{ $('Resolve Gmail label IDs (error)').item.json.searchRfcId }}"
-        },
-        "options": {
-          "simplify": false
+          "q": "=rfc822msgid:{{ $('Resolve Gmail label IDs (error)1').item.json.searchRfcId }}"
         }
       },
-      "id": "n-find-rfc-err",
-      "name": "Find Gmail by RFC ID (error)",
+      "id": "3314434b-50bb-49fc-ae60-efc5d0b3c8c1",
+      "name": "Find Gmail by RFC ID (error)1",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        3400,
-        496
+        -5296,
+        3184
       ],
+      "webhookId": "4dd7b86f-99de-4835-81b1-efc10501fd8d",
       "credentials": {
         "gmailOAuth2": {
-          "id": "GMAIL_CREDENTIAL_ID",
-          "name": "Gmail account"
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
         }
       },
       "continueOnFail": true
@@ -977,470 +1039,494 @@
       "parameters": {
         "jsCode": "function nodeNameVariants(base) {\n  const names = [base];\n  for (let i = 1; i <= 9; i++) {\n    names.push(`${base}${i}`);\n    names.push(`${base} ${i}`);\n  }\n  return names;\n}\n\nfunction readNodeJson(bases, predicate = () => true) {\n  for (const base of bases) {\n    for (const name of nodeNameVariants(base)) {\n      try {\n        const json = $(name).item.json;\n        if (json && predicate(json)) return json;\n      } catch (_) {}\n    }\n  }\n  return null;\n}\nconst ctx = readNodeJson(['Resolve Gmail label IDs (error)'], () => true);\nif (!ctx) {\n  throw new Error('Resolve Gmail label IDs (error) output not found.');\n}\nconst found = $input.item.json;\nconst archiveGmailId = String(found.id || '').trim();\nif (!archiveGmailId) {\n  return [{ json: { ...ctx, archiveSkipped: true, skipReason: 'Gmail message not found for archive' } }];\n}\nreturn [{ json: { ...ctx, archiveGmailId, archiveSkipped: false } }];\n"
       },
-      "id": "n-pick-rfc-err",
-      "name": "Pick Gmail ID for error",
+      "id": "dc2ecd6a-e654-4a79-910d-7904cfb58c31",
+      "name": "Pick Gmail ID for error1",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3400,
-        496
+        -5040,
+        3216
       ]
     }
   ],
   "pinData": {},
   "connections": {
-    "Email Trigger (IMAP)": {
+    "Webhook task moved1": {
       "main": [
         [
           {
-            "node": "Normalize IMAP email",
+            "node": "Normalize task moved payload1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Schedule Trigger (every 5 min)": {
+    "Normalize task moved payload1": {
       "main": [
         [
           {
-            "node": "Fetch unread emails (Gmail)",
+            "node": "IF creator email available1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "When clicking 'Execute workflow'": {
+    "IF creator email available1": {
       "main": [
         [
           {
-            "node": "Sample stakeholder email",
+            "node": "Send task moved response1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Fetch unread emails (Gmail)": {
+    "Email Trigger (IMAP)1": {
       "main": [
         [
           {
-            "node": "Normalize scheduled email",
+            "node": "Normalize IMAP email1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Normalize scheduled email": {
+    "Schedule Trigger (every 5 min)1": {
       "main": [
         [
           {
-            "node": "Parse ticket with AI",
+            "node": "Fetch unread emails (Gmail)1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Normalize IMAP email": {
+    "Fetch unread emails (Gmail)1": {
       "main": [
         [
           {
-            "node": "Parse ticket with AI",
+            "node": "Normalize scheduled email1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Sample stakeholder email": {
+    "Normalize scheduled email1": {
       "main": [
         [
           {
-            "node": "Parse ticket with AI",
+            "node": "Parse ticket with AI1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "OpenAI Chat Model": {
+    "Normalize IMAP email1": {
+      "main": [
+        [
+          {
+            "node": "Parse ticket with AI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample stakeholder email1": {
+      "main": [
+        [
+          {
+            "node": "Parse ticket with AI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse ticket with AI1": {
+      "main": [
+        [
+          {
+            "node": "Build Join payload1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
       "ai_languageModel": [
         [
           {
-            "node": "Parse ticket with AI",
+            "node": "Parse ticket with AI1",
             "type": "ai_languageModel",
             "index": 0
           }
         ]
       ]
     },
-    "Parse ticket with AI": {
+    "Build Join payload1": {
       "main": [
         [
           {
-            "node": "Build Join payload",
+            "node": "Apply auto email cap (max 10)1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Build Join payload": {
+    "Apply auto email cap (max 10)1": {
       "main": [
         [
           {
-            "node": "Apply auto email cap (max 10)",
+            "node": "IF within auto cap1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Apply auto email cap (max 10)": {
+    "IF within auto cap1": {
       "main": [
         [
           {
-            "node": "IF within auto cap",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF within auto cap": {
-      "main": [
-        [
-          {
-            "node": "Create task in Triage",
+            "node": "Create task in Triage1",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Prepare error archive",
+            "node": "Prepare error archive1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Create task in Triage": {
+    "Create task in Triage1": {
       "main": [
         [
           {
-            "node": "Evaluate create result",
+            "node": "Evaluate create result1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Evaluate create result": {
+    "Evaluate create result1": {
       "main": [
         [
           {
-            "node": "IF task created",
+            "node": "IF task created1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF task created": {
+    "IF task created1": {
       "main": [
         [
           {
-            "node": "Prepare success archive",
+            "node": "Prepare success archive1",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Prepare error archive",
+            "node": "Prepare error archive1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Prepare success archive": {
+    "Prepare success archive1": {
       "main": [
         [
           {
-            "node": "IF not manual test",
+            "node": "IF not manual test1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF not manual test": {
+    "IF not manual test1": {
       "main": [
         [
           {
-            "node": "Send success response",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
-      ]
-    },
-    "Send success response": {
-      "main": [
-        [
-          {
-            "node": "Get Gmail labels",
+            "node": "Send success response1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get Gmail labels": {
+    "Send success response1": {
       "main": [
         [
           {
-            "node": "Resolve Gmail label IDs",
+            "node": "Get Gmail labels1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Resolve Gmail label IDs": {
+    "Get Gmail labels1": {
       "main": [
         [
           {
-            "node": "IF Erledigt label found",
+            "node": "Resolve Gmail label IDs1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF Erledigt label found": {
+    "Resolve Gmail label IDs1": {
       "main": [
         [
           {
-            "node": "IF direct Gmail ID",
+            "node": "IF Erledigt label found1",
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
-    "IF direct Gmail ID": {
+    "IF Erledigt label found1": {
       "main": [
         [
           {
-            "node": "Mark Gmail read",
+            "node": "IF direct Gmail ID1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF direct Gmail ID1": {
+      "main": [
+        [
+          {
+            "node": "Mark Gmail read1",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Find Gmail by RFC ID",
+            "node": "Find Gmail by RFC ID1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Mark Gmail read": {
+    "Mark Gmail read1": {
       "main": [
         [
           {
-            "node": "Add Erledigt label",
+            "node": "Add Erledigt label1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Add Erledigt label": {
+    "Add Erledigt label1": {
       "main": [
         [
           {
-            "node": "Remove from Inbox",
+            "node": "Remove from Inbox1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Find Gmail by RFC ID": {
+    "Find Gmail by RFC ID1": {
       "main": [
         [
           {
-            "node": "Pick Gmail ID for archive",
+            "node": "Pick Gmail ID for archive1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Pick Gmail ID for archive": {
+    "Pick Gmail ID for archive1": {
       "main": [
         [
           {
-            "node": "IF archive ID found",
+            "node": "IF archive ID found1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF archive ID found": {
+    "IF archive ID found1": {
       "main": [
         [
           {
-            "node": "Mark Gmail read",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
-      ]
-    },
-    "Prepare error archive": {
-      "main": [
-        [
-          {
-            "node": "IF not manual test (error)",
+            "node": "Mark Gmail read1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF not manual test (error)": {
+    "Prepare error archive1": {
       "main": [
         [
           {
-            "node": "IF cap reached",
+            "node": "IF not manual test (error)1",
             "type": "main",
             "index": 0
           }
-        ],
-        []
+        ]
       ]
     },
-    "IF cap reached": {
+    "IF not manual test (error)1": {
       "main": [
         [
           {
-            "node": "Send cap reached response",
+            "node": "IF cap reached1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF cap reached1": {
+      "main": [
+        [
+          {
+            "node": "Send cap reached response1",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Send processing error response",
+            "node": "Send processing error response1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send cap reached response": {
+    "Send cap reached response1": {
       "main": [
         [
           {
-            "node": "Get Gmail labels (error)",
+            "node": "Get Gmail labels (error)1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Send processing error response": {
+    "Send processing error response1": {
       "main": [
         [
           {
-            "node": "Get Gmail labels (error)",
+            "node": "Get Gmail labels (error)1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get Gmail labels (error)": {
+    "Get Gmail labels (error)1": {
       "main": [
         [
           {
-            "node": "Resolve Gmail label IDs (error)",
+            "node": "Resolve Gmail label IDs (error)1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Resolve Gmail label IDs (error)": {
+    "Resolve Gmail label IDs (error)1": {
       "main": [
         [
           {
-            "node": "IF zu bearbeiten label found",
+            "node": "IF zu bearbeiten label found1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "IF zu bearbeiten label found": {
+    "IF zu bearbeiten label found1": {
       "main": [
         [
           {
-            "node": "IF direct Gmail ID (error)",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        []
-      ]
-    },
-    "IF direct Gmail ID (error)": {
-      "main": [
-        [
-          {
-            "node": "Add zu bearbeiten label",
+            "node": "IF direct Gmail ID (error)1",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Find Gmail by RFC ID (error)",
+            "node": "IF direct Gmail ID (error)1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Find Gmail by RFC ID (error)": {
+    "IF direct Gmail ID (error)1": {
       "main": [
         [
           {
-            "node": "Pick Gmail ID for error",
+            "node": "Add zu bearbeiten label1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Gmail by RFC ID (error)1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Pick Gmail ID for error": {
+    "Find Gmail by RFC ID (error)1": {
       "main": [
         [
           {
-            "node": "Add zu bearbeiten label",
+            "node": "Pick Gmail ID for error1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Gmail ID for error1": {
+      "main": [
+        [
+          {
+            "node": "Add zu bearbeiten label1",
             "type": "main",
             "index": 0
           }
@@ -1448,14 +1534,20 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
   },
+  "versionId": "ab153b42-71be-441c-a113-52a8f5b1c9a3",
   "meta": {
-    "templateCredsSetupCompleted": true
+    "templateCredsSetupCompleted": true,
+    "instanceId": "178e2aea3414a8776196d1eaa659ed3e085989989f4a0edffb60f4038b9bcd3b"
   },
+  "nodeGroups": [],
+  "id": "ztO1p9Zdpb5A5mKK",
   "tags": []
 }

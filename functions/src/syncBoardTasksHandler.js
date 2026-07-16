@@ -1,4 +1,5 @@
 import { getAuth } from "firebase-admin/auth";
+import { ensureFirebaseAdmin } from "./firebaseAdmin.js";
 import { sendJson } from "./responseHelpers.js";
 import { syncMissingTasksFromSource } from "./taskRepository.js";
 
@@ -13,6 +14,7 @@ async function verifyRequestUid(req) {
   if (!match?.[1]) return null;
 
   try {
+    ensureFirebaseAdmin();
     const decoded = await getAuth().verifyIdToken(match[1]);
     return decoded.uid || null;
   } catch (error) {

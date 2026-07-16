@@ -24,11 +24,14 @@ function getUserTaskItemUrl(id) {
  * @returns {Promise<{ synced?: number, totalSourceTasks?: number }|null>}
  */
 async function syncUserBoardTasks() {
-  if (!window.USERKEY || !window.firebaseAuth?.currentUser) return null;
+  const user =
+    window.firebaseAuth?.currentUser ||
+    (typeof waitForAuthUser === "function" ? await waitForAuthUser() : null);
+  if (!window.USERKEY || !user) return null;
 
   try {
-    const token = await window.firebaseAuth.currentUser.getIdToken();
-    const response = await fetch(BOARD_TASKS_SYNC_ENDPOINT, {
+    let token = await user.getIdToken();
+    let response = await fetch(BOARD_TASKS_SYNC_ENDPOINT, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -37,14 +40,26 @@ async function syncUserBoardTasks() {
       cache: "no-store",
     });
 
+    if (response.status === 401) {
+      token = await user.getIdToken(true);
+      response = await fetch(BOARD_TASKS_SYNC_ENDPOINT, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      });
+    }
+
     if (!response.ok) {
-      console.error("Board task sync failed:", response.status);
+      console.warn("Board task sync failed:", response.status);
       return null;
     }
 
     return response.json();
   } catch (err) {
-    console.error("Board task sync error:", err);
+    console.warn("Board task sync error:", err);
     return null;
   }
 }
