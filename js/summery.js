@@ -34,9 +34,9 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (!ok) return;
 
   try {
-    mobileOverlayFadeOut();
-    await init();
     await initSummaryPage();
+    await showMobileGreetingIfNeeded();
+    await init();
     await loadAndRenderTaskCounts();
   } catch (err) {
     console.error('Initialization error:', err);
@@ -319,28 +319,41 @@ function estimateDailyEmailRequestsFromTasks(tasks) {
   }, 0);
 }
 
+const MOBILE_GREETING_BREAKPOINT = "(max-width: 800px)";
+const MOBILE_GREETING_DISPLAY_MS = 2000;
+const MOBILE_GREETING_FADE_MS = 1000;
+
 /**
- * Fades out the mobile greeting overlay after a short delay.
+ * Shows the mobile greeting overlay after login (mobile only), then fades it out.
  * Requires an element with ID "MobileGreeting" and CSS classes "hidden" and "fade-out".
  *
  * Controlled by `sessionStorage.showMobileGreeting === "1"`.
  * Clears the storage flag after hiding the overlay.
  *
- * @returns {void}
+ * @returns {Promise<void>}
  */
-function mobileOverlayFadeOut() {
+async function showMobileGreetingIfNeeded() {
   const overlay = document.getElementById("MobileGreeting");
-  if (!overlay) return;
-
   const shouldShow = sessionStorage.getItem("showMobileGreeting") === "1";
-  if (!shouldShow) return;
+  const isMobile = window.matchMedia(MOBILE_GREETING_BREAKPOINT).matches;
+
+  if (!overlay || !shouldShow || !isMobile) {
+    if (shouldShow) sessionStorage.removeItem("showMobileGreeting");
+    return;
+  }
 
   overlay.classList.remove("hidden");
-  setTimeout(() => {
-    overlay.classList.add("fade-out");
+  document.body.style.visibility = "visible";
+
+  await new Promise((resolve) => {
     setTimeout(() => {
-      overlay.classList.add("hidden");
-      sessionStorage.removeItem("showMobileGreeting");
-    }, 1000);
-  }, 1000);
+      overlay.classList.add("fade-out");
+      setTimeout(() => {
+        overlay.classList.add("hidden");
+        overlay.classList.remove("fade-out");
+        sessionStorage.removeItem("showMobileGreeting");
+        resolve();
+      }, MOBILE_GREETING_FADE_MS);
+    }, MOBILE_GREETING_DISPLAY_MS);
+  });
 }

@@ -7,16 +7,14 @@
   }
 
   .into {
-    max-height: 61px;
+    width: auto;
+    max-width: 100%;
+    height: auto;
     gap: 24px;
   }
 
   .into h1 {
     font-size: 49px;
-  }
-
-  .into h2 {
-    font-size: 22px;
   }
 
   h1 {
@@ -28,7 +26,16 @@
     width: 3px;
   }
 
+  .nameAndToDoParent {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+  }
+
   .nameAndToDo {
+    width: auto;
+    max-width: 100%;
+    height: auto;
     gap: 64px;
   }
 
@@ -46,6 +53,35 @@
   }
 }
 
+@media (max-width: 1399px) and (min-width: 801px) {
+  .row-grid {
+    width: auto;
+    max-width: 560px;
+    height: auto;
+  }
+
+  .row-grid > .row:first-child {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+  }
+
+  .row--deadline-email {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+  }
+
+  .row-grid > .row:last-child {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+  }
+}
+
 @media (max-width: 1099px) {
   .content {
     padding: 54px 48px;
@@ -55,15 +91,14 @@
   }
 
   .into {
+    width: auto;
+    max-width: 100%;
+    height: auto;
     gap: 20px;
   }
 
   .into h1 {
     font-size: 40px;
-  }
-
-  .into h2 {
-    font-size: 16px;
   }
 
   h1 {
@@ -75,7 +110,16 @@
     width: 3px;
   }
 
+  .nameAndToDoParent {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+  }
+
   .nameAndToDo {
+    width: auto;
+    max-width: 100%;
+    height: auto;
     gap: 54px;
   }
 
@@ -93,15 +137,38 @@
   }
 }
 
-@media (max-width: 1164px) and (min-width: 801px) {
-  .nameAndToDo {
-    flex-wrap: wrap;
-    gap: 32px;
+@media (max-width: 1099px) and (min-width: 801px) {
+  .row-grid {
+    width: auto;
+    max-width: 560px;
+    height: auto;
   }
 
+  .row-grid > .row:first-child {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+  }
+
+  .row--deadline-email {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+  }
+
+  .row-grid > .row:last-child {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+  }
+}
+
+@media (max-width: 1164px) and (min-width: 801px) {
   .greetings {
-    margin-left: 0;
-    width: 100%;
+    display: none;
   }
 }
 
@@ -145,23 +212,24 @@
     max-height: calc(100vh - 160px);
     align-items: flex-start;
     overflow-x: hidden;
+    gap: 56px;
   }
 
   .into {
     align-items: flex-start;
     flex-direction: column;
-    max-height: none;
-    gap: 16px;
     width: 100%;
+    height: auto;
+    gap: 16px;
   }
 
   .into h1 {
-    font-size: clamp(28px, 8vw, 40px);
+    font-size: clamp(28px, 8vw, 47px);
     white-space: normal;
   }
 
   .into h2 {
-    font-size: 16px;
+    font-size: 20px;
     white-space: normal;
   }
 
@@ -184,8 +252,9 @@
   }
 
   .nameAndToDoParent {
+    --summary-scale: 0.8302;
     width: 100%;
-    max-width: 560px;
+    max-width: calc(560px * var(--summary-scale));
     max-height: none;
     align-items: flex-start;
   }
@@ -194,200 +263,161 @@
     justify-content: flex-start;
     align-items: flex-start;
     width: 100%;
-    max-width: 560px;
+    max-width: calc(560px * var(--summary-scale));
     gap: 0;
   }
 
   .row-grid {
+    --summary-scale: 0.8302;
     width: 100%;
-    max-width: 560px;
+    max-width: calc(560px * var(--summary-scale));
+    height: calc(562px * var(--summary-scale));
     min-width: 0;
-    --summary-row-stack-gap: 28px;
-    --summary-row-inline-gap: clamp(10px, 3.2vw, 32px);
-    --summary-deadline-row-gap: clamp(10px, 3.2vw, 28px);
-    --summary-number-size: clamp(28px, 10vw, 64px);
-    --summary-label-size: 16px;
-    --summary-card-height: clamp(108px, 32vw, 168px);
+    --summary-row-stack-gap: calc(28px * var(--summary-scale));
+    --summary-row-inline-gap: calc(32px * var(--summary-scale));
+    --summary-deadline-row-gap: calc(28px * var(--summary-scale));
+    --summary-number-size: calc(64px * var(--summary-scale));
+    --summary-label-size: calc(20px * var(--summary-scale));
+    --summary-deadline-strong-size: calc(20px * var(--summary-scale));
+    --summary-deadline-normal-size: calc(16px * var(--summary-scale));
+    --summary-deadline-text-size: calc(16px * var(--summary-scale));
+    --summary-circle-size: calc(69px * var(--summary-scale));
   }
 
-  .row {
-    max-height: none;
-    height: auto;
-    width: 100%;
-    min-width: 0;
+  .row-grid > .row:first-child {
+    width: calc(560px * var(--summary-scale));
     max-width: 100%;
-    align-items: stretch;
-  }
-
-  .row .item1 {
-    flex: 1 1 0;
-    max-width: 264px;
-    min-width: 0;
-  }
-
-  .row .item3 {
-    flex: 1 1 0;
-    max-width: 168px;
-    min-width: 0;
-  }
-
-  .item1 {
-    height: var(--summary-card-height);
-    min-height: 0;
-    max-height: var(--summary-card-height);
-    gap: clamp(6px, 2vw, 18px);
-    padding: clamp(6px, 2vw, 8px) clamp(2px, 1vw, 4px);
-    box-sizing: border-box;
-  }
-
-  .item3 {
-    height: var(--summary-card-height);
-    min-height: 0;
-    max-height: var(--summary-card-height);
-    max-width: 168px;
-    padding: clamp(8px, 2vw, 10px) clamp(2px, 1vw, 4px);
-    gap: clamp(6px, 2vw, 13px);
-    box-sizing: border-box;
-  }
-
-  .item3 .To-do {
-    white-space: normal;
-    overflow-wrap: normal;
-    word-break: normal;
-    text-align: center;
-  }
-
-  .row-grid .To-do,
-  .row-grid .email-requests-label {
-    font-size: 16px;
-    line-height: 1.2;
-    padding: 0 2px;
+    height: calc(168px * var(--summary-scale));
+    max-height: calc(168px * var(--summary-scale));
+    gap: calc(32px * var(--summary-scale));
   }
 
   .row--deadline-email {
-    align-items: stretch;
+    width: calc(560px * var(--summary-scale));
     max-width: 100%;
+    height: calc(168px * var(--summary-scale));
+    max-height: calc(168px * var(--summary-scale));
+    gap: calc(28px * var(--summary-scale));
+  }
+
+  .row-grid > .row:last-child {
+    width: calc(560px * var(--summary-scale));
+    max-width: 100%;
+    height: calc(170px * var(--summary-scale));
+    max-height: calc(170px * var(--summary-scale));
+    gap: calc(28px * var(--summary-scale));
+  }
+
+  .row {
+    max-height: calc(168px * var(--summary-scale));
+    height: auto;
+  }
+
+  .item1 {
+    width: calc(264px * var(--summary-scale));
+    max-width: calc(264px * var(--summary-scale));
+    height: calc(168px * var(--summary-scale));
+    min-height: calc(168px * var(--summary-scale));
+    max-height: calc(168px * var(--summary-scale));
+    border-radius: calc(30px * var(--summary-scale));
+    gap: calc(18px * var(--summary-scale));
+    padding: calc(38px * var(--summary-scale)) calc(19px * var(--summary-scale));
+  }
+
+  .item1 + .item1 {
+    padding: calc(38px * var(--summary-scale)) calc(58px * var(--summary-scale));
+  }
+
+  .item3 {
+    width: calc(168px * var(--summary-scale));
+    max-width: calc(168px * var(--summary-scale));
+    min-width: calc(168px * var(--summary-scale));
+    height: calc(168px * var(--summary-scale));
+    min-height: calc(168px * var(--summary-scale));
+    max-height: calc(168px * var(--summary-scale));
+    flex: 0 0 calc(168px * var(--summary-scale));
+    border-radius: calc(30px * var(--summary-scale));
+    gap: calc(13px * var(--summary-scale));
+    padding: calc(25px * var(--summary-scale)) 0;
   }
 
   .row--deadline-email .item2 {
-    flex: 364 1 0;
-    height: var(--summary-card-height);
-    min-height: 0;
-    max-height: var(--summary-card-height);
-    padding: 0 clamp(8px, 3vw, 24px);
-    --summary-separator-gap: clamp(7px, 2.2vw, 10px);
-    --summary-item2-left-fr: 132;
-    --summary-item2-right-fr: 157;
+    --summary-separator-gap: calc(11px * var(--summary-scale));
+    flex: 0 0 calc(364px * var(--summary-scale));
+    width: calc(364px * var(--summary-scale));
+    min-width: calc(364px * var(--summary-scale));
+    max-width: calc(364px * var(--summary-scale));
+    height: calc(168px * var(--summary-scale));
+    padding: 0 calc(18px * var(--summary-scale));
+    border-radius: calc(30px * var(--summary-scale));
+  }
+
+  .row--deadline-email .item2 .d-flex {
+    flex: 1 1 0;
+    width: auto;
+    max-width: none;
+    gap: calc(10px * var(--summary-scale));
+    justify-content: center;
   }
 
   .row--deadline-email .item2 .d-flex .img1 {
-    width: var(--summary-circle-size, 69px);
-    height: var(--summary-circle-size, 69px);
-    max-width: none;
-    max-height: none;
-    flex-shrink: 0;
-    object-fit: contain;
+    width: calc(60px * var(--summary-scale));
+    height: calc(60px * var(--summary-scale));
   }
 
   .row--deadline-email .item2 .separator2 {
-    height: clamp(52px, 18vw, 102px);
+    height: calc(102px * var(--summary-scale));
   }
 
   .row--deadline-email .item2 .deadline {
-    gap: clamp(4px, 1.5vw, 13px);
+    gap: calc(13px * var(--summary-scale));
   }
 
   .row--deadline-email .item-email-requests {
-    flex: 168 1 0;
-    width: auto;
-    min-width: 0;
-    max-width: 168px;
-    height: var(--summary-card-height);
-    min-height: 0;
-    max-height: var(--summary-card-height);
-    padding: clamp(8px, 2.5vw, 25px) clamp(2px, 1vw, 8px);
-    gap: clamp(6px, 2vw, 13px);
-    box-sizing: border-box;
-    align-self: stretch;
+    flex: 0 0 calc(168px * var(--summary-scale));
+    width: calc(168px * var(--summary-scale));
+    min-width: calc(168px * var(--summary-scale));
+    max-width: calc(168px * var(--summary-scale));
+    height: calc(168px * var(--summary-scale));
+    border-radius: calc(30px * var(--summary-scale));
+    gap: calc(13px * var(--summary-scale));
+    padding: calc(25px * var(--summary-scale)) 0;
   }
 
-  .row--deadline-email .email-requests-label {
-    white-space: normal;
-    overflow-wrap: normal;
-    word-break: normal;
-    line-height: 1.2;
-    text-align: center;
-  }
-
-  .row--deadline-email #nextDeadlineDate {
-    font-size: var(--summary-deadline-text-size, 16px);
-    text-align: center;
-    overflow-wrap: normal;
-    word-break: normal;
+  .To-do--offset {
+    transform: translateY(calc(8px * var(--summary-scale)));
   }
 }
 
-@media (max-width: 560px) {
+/* Ab 500px: gleiches Layout wie bei 800px, Scale flüssig und einheitlos bis 320px */
+@media (max-width: 500px) {
+  .nameAndToDoParent,
+  .nameAndToDo,
   .row-grid {
-    --summary-circle-size: clamp(36px, 12vw, 69px);
+    /* (100vw - padding) / 560 → unitless; bei 500px ≈ 0.83, bei 320px ≈ 0.511 */
+    --summary-scale: clamp(0.511, calc((100vw - 34px) / 560px), 0.8302);
   }
 
-  .row--deadline-email .item2 .d-flex {
-    display: grid;
-    grid-template-areas: "urgent-area";
-    grid-template-columns: 1fr;
-    align-items: end;
-    align-self: stretch;
-    height: 100%;
-    overflow: visible;
+  .row-grid {
+    --summary-label-size: max(16px, calc(20px * var(--summary-scale)));
+    --summary-deadline-strong-size: max(14px, calc(20px * var(--summary-scale)));
+    --summary-deadline-normal-size: max(14px, calc(16px * var(--summary-scale)));
+    --summary-deadline-text-size: max(14px, calc(16px * var(--summary-scale)));
   }
 
-  .row--deadline-email .item2 .d-flex .img1 {
-    grid-area: urgent-area;
-    align-self: center;
-    justify-self: center;
-    max-width: 100%;
+  /* Done-Card: großes Desktop-Padding (58px) quetscht bei min. 16px-Label → Umbruch/Sprung */
+  .item1 + .item1 {
+    padding: calc(38px * var(--summary-scale)) calc(19px * var(--summary-scale));
   }
 
-  .row--deadline-email .item2 .d-flex .d-colum {
-    grid-area: urgent-area;
-    justify-self: end;
-    align-self: end;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 0;
-    height: auto;
-    min-height: 0;
+  .item1 .To-do {
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: normal;
+    padding: 0;
   }
 
-  .row--deadline-email .item2 .d-flex .nummber {
-    font-size: clamp(40px, 12.5vw, var(--summary-number-size, 64px));
-  }
-
-  .row--deadline-email .item2 .d-flex .To-do,
-  .row--deadline-email .item2 .deadline .p-normal {
-    font-size: 14px;
-  }
-
-  .row--deadline-email .item2 .d-flex .To-do {
-    margin-top: clamp(4px, 1.5vw, 8px);
-  }
-}
-
-@media (max-width: 534px) {
-  .row--deadline-email .item2 {
-    --summary-separator-gap: clamp(5px, 1.5vw, 8px);
-  }
-}
-
-@media (max-width: 488px) {
-  .row--deadline-email .item2 {
-    --summary-item2-left-fr: 138;
-    --summary-item2-right-fr: 151;
-    padding: 0 8px;
-  }
-
-  .row--deadline-email .item2 .d-flex {
-    gap: 3px;
+  .row--deadline-email .item2 .d-flex .number-priority {
+    font-size: var(--summary-number-size, 64px);
   }
 }

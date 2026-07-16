@@ -87,7 +87,7 @@ async function onSubmitLogin(e, { emailInput, passwordInput, loginButton, msgBox
   if (result.success) {
     await syncUserBoardTasks();
     await ensureUserContactsIfEmpty();
-    sessionStorage.setItem("showMobileGreeting", "1");
+    setMobileGreetingFlag();
     window.location.href = "../index/summary.html";
   } else {
     showMessage(result.message || getAuthErrorMessage(result.error, "login"), msgBox);
@@ -146,7 +146,7 @@ async function startGuestSession() {
     await preloadGuestContacts(window.USERKEY);
     await syncUserBoardTasks();
     await seedUserTasksIfEmpty();
-    sessionStorage.setItem("showMobileGreeting", "1");
+    setMobileGreetingFlag();
     window.location.href = "../index/summary.html";
   } catch (err) {
     console.error("Guest-Login fehlgeschlagen:", err);
@@ -163,6 +163,16 @@ async function preloadGuestContacts(userKey) {
     postData(`users/${userKey}/contacts`, contact)
   );
   await Promise.all(contacts);
+}
+
+/**
+ * Marks the next summary visit to show the mobile greeting overlay.
+ * @returns {void}
+ */
+function setMobileGreetingFlag() {
+  if (window.matchMedia("(max-width: 800px)").matches) {
+    sessionStorage.setItem("showMobileGreeting", "1");
+  }
 }
 
 window.startGuestSession = startGuestSession;
