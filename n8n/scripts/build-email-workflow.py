@@ -1,14 +1,22 @@
-"""Regenerates n8n/workflows/Join-email-to-task-proposal.json."""
+"""Regenerates n8n/workflows/Join-email-to-task-proposal.json.
+
+Condensed exercise layout (cost + maintainability):
+1. Shared Gmail archive branch (success/cap/error)
+2. Cached Gmail label IDs in workflow static data
+3. Archive only when a direct gmailId exists (no RFC lookup)
+4. Set/expression nodes instead of heavy Code where practical
+5. One stakeholder feedback Gmail send (subject/body by outcome)
+6. Single early IF not manual before feedback/archive
+7. One Gmail API modify call (add target label + remove INBOX/UNREAD)
+"""
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "workflows" / "Join-email-to-task-proposal.json"
-SUBTASK_EXTRACTION_JS = (
-    Path(__file__).parent / "email-subtask-extraction.js"
-).read_text(encoding="utf-8")
 
-NORMALIZE_GMAIL_JS = r"""const data = $input.item.json;
+# IMAP/sample field mapping + UTF-8 / mojibake repair for German umlauts.
+PREPARE_EMAIL_JS = r"""const data = $input.item.json;
 
 function formatAddress(entry) {
   if (!entry) return '';
@@ -34,27 +42,19 @@ function extractFrom(item) {
 }
 
 function extractSubject(item) {
-  const subject =
-    item.subject ||
-    item.Subject ||
-    item.envelope?.subject ||
-    item.headers?.subject?.[0] ||
-    item.headers?.subject ||
-    '';
-  return normalizeEmailText(subject);
+  return String(
+    item.subject || item.Subject || item.envelope?.subject ||
+    item.headers?.subject?.[0] || item.headers?.subject || ''
+  ).trim();
 }
 
 function stripHtml(value) {
   return String(value || '')
     .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '\n')
-    .replace(/<\/div>/gi, '\n')
-    .replace(/<\/tr>/gi, '\n')
-    .replace(/<\/li>/gi, '\n')
+    .replace(/<\/(p|div|li|tr)>/gi, '\n')
     .replace(/<li[^>]*>/gi, '- ')
     .replace(/<[^>]+>/g, ' ')
     .replace(/\u00a0/g, ' ')
-    .replace(/[ \t]+\n/g, '\n')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/\r/g, '')
     .trim();
@@ -112,10 +112,11 @@ function decodeQuotedPrintable(value) {
 
 function repairMojibake(value) {
   const input = String(value || '');
+  // UTF-8 misread as Latin-1/Windows-1252 (e.g. "Ã¼" → "ü", "Ã¤" → "ä").
   if (!/[ÃÂâ][\x80-\xBF]/.test(input)) return input;
   try {
     const repaired = Buffer.from(input, 'latin1').toString('utf8');
-    return repaired.includes('�') ? input : repaired;
+    return repaired.includes('\uFFFD') ? input : repaired;
   } catch (_) {
     return input;
   }
@@ -129,284 +130,72 @@ function normalizeEmailText(value) {
   return String(text || '').replace(/\r/g, '').trim();
 }
 
-function extractBodyFromGmailPayload(payload) {
-  if (!payload || typeof payload !== 'object') return '';
-  const chunks = [];
-  function walk(part) {
-    if (!part || typeof part !== 'object') return;
-    const mime = String(part.mimeType || '').toLowerCase();
-    const data = part.body?.data;
-    if (typeof data === 'string' && data.trim()) {
-      try {
-        const decoded = Buffer.from(data.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
-        if (mime.includes('text/plain')) chunks.unshift(decoded);
-        else if (mime.includes('text/html')) chunks.push(decoded);
-        else chunks.push(decoded);
-      } catch (_) {}
-    }
-    if (Array.isArray(part.parts)) part.parts.forEach(walk);
-  }
-  walk(payload);
-  for (const chunk of chunks) {
-    const text = chunk.includes('<') ? stripHtml(chunk) : String(chunk || '').trim();
-    const normalized = normalizeEmailText(text);
-    if (normalized) return normalized;
-  }
-  return '';
-}
-
 function extractBody(item) {
-  const candidates = [
-    item.textPlain,
-    item.text,
-    item.textContent,
-    item.textAsHtml,
-    item.textHtml,
-    item.htmlContent,
-    item.html,
-    item.body,
-  ];
-  for (const candidate of candidates) {
+  for (const candidate of [
+    item.body, item.textPlain, item.text, item.textContent,
+    item.textAsHtml, item.textHtml, item.htmlContent, item.html,
+  ]) {
     if (typeof candidate === 'string' && candidate.trim()) {
       const raw = candidate.includes('<') ? stripHtml(candidate) : candidate.trim();
       const normalized = normalizeEmailText(raw);
       if (normalized) return normalized;
     }
   }
-  const fromPayload = extractBodyFromGmailPayload(item.payload);
-  if (fromPayload) return fromPayload;
   return item.snippet ? normalizeEmailText(item.snippet) : '';
 }
 
 function extractMessageId(item) {
-  const header = item.headers?.['message-id'];
+  const header = item.headers?.['message-id'] || item.messageId;
   if (Array.isArray(header) && header[0]) return String(header[0]).trim();
   if (typeof header === 'string' && header.trim()) return header.trim();
-  return String(item.id || item.messageId || '').trim();
+  if (item.metadata?.['message-id']) return String(item.metadata['message-id']).trim();
+  const uid = item.attributes?.uid || item.uid;
+  return uid ? `imap-${uid}` : String(item.id || '').trim();
 }
+
+const from = normalizeEmailText(extractFrom(data));
+const subject = normalizeEmailText(extractSubject(data));
+const body = extractBody(data);
+const creatorEmail = from.match(/<([^>]+)>/)?.[1] || from.trim();
+const nameMatch = from.match(/^([^<]+)</);
+const creatorNameRaw = nameMatch
+  ? nameMatch[1].trim().replace(/^["']|["']$/g, '')
+  : '';
+const creatorName = normalizeEmailText(creatorNameRaw);
 
 return [{
   json: {
-    from: normalizeEmailText(extractFrom(data)),
-    subject: extractSubject(data),
-    body: extractBody(data),
+    from,
+    subject,
+    body,
     messageId: extractMessageId(data),
-    gmailId: data.id || '',
-    emailSource: 'gmail',
-  },
-}];"""
-
-NORMALIZE_IMAP_JS = NORMALIZE_GMAIL_JS.replace(
-    "return String(item.id || item.messageId || '').trim();",
-    "if (item.metadata?.['message-id']) return String(item.metadata['message-id']).trim();\n"
-    "  const uid = item.attributes?.uid || item.uid;\n"
-    "  return uid ? `imap-${uid}` : '';",
-).replace("emailSource: 'gmail'", "emailSource: 'imap'").replace(
-    "gmailId: data.id || ''", "gmailId: ''"
-)
-
-NODE_LOOKUP_HELPER = r"""function nodeNameVariants(base) {
-  const names = [base];
-  for (let i = 1; i <= 9; i++) {
-    names.push(`${base}${i}`);
-    names.push(`${base} ${i}`);
-  }
-  return names;
-}
-
-function readNodeJson(bases, predicate = () => true) {
-  for (const base of bases) {
-    for (const name of nodeNameVariants(base)) {
-      try {
-        const json = $(name).item.json;
-        if (json && predicate(json)) return json;
-      } catch (_) {}
-    }
-  }
-  return null;
-}
-"""
-
-BUILD_PAYLOAD_JS = NODE_LOOKUP_HELPER + r"""const aiItem = $input.item.json;
-const email = readNodeJson(
-  [
-    'Normalize scheduled email',
-    'Normalize IMAP email',
-    'Sample stakeholder email',
-    'Format for OpenAI chat',
-  ],
-  (candidate) => Boolean(candidate?.from || candidate?.subject || candidate?.body)
-);
-
-if (!email) {
-  throw new Error(
-    'No stakeholder email context found. Expected output from Normalize scheduled email, Normalize IMAP email, or Sample stakeholder email.'
-  );
-}
-
-let aiText = aiItem.text ?? aiItem.response ?? aiItem.output ?? '';
-if (typeof aiText !== 'string') aiText = JSON.stringify(aiText);
-aiText = aiText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-
-let parsed;
-try {
-  parsed = JSON.parse(aiText);
-} catch (_) {
-  parsed = {
-    title: email.subject || 'Stakeholder request',
-    description: email.body || '',
-    category: 'User Story',
-    priority: 'MidPriority',
-    dueDate: '',
-    creatorName: '',
-  };
-}
-
-const validCategories = new Set(['User Story', 'Technical Task']);
-const validPriorities = new Set(['HighPriority', 'MidPriority', 'LowPriority']);
-const fromRaw = String(email.from || '');
-const creatorEmail = fromRaw.match(/<([^>]+)>/)?.[1] || fromRaw.trim();
-
-function parseFromDisplayName(fromValue) {
-  const trimmed = String(fromValue || '').trim();
-  const match = trimmed.match(/^([^<]+)</);
-  if (!match) return '';
-  const name = match[1].trim().replace(/^["']|["']$/g, '');
-  return name && !name.includes('@') ? name : '';
-}
-
-function normalizeCreatorName(value) {
-  const name = String(value || '').trim().replace(/\s+/g, ' ');
-  if (!name || name.includes('@') || /^(stakeholder|unknown|guest|n\/a|na)$/i.test(name)) return '';
-  return name;
-}
-
-function normalizeDueDate(value) {
-  if (typeof value !== 'string') return '';
-  const trimmed = value.trim();
-  if (!trimmed || /^(undefined|null|n\/a|na)$/i.test(trimmed)) return '';
-  return trimmed;
-}
-
-""" + SUBTASK_EXTRACTION_JS + r"""
-
-function normalizeAiSubtasks(input) {
-  if (!Array.isArray(input)) return [];
-  const out = [];
-  const seen = new Set();
-  for (const entry of input) {
-    let value = '';
-    if (typeof entry === 'string') value = entry;
-    else if (entry && typeof entry === 'object' && typeof entry.value === 'string') value = entry.value;
-    value = normalizeSubtaskValue(value);
-    if (!value) continue;
-    const key = value.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push({ value, checked: false });
-  }
-  return out;
-}
-
-const creatorName = normalizeCreatorName(parsed.creatorName) || parseFromDisplayName(fromRaw) || '';
-// Prefer deterministic extraction whenever a Subtask/Subtasks section exists.
-// AI subtasks are only a fallback for free-form emails without that section.
-const explicitSubtasks = extractExplicitSubtasks(email.body);
-const subtasks = explicitSubtasks.length
-  ? explicitSubtasks
-  : normalizeAiSubtasks(parsed.subtasks);
-
-return [{
-  json: {
-    title: String(parsed.title || email.subject || 'Stakeholder request').trim(),
-    description: String(parsed.description || email.body || '').trim(),
-    category: validCategories.has(parsed.category) ? parsed.category : 'User Story',
-    priority: validPriorities.has(parsed.priority) ? parsed.priority : 'MidPriority',
-    dueDate: normalizeDueDate(parsed.dueDate),
-    column: 'triageColumn',
-    creatorName,
+    sourceMessageId: extractMessageId(data),
+    gmailId: String(data.gmailId || '').trim(),
+    emailSource: String(data.emailSource || 'imap').trim() || 'imap',
+    title: subject || 'Stakeholder request',
+    creatorName: creatorName && !creatorName.includes('@') ? creatorName : '',
     creatorEmail,
-    creatorType: 'external',
-    aiGenerated: true,
-    sourceMessageId: String(email.messageId || '').trim(),
-    emailSource: String(email.emailSource || 'unknown').trim(),
-    gmailId: String(email.gmailId || '').trim(),
-    subtasks,
-  },
-}];"""
-
-EVALUATE_JS = NODE_LOOKUP_HELPER + r"""const http = $input.item.json;
-const payload = readNodeJson(['Build Join payload'], (candidate) => Boolean(candidate?.title));
-if (!payload) {
-  throw new Error('Build Join payload output not found.');
-}
-const statusCode = Number(http.statusCode || 0);
-let body = http.body ?? http;
-if (typeof body === 'string') {
-  try { body = JSON.parse(body || '{}'); } catch (_) { body = {}; }
-}
-const createdId =
-  typeof body?.id === 'string' && body.id.trim() ? body.id.trim() : '';
-const ok =
-  statusCode === 201 ||
-  (statusCode === 200 && (body?.duplicate === true || Boolean(createdId)));
-
-return [{
-  json: {
-    ok,
-    statusCode,
-    duplicate: Boolean(body?.duplicate),
-    createdId,
-    title: payload.title || '',
-    creatorName: payload.creatorName || '',
-    creatorEmail: payload.creatorEmail || '',
-    sourceMessageId: payload.sourceMessageId || '',
-    gmailId: payload.gmailId || '',
-    emailSource: payload.emailSource || 'unknown',
-  },
-}];"""
-
-PREPARE_ARCHIVE_JS = r"""const ctx = $input.item.json;
-const gmailId = String(ctx.gmailId || '').trim();
-const searchRfcId = String(ctx.sourceMessageId || '').replace(/^<|>$/g, '').trim();
-return [{
-  json: {
-    ...ctx,
-    archiveGmailId: gmailId,
-    searchRfcId,
-    useDirectId: Boolean(gmailId),
   },
 }];"""
 
 AUTO_CAP_JS = r"""const AUTO_CAP = 10;
-const TOTAL_CAP = 15;
 const items = $input.all();
 const today = new Date().toISOString().slice(0, 10);
 const hasStaticDataApi = typeof $getWorkflowStaticData === 'function';
-
 let autoProcessedToday = 0;
-let totalProcessedToday = 0;
 let staticData = null;
 let autoBatchProcessed = 0;
-let totalBatchProcessed = 0;
 
 if (hasStaticDataApi) {
   staticData = $getWorkflowStaticData('global');
   if (staticData.capDate !== today) {
     staticData.capDate = today;
-    staticData.autoCapDate = today;
-    staticData.totalCapDate = today;
     staticData.autoCapCount = 0;
-    staticData.totalCapCount = 0;
   }
   if (!Number.isInteger(staticData.autoCapCount) || staticData.autoCapCount < 0) {
     staticData.autoCapCount = 0;
   }
-  if (!Number.isInteger(staticData.totalCapCount) || staticData.totalCapCount < 0) {
-    staticData.totalCapCount = 0;
-  }
   autoProcessedToday = staticData.autoCapCount;
-  totalProcessedToday = staticData.totalCapCount;
 }
 
 return items.map((item, index) => {
@@ -417,33 +206,19 @@ return items.map((item, index) => {
 
   if (!isManual) {
     if (hasStaticDataApi) {
-      if (totalProcessedToday >= TOTAL_CAP) {
-        skipTaskCreation = true;
-        skipReason = 'TOTAL_EMAIL_CAP_REACHED';
-      } else {
-        totalProcessedToday += 1;
-        if (staticData) staticData.totalCapCount = totalProcessedToday;
-        if (autoProcessedToday >= AUTO_CAP) {
-          skipTaskCreation = true;
-          skipReason = 'AUTO_EMAIL_CAP_REACHED';
-        } else {
-          autoProcessedToday += 1;
-          if (staticData) staticData.autoCapCount = autoProcessedToday;
-        }
-      }
-    } else if (totalBatchProcessed >= TOTAL_CAP) {
-      skipTaskCreation = true;
-      skipReason = 'TOTAL_EMAIL_CAP_REACHED';
-    } else {
-      totalBatchProcessed += 1;
-      totalProcessedToday = totalBatchProcessed;
-      if (autoBatchProcessed >= AUTO_CAP) {
+      if (autoProcessedToday >= AUTO_CAP) {
         skipTaskCreation = true;
         skipReason = 'AUTO_EMAIL_CAP_REACHED';
       } else {
-        autoBatchProcessed += 1;
-        autoProcessedToday = autoBatchProcessed;
+        autoProcessedToday += 1;
+        staticData.autoCapCount = autoProcessedToday;
       }
+    } else if (autoBatchProcessed >= AUTO_CAP) {
+      skipTaskCreation = true;
+      skipReason = 'AUTO_EMAIL_CAP_REACHED';
+    } else {
+      autoBatchProcessed += 1;
+      autoProcessedToday = autoBatchProcessed;
     }
   }
 
@@ -451,183 +226,263 @@ return items.map((item, index) => {
     json: {
       ...item.json,
       autoCap: AUTO_CAP,
-      totalCap: TOTAL_CAP,
       autoCapDate: today,
-      totalCapDate: today,
       autoProcessedToday,
-      totalProcessedToday,
       batchIndex: index + 1,
       batchCount: items.length,
       skipTaskCreation,
       skipReason,
       capBypassedForManual: isManual,
-      capMode: hasStaticDataApi ? 'daily' : 'batch-fallback',
     },
   };
 });"""
 
-PICK_ARCHIVE_JS = NODE_LOOKUP_HELPER + r"""const ctx = readNodeJson(['Resolve Gmail label IDs'], () => true);
-if (!ctx) {
-  throw new Error('Resolve Gmail label IDs output not found.');
+CHECK_LABEL_CACHE_JS = r"""function readOutcomeContext() {
+  const bases = [
+    'IF not manual test',
+    'Set outcome success',
+    'Set outcome error',
+    'Set outcome cap',
+  ];
+  for (const name of bases) {
+    try {
+      const json = $(name).item.json;
+      if (json && (json.outcome || json.archiveLabelName || json.gmailId || json.creatorEmail)) {
+        return json;
+      }
+    } catch (_) {}
+  }
+  return $input.item.json;
 }
-const found = $input.item.json;
-const archiveGmailId = String(found.id || '').trim();
-if (!archiveGmailId) {
-  return [{ json: { ...ctx, archiveSkipped: true, skipReason: 'Gmail message not found for archive' } }];
-}
-return [{ json: { ...ctx, archiveGmailId, archiveSkipped: false } }];
-"""
 
-PICK_ERROR_JS = PICK_ARCHIVE_JS.replace(
-    "Resolve Gmail label IDs", "Resolve Gmail label IDs (error)"
-)
+const ctx = readOutcomeContext();
+const hasStaticDataApi = typeof $getWorkflowStaticData === 'function';
+const staticData = hasStaticDataApi ? $getWorkflowStaticData('global') : {};
+const cache = staticData.labelCache && typeof staticData.labelCache === 'object'
+  ? staticData.labelCache
+  : {};
+const emailDoneLabelId = String(cache['email done'] || '').trim();
+const needsReviewLabelId = String(cache['needs review'] || '').trim();
+const cacheHit = Boolean(emailDoneLabelId && needsReviewLabelId);
+const archiveLabelName = String(ctx.archiveLabelName || 'needs review').trim().toLowerCase();
+const targetLabelId = archiveLabelName === 'email done' ? emailDoneLabelId : needsReviewLabelId;
 
-RESOLVE_LABELS_JS = NODE_LOOKUP_HELPER + r"""const ctx = readNodeJson(['SOURCE_BASE'], () => true);
-if (!ctx) {
-  throw new Error('SOURCE_BASE output not found.');
-}
+return [{
+  json: {
+    ...ctx,
+    emailDoneLabelId,
+    needsReviewLabelId,
+    targetLabelId,
+    cacheHit,
+    archiveLabelName,
+  },
+}];"""
+
+STORE_LABEL_CACHE_JS = r"""const ctx = $('Check label cache').item.json;
 const labels = $input.all().map((item) => item.json);
+const hasStaticDataApi = typeof $getWorkflowStaticData === 'function';
+const staticData = hasStaticDataApi ? $getWorkflowStaticData('global') : { labelCache: {} };
+if (!staticData.labelCache || typeof staticData.labelCache !== 'object') {
+  staticData.labelCache = {};
+}
 
 function findLabelId(...names) {
   for (const wanted of names) {
     const hit = labels.find(
       (label) => String(label.name || '').trim().toLowerCase() === wanted.toLowerCase()
     );
-    if (hit?.id) return hit.id;
+    if (hit?.id) return String(hit.id);
   }
   return '';
 }
 
-const erledigtLabelId = findLabelId('Erledigt', 'erledigt');
-const zuBearbeitenLabelId = findLabelId('zu bearbeiten', 'Zu bearbeiten');
+const emailDoneLabelId = findLabelId('email done', 'Email done', 'Email Done');
+const needsReviewLabelId = findLabelId('needs review', 'Needs review', 'Needs Review');
+if (emailDoneLabelId) staticData.labelCache['email done'] = emailDoneLabelId;
+if (needsReviewLabelId) staticData.labelCache['needs review'] = needsReviewLabelId;
+
+const archiveLabelName = String(ctx.archiveLabelName || 'needs review').trim().toLowerCase();
+const targetLabelId = archiveLabelName === 'email done' ? emailDoneLabelId : needsReviewLabelId;
 
 return [{
   json: {
     ...ctx,
-    erledigtLabelId,
-    zuBearbeitenLabelId,
-    labelsResolved: Boolean(erledigtLabelId && zuBearbeitenLabelId),
+    emailDoneLabelId,
+    needsReviewLabelId,
+    targetLabelId,
+    cacheHit: Boolean(emailDoneLabelId && needsReviewLabelId),
+    labelsFromCache: false,
   },
 }];"""
 
-RESOLVE_LABELS_OK_JS = (
-    RESOLVE_LABELS_JS.replace("SOURCE_BASE", "Prepare success archive").replace(
-        "labelsResolved: Boolean(erledigtLabelId && zuBearbeitenLabelId),",
-        "labelsResolved: Boolean(erledigtLabelId),",
-    )
+GMAIL_CRED = {"gmailOAuth2": {"id": "15U509ehBEzJwEV9", "name": "Gmail account 3"}}
+IMAP_CRED = {"imap": {"id": "v6fJz0hh1XAMh9uB", "name": "IMAP account 3"}}
+OPENAI_CRED = {"openAiApi": {"id": "qXmdRSJivefpurUF", "name": "OpenAI account 2"}}
+HTTP_CRED = {"httpHeaderAuth": {"id": "HjH4uC7k7UHF6k0F", "name": "Header Auth account"}}
+GMAIL_NODE_VERSION = 2.1
+
+AI_PROMPT = (
+    "=You parse stakeholder emails into Kanban ticket fields for Join-Issue Collector.\n\n"
+    "Two email styles are common:\n"
+    "1) Create Request template with labels Description: / Subtask: / Enddate:\n"
+    "2) Free-form email with optional Subtasks list and a deadline line like 'bis 27.7.26'.\n\n"
+    "Rules:\n"
+    "- title: short summary, max 80 chars\n"
+    "- description: request text without subtasks, deadlines, greeting/signature\n"
+    "- subtasks: only explicit Subtask/Subtasks list items; else []\n"
+    "- dueDate: YYYY-MM-DD or empty string\n"
+    '- category: "User Story" or "Technical Task"\n'
+    '- priority: "HighPriority", "MidPriority", or "LowPriority"\n'
+    "- creatorName: person name from signature/display name; never an email\n"
+    "- Ignore signatures and footers.\n\n"
+    "Email from: {{ $json.from }}\n"
+    "Subject: {{ $json.subject }}\n"
+    "Body:\n{{ $json.body }}"
 )
-RESOLVE_LABELS_ERR_JS = (
-    RESOLVE_LABELS_JS.replace("SOURCE_BASE", "Prepare error archive").replace(
-        "labelsResolved: Boolean(erledigtLabelId && zuBearbeitenLabelId),",
-        "labelsResolved: Boolean(zuBearbeitenLabelId),",
-    )
+
+TICKET_JSON_EXAMPLE = json.dumps(
+    {
+        "title": "Dark Mode testen",
+        "description": "Bitte Dark Mode bis Ende August testen.",
+        "category": "User Story",
+        "priority": "MidPriority",
+        "dueDate": "2026-08-31",
+        "subtasks": ["Kontrast pruefen", "Mobile Ansicht testen"],
+        "creatorName": "Max Mustermann",
+    },
+    ensure_ascii=False,
+    indent=2,
 )
 
-IF_LABEL_OK = {
-    "conditions": {
-        "options": {
-            "caseSensitive": True,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2,
-        },
-        "conditions": [
-            {
-                "id": "erledigt-label",
-                "leftValue": "={{ $('Resolve Gmail label IDs').item.json.erledigtLabelId }}",
-                "rightValue": "",
-                "operator": {"type": "string", "operation": "notEmpty"},
-            }
-        ],
-        "combinator": "and",
-    },
-    "options": {},
-}
+# Expressions for condensed Set / Gmail nodes
+BUILD_TITLE = (
+    "={{ String($json.output?.title || $json.title || "
+    "$('Prepare email context').item.json.subject || 'Stakeholder request').trim() }}"
+)
+BUILD_DESCRIPTION = (
+    "={{ String($json.output?.description || $json.description || "
+    "$('Prepare email context').item.json.body || '').trim() }}"
+)
+BUILD_CATEGORY = (
+    "={{ ['User Story','Technical Task'].includes($json.output?.category) "
+    "? $json.output.category : 'User Story' }}"
+)
+BUILD_PRIORITY = (
+    "={{ ['HighPriority','MidPriority','LowPriority'].includes($json.output?.priority) "
+    "? $json.output.priority : 'MidPriority' }}"
+)
+BUILD_DUEDATE = (
+    "={{ String($json.output?.dueDate || '').trim() "
+    ".replace(/^(undefined|null|n\\/a|na)$/i, '') }}"
+)
+BUILD_CREATOR_NAME = (
+    "={{ (() => { const ai = String($json.output?.creatorName || '').trim(); "
+    "const fallback = String($('Prepare email context').item.json.creatorName || '').trim(); "
+    "const name = ai || fallback; "
+    "return (!name || name.includes('@') || /^(stakeholder|unknown|guest)$/i.test(name)) "
+    "? '' : name; })() }}"
+)
+BUILD_SUBTASKS = (
+    "={{ (() => { const raw = $json.output?.subtasks; "
+    "if (!Array.isArray(raw)) return []; "
+    "const seen = new Set(); const out = []; "
+    "for (const entry of raw) { "
+    "let value = typeof entry === 'string' ? entry : (entry?.value || ''); "
+    "value = String(value).replace(/\\s+/g, ' ').trim(); "
+    "if (value.length < 3) continue; "
+    "const key = value.toLowerCase(); if (seen.has(key)) continue; "
+    "seen.add(key); out.push({ value, checked: false }); } "
+    "return out; })() }}"
+)
 
-IF_LABEL_ERR = {
-    "conditions": {
-        "options": {
-            "caseSensitive": True,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2,
-        },
-        "conditions": [
-            {
-                "id": "zb-label",
-                "leftValue": "={{ $('Resolve Gmail label IDs (error)').item.json.zuBearbeitenLabelId }}",
-                "rightValue": "",
-                "operator": {"type": "string", "operation": "notEmpty"},
-            }
-        ],
-        "combinator": "and",
-    },
-    "options": {},
-}
+EVAL_OK = (
+    "={{ Number($json.statusCode) === 201 || "
+    "(Number($json.statusCode) === 200 && "
+    "($json.body?.duplicate === true || Boolean($json.body?.id))) }}"
+)
 
-IF_OK = {
-    "conditions": {
-        "options": {
-            "caseSensitive": True,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2,
-        },
-        "conditions": [
-            {
-                "id": "ok-check",
-                "leftValue": "={{ $json.ok }}",
-                "rightValue": True,
-                "operator": {"type": "boolean", "operation": "true"},
-            }
-        ],
-        "combinator": "and",
-    },
-    "options": {},
-}
+FEEDBACK_SUBJECT = (
+    "={{ $json.outcome === 'success' "
+    "? ('Bestaetigung: Ticket in Triage angelegt - ' + ($json.title || 'Anfrage')) "
+    ": ($json.outcome === 'cap' "
+    "? 'Hinweis: Tageslimit fuer automatische Ticket-Erstellung erreicht' "
+    ": 'Hinweis: E-Mail erhalten - manuelle Rueckmeldung folgt') }}"
+)
+FEEDBACK_MESSAGE = (
+    "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n' + ("
+    "$json.outcome === 'success' "
+    "? ('vielen Dank fuer Ihre Nachricht. Ihr Ticket wurde erfolgreich im Join Task Board "
+    "(Spalte Triage) angelegt.\\n\\nBetreff: ' + ($json.title || 'Anfrage') + '\\n\\n') "
+    ": ($json.outcome === 'cap' "
+    "? 'wir haben Ihre E-Mail erhalten. Das Tageslimit fuer die automatische Ticket-Erstellung "
+    "(max. 10) ist heute bereits erreicht.\\nIhr Anliegen wird vom Team manuell geprueft "
+    "und ins Task Board uebertragen.\\n\\n' "
+    ": 'wir haben Ihre E-Mail erhalten. Bei der automatischen Verarbeitung ist ein Fehler "
+    "aufgetreten.\\nDas Team kuemmert sich zeitnah manuell um Ihr Anliegen.\\n\\n')"
+    ") + 'Viele Gruesse\\nJoin Team' }}"
+)
 
-IF_WITHIN_AUTO_CAP = {
-    "conditions": {
-        "options": {
-            "caseSensitive": True,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2,
-        },
-        "conditions": [
-            {
-                "id": "within-cap",
-                "leftValue": "={{ $json.skipTaskCreation }}",
-                "rightValue": True,
-                "operator": {"type": "boolean", "operation": "false"},
-            }
-        ],
-        "combinator": "and",
-    },
-    "options": {},
-}
+GMAIL_MODIFY_URL = (
+    "=https://gmail.googleapis.com/gmail/v1/users/me/messages/"
+    "{{ $json.gmailId }}/modify"
+)
+GMAIL_MODIFY_BODY = (
+    "={{ JSON.stringify({ "
+    "addLabelIds: [$json.targetLabelId], "
+    "removeLabelIds: ['INBOX', 'UNREAD'] "
+    "}) }}"
+)
 
-IF_DIRECT = {
-    "conditions": {
-        "options": {
-            "caseSensitive": True,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2,
-        },
-        "conditions": [
-            {
-                "id": "direct-id",
-                "leftValue": "={{ $json.useDirectId }}",
-                "rightValue": True,
-                "operator": {"type": "boolean", "operation": "true"},
-            }
-        ],
-        "combinator": "and",
-    },
-    "options": {},
-}
 
+def if_string_not_empty(left, condition_id):
+    return {
+        "conditions": {
+            "options": {
+                "caseSensitive": True,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 2,
+            },
+            "conditions": [
+                {
+                    "id": condition_id,
+                    "leftValue": left,
+                    "rightValue": "",
+                    "operator": {"type": "string", "operation": "notEmpty"},
+                }
+            ],
+            "combinator": "and",
+        },
+        "options": {},
+    }
+
+
+def if_bool(left, operation, condition_id):
+    return {
+        "conditions": {
+            "options": {
+                "caseSensitive": True,
+                "leftValue": "",
+                "typeValidation": "strict",
+                "version": 2,
+            },
+            "conditions": [
+                {
+                    "id": condition_id,
+                    "leftValue": left,
+                    "rightValue": True,
+                    "operator": {"type": "boolean", "operation": operation},
+                }
+            ],
+            "combinator": "and",
+        },
+        "options": {},
+    }
+
+
+IF_WITHIN_CAP = if_bool("={{ $json.skipTaskCreation }}", "false", "within-cap")
+IF_TASK_OK = if_bool("={{ $json.ok }}", "true", "ok-check")
+IF_CACHE_HIT = if_bool("={{ $json.cacheHit }}", "true", "cache-hit")
 IF_NOT_MANUAL = {
     "conditions": {
         "options": {
@@ -648,7 +503,6 @@ IF_NOT_MANUAL = {
     },
     "options": {},
 }
-
 IF_CAN_ARCHIVE = {
     "conditions": {
         "options": {
@@ -659,127 +513,134 @@ IF_CAN_ARCHIVE = {
         },
         "conditions": [
             {
-                "id": "has-id",
-                "leftValue": "={{ $json.archiveSkipped }}",
-                "rightValue": True,
-                "operator": {"type": "boolean", "operation": "false"},
-            }
-        ],
-        "combinator": "and",
-    },
-    "options": {},
-}
-
-IF_CAP_REACHED = {
-    "conditions": {
-        "options": {
-            "caseSensitive": True,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2,
-        },
-        "conditions": [
+                "id": "has-gmail-id",
+                "leftValue": "={{ $json.gmailId }}",
+                "rightValue": "",
+                "operator": {"type": "string", "operation": "notEmpty"},
+            },
             {
-                "id": "cap-reached",
-                "leftValue": "={{ ['AUTO_EMAIL_CAP_REACHED', 'TOTAL_EMAIL_CAP_REACHED'].includes($json.skipReason) }}",
-                "rightValue": True,
-                "operator": {"type": "boolean", "operation": "true"},
-            }
+                "id": "has-target-label",
+                "leftValue": "={{ $json.targetLabelId }}",
+                "rightValue": "",
+                "operator": {"type": "string", "operation": "notEmpty"},
+            },
         ],
         "combinator": "and",
     },
     "options": {},
 }
+IF_CREATOR_EMAIL = if_string_not_empty("={{ $json.creatorEmail }}", "creator-email-present")
 
-MAIL_TO_STAKEHOLDER = "={{ $json.creatorEmail }}"
-MAIL_SUBJECT_SUCCESS = "={{ 'Bestaetigung: Ticket in Triage angelegt - ' + ($json.title || 'Anfrage') }}"
-MAIL_MESSAGE_SUCCESS = (
-    "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n'"
-    " + 'vielen Dank fuer Ihre Nachricht. Ihr Ticket wurde erfolgreich im Join Task Board "
-    "(Spalte Triage) angelegt.\\n\\n'"
-    " + 'Betreff: ' + ($json.title || 'Anfrage') + '\\n\\n'"
-    " + 'Viele Gruesse\\nJoin Team' }}"
-)
-MAIL_SUBJECT_CAP = (
-    "={{ $json.skipReason === 'TOTAL_EMAIL_CAP_REACHED' "
-    "? 'Hinweis: Tageslimit fuer E-Mail-Eingang im Join Collector erreicht' "
-    ": 'Hinweis: Tageslimit fuer automatische Ticket-Erstellung erreicht' }}"
-)
-MAIL_MESSAGE_CAP = (
-    "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n' + ("
-    "$json.skipReason === 'TOTAL_EMAIL_CAP_REACHED' "
-    "? 'wir koennen heute keine weiteren E-Mails im Join Collector annehmen. "
-    "Bitte senden Sie Ihr Anliegen morgen erneut.\\n\\n' "
-    ": 'wir haben Ihre E-Mail erhalten. Das Tageslimit fuer die automatische Ticket-Erstellung "
-    "ist heute bereits erreicht.\\nIhr Anliegen wird vom Team manuell geprueft und ins Task Board uebertragen.\\n\\n'"
-    ") + 'Viele Gruesse\\nJoin Team' }}"
-)
-MAIL_SUBJECT_ERROR = "={{ 'Hinweis: E-Mail erhalten - manuelle Rueckmeldung folgt' }}"
-MAIL_MESSAGE_ERROR = (
-    "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n'"
-    " + 'wir haben Ihre E-Mail erhalten. Bei der automatischen Verarbeitung ist ein Fehler aufgetreten.\\n'"
-    " + 'Das Team kuemmert sich zeitnah manuell um Ihr Anliegen.\\n\\n'"
-    " + 'Viele Gruesse\\nJoin Team' }}"
-)
 
-GMAIL_ARCHIVE_MSG_ID = (
-    "={{ $('Resolve Gmail label IDs').item.json.archiveGmailId "
-    "|| $('Pick Gmail ID for archive').item.json.archiveGmailId "
-    "|| $('Prepare success archive').item.json.archiveGmailId }}"
-)
-GMAIL_ERLEDIGT_LABEL = "={{ $('Resolve Gmail label IDs').item.json.erledigtLabelId }}"
-GMAIL_RFC_QUERY_OK = (
-    "=rfc822msgid:{{ $('Resolve Gmail label IDs').item.json.searchRfcId }}"
-)
-GMAIL_ZB_MSG_ID = (
-    "={{ $('Resolve Gmail label IDs (error)').item.json.archiveGmailId "
-    "|| $('Pick Gmail ID for error').item.json.archiveGmailId "
-    "|| $('Prepare error archive').item.json.archiveGmailId }}"
-)
-GMAIL_ZB_LABEL = "={{ $('Resolve Gmail label IDs (error)').item.json.zuBearbeitenLabelId }}"
-GMAIL_RFC_QUERY_ERR = (
-    "=rfc822msgid:{{ $('Resolve Gmail label IDs (error)').item.json.searchRfcId }}"
-)
-GMAIL_NODE_VERSION = 2.1
-GMAIL_CRED = {"gmailOAuth2": {"id": "15U509ehBEzJwEV9", "name": "Gmail account 3"}}
-IMAP_CRED = {"imap": {"id": "v6fJz0hh1XAMh9uB", "name": "IMAP account 3"}}
-OPENAI_CRED = {"openAiApi": {"id": "qXmdRSJivefpurUF", "name": "OpenAI account 2"}}
-HTTP_CRED = {"httpHeaderAuth": {"id": "HjH4uC7k7UHF6k0F", "name": "Header Auth account"}}
+def set_assignments(pairs):
+    return {
+        "assignments": {
+            "assignments": [
+                {
+                    "id": f"a-{i}",
+                    "name": name,
+                    "value": value,
+                    "type": typ,
+                }
+                for i, (name, value, typ) in enumerate(pairs)
+            ]
+        },
+        "options": {},
+    }
 
-AI_PROMPT = (
-    "=You parse stakeholder emails into Kanban ticket fields for Join-Issue Collector.\n\n"
-    "Two email styles are common:\n"
-    "1) Create Request template with labels Description: / Subtask: / Enddate:\n"
-    "2) Free-form email from any mailbox, often with a short title, optional Subtasks: bullet list, "
-    "a deadline line like 'bis 27.7.26', then a greeting and sender name.\n\n"
-    "Rules:\n"
-    "- title: short summary (subject or first content line), max 80 chars\n"
-    "- description: the request text WITHOUT Subtask/Subtasks bullets, WITHOUT deadline lines, "
-    "WITHOUT greeting/signature/name\n"
-    "- subtasks: ONLY concrete action items from an explicit Subtask/Subtasks list "
-    "(bullets or numbered). Never include title, description prose, deadline lines "
-    "('bis …', dates), greetings ('Beste Grüße', 'LG'), or person names.\n"
-    "- If there is no Subtask/Subtasks section, return subtasks as [].\n"
-    "- dueDate: from Enddate or lines like 'bis 27.7.26' / 'bis zum 27.07.2026' as YYYY-MM-DD; "
-    "else empty string\n"
-    "- Ignore signatures and company footers.\n\n"
-    "Return ONLY valid JSON with these keys:\n"
-    "- title (string)\n"
-    "- description (string)\n"
-    '- category: exactly "User Story" or "Technical Task"\n'
-    '- priority: exactly "HighPriority", "MidPriority", or "LowPriority"\n'
-    '- dueDate: "YYYY-MM-DD" or empty string\n'
-    "- subtasks (array of strings; empty array when none)\n"
-    "- creatorName (string: first and last name from signature or sender display name; "
-    'never an email address; never "Stakeholder")\n\n'
-    "Email from: {{ $json.from }}\n"
-    "Subject: {{ $json.subject }}\n"
-    "Body:\n{{ $json.body }}"
-)
 
 workflow = {
     "name": "Join-email-to-task-proposal",
     "nodes": [
+        # --- Task moved branch ---
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "join-task-moved",
+                "options": {},
+            },
+            "id": "e2fb1760-ba66-4fcb-8710-e1d6d866879a",
+            "name": "Webhook task moved",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [0, 780],
+            "webhookId": "1b7b72a6-4cdc-43ca-8f0b-7725c34835e0",
+            "notes": "Receives task column-change events from Firebase.",
+        },
+        {
+            "parameters": set_assignments(
+                [
+                    (
+                        "title",
+                        "={{ String($json.body?.title || $json.title || 'Ticket').trim() }}",
+                        "string",
+                    ),
+                    (
+                        "creatorName",
+                        "={{ String($json.body?.creatorName || $json.creatorName || '').trim() }}",
+                        "string",
+                    ),
+                    (
+                        "creatorEmail",
+                        "={{ String($json.body?.creatorEmail || $json.creatorEmail || '').trim() }}",
+                        "string",
+                    ),
+                    (
+                        "previousColumnLabel",
+                        "={{ String($json.body?.previousColumnLabel || $json.body?.previousColumn || $json.previousColumnLabel || $json.previousColumn || 'Unbekannt').trim() }}",
+                        "string",
+                    ),
+                    (
+                        "newColumnLabel",
+                        "={{ String($json.body?.newColumnLabel || $json.body?.newColumn || $json.newColumnLabel || $json.newColumn || 'Unbekannt').trim() }}",
+                        "string",
+                    ),
+                    (
+                        "movedAtIso",
+                        "={{ (() => { const raw = Number($json.body?.movedAt || $json.movedAt || 0); return Number.isFinite(raw) && raw > 0 ? new Date(raw).toISOString() : ''; })() }}",
+                        "string",
+                    ),
+                ]
+            ),
+            "id": "n-task-moved-set",
+            "name": "Set task moved fields",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [240, 780],
+        },
+        {
+            "parameters": IF_CREATOR_EMAIL,
+            "id": "778a64ff-aa44-45b6-acb8-1fc5049be299",
+            "name": "IF creator email available",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [480, 780],
+        },
+        {
+            "parameters": {
+                "sendTo": "={{ $json.creatorEmail }}",
+                "subject": "={{ 'Update zu Ihrem Ticket: ' + ($json.title || 'Ticket') }}",
+                "emailType": "text",
+                "message": (
+                    "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n'"
+                    " + 'Ihr Ticket wurde im Join Task Board in eine neue Spalte verschoben.\\n\\n'"
+                    " + 'Ticket: ' + ($json.title || 'Ticket') + '\\n'"
+                    " + 'Von: ' + ($json.previousColumnLabel || 'Unbekannt') + '\\n'"
+                    " + 'Nach: ' + ($json.newColumnLabel || 'Unbekannt')"
+                    " + ($json.movedAtIso ? ('\\nZeitpunkt: ' + $json.movedAtIso) : '')"
+                    " + '\\n\\nViele Gruesse\\nJoin Team' }}"
+                ),
+                "options": {"appendAttribution": False},
+            },
+            "id": "fe8b8ecf-9ac9-4833-85aa-21cd8dce2ef2",
+            "name": "Send task moved response",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": GMAIL_NODE_VERSION,
+            "position": [720, 764],
+            "credentials": GMAIL_CRED,
+            "continueOnFail": True,
+        },
+        # --- Email intake ---
         {
             "parameters": {
                 "postProcessAction": "read",
@@ -789,18 +650,9 @@ workflow = {
             "name": "Email Trigger (IMAP)",
             "type": "n8n-nodes-base.emailReadImap",
             "typeVersion": 2,
-            "position": [0, 0],
+            "position": [0, 240],
             "credentials": IMAP_CRED,
-            "notes": "Realtime IMAP. Marks UNSEEN mail as read after trigger.",
-        },
-        {
-            "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
-            "id": "n-schedule",
-            "name": "Schedule Trigger (every 5 min)",
-            "type": "n8n-nodes-base.scheduleTrigger",
-            "typeVersion": 1.2,
-            "position": [0, 208],
-            "notes": "Polls unread Gmail inbox every 5 minutes.",
+            "notes": "Realtime IMAP. No schedule polling.",
         },
         {
             "parameters": {},
@@ -808,73 +660,69 @@ workflow = {
             "name": "When clicking 'Execute workflow'",
             "type": "n8n-nodes-base.manualTrigger",
             "typeVersion": 1,
-            "position": [0, 416],
-            "notes": "Manual test without real email.",
+            "position": [0, 440],
         },
         {
-            "parameters": {
-                "resource": "message",
-                "operation": "getAll",
-                "returnAll": True,
-                "filters": {"readStatus": "unread", "labelIds": ["INBOX"]},
-                "options": {"simplify": False},
-            },
-            "id": "n-fetch-gmail",
-            "name": "Fetch unread emails (Gmail)",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": GMAIL_NODE_VERSION,
-            "position": [240, 208],
-            "credentials": GMAIL_CRED,
-        },
-        {
-            "parameters": {"jsCode": NORMALIZE_GMAIL_JS},
-            "id": "n-norm-gmail",
-            "name": "Normalize scheduled email",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [480, 208],
-        },
-        {
-            "parameters": {"jsCode": NORMALIZE_IMAP_JS},
-            "id": "n-norm-imap",
-            "name": "Normalize IMAP email",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [480, 0],
-        },
-        {
-            "parameters": {
-                "assignments": {
-                    "assignments": [
-                        {"id": "s-from", "name": "from", "value": "Max Mustermann <test@example.com>", "type": "string"},
-                        {"id": "s-subject", "name": "subject", "value": "Test Dark Mode", "type": "string"},
-                        {
-                            "id": "s-body",
-                            "name": "body",
-                            "value": "Bitte Dark Mode bis Ende August testen.\n\nSubtasks:\n- Kontrast prüfen\n- Mobile Ansicht testen\n- Feedback an Team senden\n\nMit freundlichen Grüßen\nMax Mustermann",
-                            "type": "string",
-                        },
-                        {"id": "s-msgid", "name": "messageId", "value": "<manual-test-001@join-collector.local>", "type": "string"},
-                        {"id": "s-source", "name": "emailSource", "value": "manual", "type": "string"},
-                        {"id": "s-gmail", "name": "gmailId", "value": "", "type": "string"},
-                    ]
-                },
-                "options": {},
-            },
+            "parameters": set_assignments(
+                [
+                    ("from", "Max Mustermann <test@example.com>", "string"),
+                    ("subject", "Test Dark Mode", "string"),
+                    (
+                        "body",
+                        "Bitte Dark Mode bis Ende August testen.\n\nSubtasks:\n"
+                        "- Kontrast prüfen\n- Mobile Ansicht testen\n\n"
+                        "Mit freundlichen Grüßen\nMax Mustermann",
+                        "string",
+                    ),
+                    ("messageId", "<manual-test-001@join-collector.local>", "string"),
+                    ("emailSource", "manual", "string"),
+                    ("gmailId", "", "string"),
+                ]
+            ),
             "id": "n-sample",
             "name": "Sample stakeholder email",
             "type": "n8n-nodes-base.set",
             "typeVersion": 3.4,
-            "position": [240, 416],
-            "notes": "Sample data for manual test path.",
+            "position": [240, 440],
         },
         {
-            "parameters": {"promptType": "define", "text": AI_PROMPT},
+            "parameters": {"jsCode": PREPARE_EMAIL_JS},
+            "id": "n-prepare-email",
+            "name": "Prepare email context",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [480, 320],
+            "notes": "Maps IMAP/sample fields and repairs UTF-8 mojibake (Ã¼→ü) for German umlauts.",
+        },
+        {
+            "parameters": {"mode": "runOnceForAllItems", "jsCode": AUTO_CAP_JS},
+            "id": "n-cap-limit",
+            "name": "Apply auto email cap (max 10)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [720, 320],
+            "notes": "Daily cap max 10 BEFORE AI call.",
+        },
+        {
+            "parameters": IF_WITHIN_CAP,
+            "id": "n-if-cap",
+            "name": "IF within auto cap",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [960, 320],
+        },
+        # --- AI path ---
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": AI_PROMPT,
+                "hasOutputParser": True,
+            },
             "id": "n-ai-parse",
             "name": "Parse ticket with AI",
             "type": "@n8n/n8n-nodes-langchain.chainLlm",
             "typeVersion": 1.5,
-            "position": [760, 208],
+            "position": [1200, 200],
         },
         {
             "parameters": {
@@ -885,33 +733,61 @@ workflow = {
             "name": "OpenAI Chat Model",
             "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
             "typeVersion": 1.2,
-            "position": [760, 432],
+            "position": [1200, 420],
             "credentials": OPENAI_CRED,
         },
         {
-            "parameters": {"jsCode": BUILD_PAYLOAD_JS},
+            "parameters": {
+                "schemaType": "fromJson",
+                "jsonSchemaExample": TICKET_JSON_EXAMPLE,
+            },
+            "id": "n-output-parser",
+            "name": "Structured Output Parser",
+            "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+            "typeVersion": 1.2,
+            "position": [1440, 420],
+        },
+        {
+            "parameters": set_assignments(
+                [
+                    ("title", BUILD_TITLE, "string"),
+                    ("description", BUILD_DESCRIPTION, "string"),
+                    ("category", BUILD_CATEGORY, "string"),
+                    ("priority", BUILD_PRIORITY, "string"),
+                    ("dueDate", BUILD_DUEDATE, "string"),
+                    ("column", "triageColumn", "string"),
+                    ("creatorName", BUILD_CREATOR_NAME, "string"),
+                    (
+                        "creatorEmail",
+                        "={{ $('Prepare email context').item.json.creatorEmail }}",
+                        "string",
+                    ),
+                    ("creatorType", "external", "string"),
+                    ("aiGenerated", True, "boolean"),
+                    (
+                        "sourceMessageId",
+                        "={{ $('Prepare email context').item.json.sourceMessageId }}",
+                        "string",
+                    ),
+                    (
+                        "emailSource",
+                        "={{ $('Prepare email context').item.json.emailSource }}",
+                        "string",
+                    ),
+                    (
+                        "gmailId",
+                        "={{ $('Prepare email context').item.json.gmailId }}",
+                        "string",
+                    ),
+                    ("subtasks", BUILD_SUBTASKS, "array"),
+                ]
+            ),
             "id": "n-build",
             "name": "Build Join payload",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [1000, 208],
-        },
-        {
-            "parameters": {"mode": "runOnceForAllItems", "jsCode": AUTO_CAP_JS},
-            "id": "n-cap-limit",
-            "name": "Apply auto email cap (max 10)",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [1240, 320],
-            "notes": "Daily caps: max 15 accepted emails/day in Join Collector, of which max 10 are auto-processed into board tasks.",
-        },
-        {
-            "parameters": IF_WITHIN_AUTO_CAP,
-            "id": "n-if-cap",
-            "name": "IF within auto cap",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2.2,
-            "position": [1480, 320],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [1440, 200],
+            "notes": "Set/expressions merge structured AI output with email metadata.",
         },
         {
             "parameters": {
@@ -920,495 +796,354 @@ workflow = {
                 "authentication": "genericCredentialType",
                 "genericAuthType": "httpHeaderAuth",
                 "sendHeaders": True,
-                "headerParameters": {"parameters": [{"name": "Content-Type", "value": "application/json"}]},
+                "headerParameters": {
+                    "parameters": [{"name": "Content-Type", "value": "application/json"}]
+                },
                 "sendBody": True,
                 "specifyBody": "json",
                 "jsonBody": "={{ $json }}",
-                "options": {"response": {"response": {"fullResponse": True, "neverError": True}}},
+                "options": {
+                    "response": {"response": {"fullResponse": True, "neverError": True}}
+                },
             },
             "id": "n-create",
             "name": "Create task in Triage",
             "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 4.2,
-            "position": [1240, 208],
+            "position": [1680, 200],
             "credentials": HTTP_CRED,
-            "notes": "POST to Firebase via Hosting rewrite. Header Auth credential must send X-N8N-Secret with the same value as Firebase secret N8N_API_SECRET.",
         },
         {
-            "parameters": {"jsCode": EVALUATE_JS},
+            "parameters": set_assignments(
+                [
+                    ("ok", EVAL_OK, "boolean"),
+                    ("statusCode", "={{ Number($json.statusCode || 0) }}", "number"),
+                    (
+                        "title",
+                        "={{ $('Build Join payload').item.json.title }}",
+                        "string",
+                    ),
+                    (
+                        "creatorName",
+                        "={{ $('Build Join payload').item.json.creatorName }}",
+                        "string",
+                    ),
+                    (
+                        "creatorEmail",
+                        "={{ $('Build Join payload').item.json.creatorEmail }}",
+                        "string",
+                    ),
+                    (
+                        "gmailId",
+                        "={{ $('Build Join payload').item.json.gmailId }}",
+                        "string",
+                    ),
+                    (
+                        "emailSource",
+                        "={{ $('Build Join payload').item.json.emailSource }}",
+                        "string",
+                    ),
+                    (
+                        "sourceMessageId",
+                        "={{ $('Build Join payload').item.json.sourceMessageId }}",
+                        "string",
+                    ),
+                ]
+            ),
             "id": "n-eval",
             "name": "Evaluate create result",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [1480, 208],
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [1920, 200],
         },
         {
-            "parameters": IF_OK,
+            "parameters": IF_TASK_OK,
             "id": "n-if-ok",
             "name": "IF task created",
             "type": "n8n-nodes-base.if",
             "typeVersion": 2.2,
-            "position": [1720, 208],
+            "position": [2160, 200],
         },
         {
-            "parameters": {"jsCode": PREPARE_ARCHIVE_JS},
-            "id": "n-prep-ok",
-            "name": "Prepare success archive",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [1960, 80],
+            "parameters": set_assignments(
+                [
+                    ("outcome", "success", "string"),
+                    ("archiveLabelName", "email done", "string"),
+                    ("title", "={{ $json.title }}", "string"),
+                    ("creatorName", "={{ $json.creatorName }}", "string"),
+                    ("creatorEmail", "={{ $json.creatorEmail }}", "string"),
+                    ("gmailId", "={{ $json.gmailId }}", "string"),
+                    ("emailSource", "={{ $json.emailSource }}", "string"),
+                    ("sourceMessageId", "={{ $json.sourceMessageId }}", "string"),
+                ]
+            ),
+            "id": "n-outcome-success",
+            "name": "Set outcome success",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [2400, 120],
         },
+        {
+            "parameters": set_assignments(
+                [
+                    ("outcome", "error", "string"),
+                    ("archiveLabelName", "needs review", "string"),
+                    ("title", "={{ $json.title }}", "string"),
+                    ("creatorName", "={{ $json.creatorName }}", "string"),
+                    ("creatorEmail", "={{ $json.creatorEmail }}", "string"),
+                    ("gmailId", "={{ $json.gmailId }}", "string"),
+                    ("emailSource", "={{ $json.emailSource }}", "string"),
+                    ("sourceMessageId", "={{ $json.sourceMessageId }}", "string"),
+                ]
+            ),
+            "id": "n-outcome-error",
+            "name": "Set outcome error",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [2400, 280],
+        },
+        {
+            "parameters": set_assignments(
+                [
+                    ("outcome", "cap", "string"),
+                    ("archiveLabelName", "needs review", "string"),
+                    ("skipReason", "={{ $json.skipReason }}", "string"),
+                    ("title", "={{ $json.title }}", "string"),
+                    ("creatorName", "={{ $json.creatorName }}", "string"),
+                    ("creatorEmail", "={{ $json.creatorEmail }}", "string"),
+                    ("gmailId", "={{ $json.gmailId }}", "string"),
+                    ("emailSource", "={{ $json.emailSource }}", "string"),
+                    ("sourceMessageId", "={{ $json.sourceMessageId }}", "string"),
+                ]
+            ),
+            "id": "n-outcome-cap",
+            "name": "Set outcome cap",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 3.4,
+            "position": [1200, 480],
+        },
+        # --- Shared feedback + archive (suggestions 1,3,5,6,7) ---
         {
             "parameters": IF_NOT_MANUAL,
-            "id": "n-if-not-manual-ok",
+            "id": "n-if-not-manual",
             "name": "IF not manual test",
             "type": "n8n-nodes-base.if",
             "typeVersion": 2.2,
-            "position": [2200, 80],
-            "notes": "Skips Gmail archive for manual test runs.",
+            "position": [2640, 240],
+            "notes": "Single manual filter before feedback/archive.",
         },
         {
             "parameters": {
                 "resource": "message",
                 "operation": "send",
-                "sendTo": MAIL_TO_STAKEHOLDER,
-                "subject": MAIL_SUBJECT_SUCCESS,
+                "sendTo": "={{ $json.creatorEmail }}",
+                "subject": FEEDBACK_SUBJECT,
                 "emailType": "text",
-                "message": MAIL_MESSAGE_SUCCESS,
+                "message": FEEDBACK_MESSAGE,
                 "options": {"appendAttribution": False},
             },
-            "id": "n-mail-success",
-            "name": "Send success response",
+            "id": "n-mail-feedback",
+            "name": "Send stakeholder feedback",
             "type": "n8n-nodes-base.gmail",
             "typeVersion": GMAIL_NODE_VERSION,
-            "position": [2440, -16],
+            "position": [2880, 220],
             "credentials": GMAIL_CRED,
             "continueOnFail": True,
-            "notes": "Confirmation email to stakeholder when task was created successfully.",
+            "notes": "One send node; subject/body depend on outcome success|cap|error.",
+        },
+        {
+            "parameters": {"jsCode": CHECK_LABEL_CACHE_JS},
+            "id": "n-check-cache",
+            "name": "Check label cache",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [3120, 220],
+            "notes": "Uses workflow static data for email done / needs review IDs.",
+        },
+        {
+            "parameters": IF_CACHE_HIT,
+            "id": "n-if-cache",
+            "name": "IF label cache hit",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [3360, 220],
         },
         {
             "parameters": {"resource": "label", "operation": "getAll", "returnAll": True},
-            "id": "n-get-labels-ok",
+            "id": "n-get-labels",
             "name": "Get Gmail labels",
             "type": "n8n-nodes-base.gmail",
             "typeVersion": GMAIL_NODE_VERSION,
-            "position": [2440, 80],
+            "position": [3600, 320],
             "credentials": GMAIL_CRED,
-            "notes": "Loads label IDs for Erledigt / zu bearbeiten.",
         },
         {
-            "parameters": {"jsCode": RESOLVE_LABELS_OK_JS},
-            "id": "n-resolve-labels-ok",
-            "name": "Resolve Gmail label IDs",
+            "parameters": {"jsCode": STORE_LABEL_CACHE_JS},
+            "id": "n-store-cache",
+            "name": "Store label cache",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
-            "position": [2680, 80],
-            "notes": "Maps Gmail label names Erledigt / zu bearbeiten to Label_… IDs.",
-        },
-        {
-            "parameters": IF_LABEL_OK,
-            "id": "n-if-label-ok",
-            "name": "IF Erledigt label found",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2.2,
-            "position": [2920, 80],
-            "notes": "Stops archive if Gmail label Erledigt is missing.",
-        },
-        {
-            "parameters": IF_DIRECT,
-            "id": "n-if-direct",
-            "name": "IF direct Gmail ID",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2.2,
-            "position": [3160, 80],
-        },
-        {
-            "parameters": {"resource": "message", "operation": "markAsRead", "messageId": GMAIL_ARCHIVE_MSG_ID},
-            "id": "n-mark-read",
-            "name": "Mark Gmail read",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": GMAIL_NODE_VERSION,
-            "position": [3400, -16],
-            "credentials": GMAIL_CRED,
-        },
-        {
-            "parameters": {
-                "resource": "message",
-                "operation": "addLabels",
-                "messageId": GMAIL_ARCHIVE_MSG_ID,
-                "labelIds": GMAIL_ERLEDIGT_LABEL,
-            },
-            "id": "n-add-erledigt",
-            "name": "Add Erledigt label",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": GMAIL_NODE_VERSION,
-            "position": [3640, -16],
-            "credentials": GMAIL_CRED,
-            "notes": "Uses Label_… ID from Resolve Gmail label IDs (not display name Erledigt).",
-        },
-        {
-            "parameters": {
-                "resource": "message",
-                "operation": "removeLabels",
-                "messageId": GMAIL_ARCHIVE_MSG_ID,
-                "labelIds": ["INBOX", "UNREAD"],
-            },
-            "id": "n-rm-inbox",
-            "name": "Remove from Inbox",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": GMAIL_NODE_VERSION,
-            "position": [3880, -16],
-            "credentials": GMAIL_CRED,
-        },
-        {
-            "parameters": {
-                "resource": "message",
-                "operation": "getAll",
-                "returnAll": False,
-                "limit": 1,
-                "filters": {"q": GMAIL_RFC_QUERY_OK},
-                "options": {"simplify": False},
-            },
-            "id": "n-find-rfc",
-            "name": "Find Gmail by RFC ID",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": GMAIL_NODE_VERSION,
-            "position": [3400, 176],
-            "credentials": GMAIL_CRED,
-            "continueOnFail": True,
-        },
-        {
-            "parameters": {"jsCode": PICK_ARCHIVE_JS},
-            "id": "n-pick-rfc",
-            "name": "Pick Gmail ID for archive",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [3400, 176],
+            "position": [3840, 320],
         },
         {
             "parameters": IF_CAN_ARCHIVE,
             "id": "n-if-can-archive",
-            "name": "IF archive ID found",
+            "name": "IF can archive in Gmail",
             "type": "n8n-nodes-base.if",
             "typeVersion": 2.2,
-            "position": [3640, 176],
-        },
-        {
-            "parameters": {"jsCode": PREPARE_ARCHIVE_JS},
-            "id": "n-prep-err",
-            "name": "Prepare error archive",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [1960, 336],
-        },
-        {
-            "parameters": IF_NOT_MANUAL,
-            "id": "n-if-not-manual-err",
-            "name": "IF not manual test (error)",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2.2,
-            "position": [2200, 336],
-        },
-        {
-            "parameters": IF_CAP_REACHED,
-            "id": "n-if-cap-reached",
-            "name": "IF cap reached",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2.2,
-            "position": [2440, 336],
-            "notes": "Distinguishes daily limit response from generic processing errors.",
+            "position": [4080, 220],
+            "notes": "Archives only when gmailId + target label ID exist (no RFC fallback).",
         },
         {
             "parameters": {
-                "resource": "message",
-                "operation": "send",
-                "sendTo": MAIL_TO_STAKEHOLDER,
-                "subject": MAIL_SUBJECT_CAP,
-                "emailType": "text",
-                "message": MAIL_MESSAGE_CAP,
-                "options": {"appendAttribution": False},
+                "method": "POST",
+                "url": GMAIL_MODIFY_URL,
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "gmailOAuth2",
+                "sendBody": True,
+                "specifyBody": "json",
+                "jsonBody": GMAIL_MODIFY_BODY,
+                "options": {},
             },
-            "id": "n-mail-cap",
-            "name": "Send cap reached response",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": GMAIL_NODE_VERSION,
-            "position": [2680, 272],
+            "id": "n-archive-modify",
+            "name": "Archive Gmail message",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [4320, 200],
             "credentials": GMAIL_CRED,
             "continueOnFail": True,
-            "notes": "Automatic response when daily auto-processing limit is reached.",
-        },
-        {
-            "parameters": {
-                "resource": "message",
-                "operation": "send",
-                "sendTo": MAIL_TO_STAKEHOLDER,
-                "subject": MAIL_SUBJECT_ERROR,
-                "emailType": "text",
-                "message": MAIL_MESSAGE_ERROR,
-                "options": {"appendAttribution": False},
-            },
-            "id": "n-mail-error",
-            "name": "Send processing error response",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": GMAIL_NODE_VERSION,
-            "position": [2680, 400],
-            "credentials": GMAIL_CRED,
-            "continueOnFail": True,
-            "notes": "Automatic response when processing failed for other reasons.",
-        },
-        {
-            "parameters": {"resource": "label", "operation": "getAll", "returnAll": True},
-            "id": "n-get-labels-err",
-            "name": "Get Gmail labels (error)",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": GMAIL_NODE_VERSION,
-            "position": [2920, 336],
-            "credentials": GMAIL_CRED,
-        },
-        {
-            "parameters": {"jsCode": RESOLVE_LABELS_ERR_JS},
-            "id": "n-resolve-labels-err",
-            "name": "Resolve Gmail label IDs (error)",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [2680, 336],
-            "notes": "Maps Gmail label zu bearbeiten to Label_… ID.",
-        },
-        {
-            "parameters": IF_LABEL_ERR,
-            "id": "n-if-label-err",
-            "name": "IF zu bearbeiten label found",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2.2,
-            "position": [2920, 336],
-            "notes": "Stops error archive if Gmail label zu bearbeiten is missing.",
-        },
-        {
-            "parameters": IF_DIRECT,
-            "id": "n-if-direct-err",
-            "name": "IF direct Gmail ID (error)",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2.2,
-            "position": [3160, 336],
-        },
-        {
-            "parameters": {
-                "resource": "message",
-                "operation": "addLabels",
-                "messageId": GMAIL_ZB_MSG_ID,
-                "labelIds": GMAIL_ZB_LABEL,
-            },
-            "id": "n-add-zb",
-            "name": "Add zu bearbeiten label",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": GMAIL_NODE_VERSION,
-            "position": [3400, 336],
-            "credentials": GMAIL_CRED,
-            "notes": "Uses Label_… ID from Resolve Gmail label IDs (error).",
-        },
-        {
-            "parameters": {
-                "resource": "message",
-                "operation": "getAll",
-                "returnAll": False,
-                "limit": 1,
-                "filters": {"q": GMAIL_RFC_QUERY_ERR},
-                "options": {"simplify": False},
-            },
-            "id": "n-find-rfc-err",
-            "name": "Find Gmail by RFC ID (error)",
-            "type": "n8n-nodes-base.gmail",
-            "typeVersion": GMAIL_NODE_VERSION,
-            "position": [3400, 496],
-            "credentials": GMAIL_CRED,
-            "continueOnFail": True,
-        },
-        {
-            "parameters": {"jsCode": PICK_ERROR_JS},
-            "id": "n-pick-rfc-err",
-            "name": "Pick Gmail ID for error",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [3400, 496],
+            "notes": "Single Gmail modify: add target label + remove INBOX/UNREAD.",
         },
     ],
     "pinData": {},
     "connections": {
-        "Email Trigger (IMAP)": {"main": [[{"node": "Normalize IMAP email", "type": "main", "index": 0}]]},
-        "Schedule Trigger (every 5 min)": {"main": [[{"node": "Fetch unread emails (Gmail)", "type": "main", "index": 0}]]},
-        "When clicking 'Execute workflow'": {"main": [[{"node": "Sample stakeholder email", "type": "main", "index": 0}]]},
-        "Fetch unread emails (Gmail)": {"main": [[{"node": "Normalize scheduled email", "type": "main", "index": 0}]]},
-        "Normalize scheduled email": {"main": [[{"node": "Parse ticket with AI", "type": "main", "index": 0}]]},
-        "Normalize IMAP email": {"main": [[{"node": "Parse ticket with AI", "type": "main", "index": 0}]]},
-        "Sample stakeholder email": {"main": [[{"node": "Parse ticket with AI", "type": "main", "index": 0}]]},
-        "OpenAI Chat Model": {"ai_languageModel": [[{"node": "Parse ticket with AI", "type": "ai_languageModel", "index": 0}]]},
-        "Parse ticket with AI": {"main": [[{"node": "Build Join payload", "type": "main", "index": 0}]]},
-        "Build Join payload": {"main": [[{"node": "Apply auto email cap (max 10)", "type": "main", "index": 0}]]},
-        "Apply auto email cap (max 10)": {"main": [[{"node": "IF within auto cap", "type": "main", "index": 0}]]},
+        "Webhook task moved": {
+            "main": [[{"node": "Set task moved fields", "type": "main", "index": 0}]]
+        },
+        "Set task moved fields": {
+            "main": [[{"node": "IF creator email available", "type": "main", "index": 0}]]
+        },
+        "IF creator email available": {
+            "main": [[{"node": "Send task moved response", "type": "main", "index": 0}], []]
+        },
+        "Email Trigger (IMAP)": {
+            "main": [[{"node": "Prepare email context", "type": "main", "index": 0}]]
+        },
+        "When clicking 'Execute workflow'": {
+            "main": [[{"node": "Sample stakeholder email", "type": "main", "index": 0}]]
+        },
+        "Sample stakeholder email": {
+            "main": [[{"node": "Prepare email context", "type": "main", "index": 0}]]
+        },
+        "Prepare email context": {
+            "main": [[{"node": "Apply auto email cap (max 10)", "type": "main", "index": 0}]]
+        },
+        "Apply auto email cap (max 10)": {
+            "main": [[{"node": "IF within auto cap", "type": "main", "index": 0}]]
+        },
         "IF within auto cap": {
             "main": [
-                [{"node": "Create task in Triage", "type": "main", "index": 0}],
-                [{"node": "Prepare error archive", "type": "main", "index": 0}],
+                [{"node": "Parse ticket with AI", "type": "main", "index": 0}],
+                [{"node": "Set outcome cap", "type": "main", "index": 0}],
             ]
         },
-        "Create task in Triage": {"main": [[{"node": "Evaluate create result", "type": "main", "index": 0}]]},
-        "Evaluate create result": {"main": [[{"node": "IF task created", "type": "main", "index": 0}]]},
+        "OpenAI Chat Model": {
+            "ai_languageModel": [
+                [{"node": "Parse ticket with AI", "type": "ai_languageModel", "index": 0}]
+            ]
+        },
+        "Structured Output Parser": {
+            "ai_outputParser": [
+                [{"node": "Parse ticket with AI", "type": "ai_outputParser", "index": 0}]
+            ]
+        },
+        "Parse ticket with AI": {
+            "main": [[{"node": "Build Join payload", "type": "main", "index": 0}]]
+        },
+        "Build Join payload": {
+            "main": [[{"node": "Create task in Triage", "type": "main", "index": 0}]]
+        },
+        "Create task in Triage": {
+            "main": [[{"node": "Evaluate create result", "type": "main", "index": 0}]]
+        },
+        "Evaluate create result": {
+            "main": [[{"node": "IF task created", "type": "main", "index": 0}]]
+        },
         "IF task created": {
             "main": [
-                [{"node": "Prepare success archive", "type": "main", "index": 0}],
-                [{"node": "Prepare error archive", "type": "main", "index": 0}],
+                [{"node": "Set outcome success", "type": "main", "index": 0}],
+                [{"node": "Set outcome error", "type": "main", "index": 0}],
             ]
         },
-        "Prepare success archive": {"main": [[{"node": "IF not manual test", "type": "main", "index": 0}]]},
+        "Set outcome success": {
+            "main": [[{"node": "IF not manual test", "type": "main", "index": 0}]]
+        },
+        "Set outcome error": {
+            "main": [[{"node": "IF not manual test", "type": "main", "index": 0}]]
+        },
+        "Set outcome cap": {
+            "main": [[{"node": "IF not manual test", "type": "main", "index": 0}]]
+        },
         "IF not manual test": {
-            "main": [[{"node": "Send success response", "type": "main", "index": 0}], []]
-        },
-        "Send success response": {"main": [[{"node": "Get Gmail labels", "type": "main", "index": 0}]]},
-        "Get Gmail labels": {"main": [[{"node": "Resolve Gmail label IDs", "type": "main", "index": 0}]]},
-        "Resolve Gmail label IDs": {"main": [[{"node": "IF Erledigt label found", "type": "main", "index": 0}]]},
-        "IF Erledigt label found": {
-            "main": [[{"node": "IF direct Gmail ID", "type": "main", "index": 0}], []]
-        },
-        "IF direct Gmail ID": {
             "main": [
-                [{"node": "Mark Gmail read", "type": "main", "index": 0}],
-                [{"node": "Find Gmail by RFC ID", "type": "main", "index": 0}],
+                [
+                    {"node": "Send stakeholder feedback", "type": "main", "index": 0},
+                    {"node": "Check label cache", "type": "main", "index": 0},
+                ],
+                [],
             ]
         },
-        "Mark Gmail read": {"main": [[{"node": "Add Erledigt label", "type": "main", "index": 0}]]},
-        "Add Erledigt label": {"main": [[{"node": "Remove from Inbox", "type": "main", "index": 0}]]},
-        "Find Gmail by RFC ID": {"main": [[{"node": "Pick Gmail ID for archive", "type": "main", "index": 0}]]},
-        "Pick Gmail ID for archive": {"main": [[{"node": "IF archive ID found", "type": "main", "index": 0}]]},
-        "IF archive ID found": {"main": [[{"node": "Mark Gmail read", "type": "main", "index": 0}], []]},
-        "Prepare error archive": {"main": [[{"node": "IF not manual test (error)", "type": "main", "index": 0}]]},
-        "IF not manual test (error)": {
-            "main": [[{"node": "IF cap reached", "type": "main", "index": 0}], []]
+        "Check label cache": {
+            "main": [[{"node": "IF label cache hit", "type": "main", "index": 0}]]
         },
-        "IF cap reached": {
+        "IF label cache hit": {
             "main": [
-                [{"node": "Send cap reached response", "type": "main", "index": 0}],
-                [{"node": "Send processing error response", "type": "main", "index": 0}],
+                [{"node": "IF can archive in Gmail", "type": "main", "index": 0}],
+                [{"node": "Get Gmail labels", "type": "main", "index": 0}],
             ]
         },
-        "Send cap reached response": {
-            "main": [[{"node": "Get Gmail labels (error)", "type": "main", "index": 0}]]
+        "Get Gmail labels": {
+            "main": [[{"node": "Store label cache", "type": "main", "index": 0}]]
         },
-        "Send processing error response": {
-            "main": [[{"node": "Get Gmail labels (error)", "type": "main", "index": 0}]]
+        "Store label cache": {
+            "main": [[{"node": "IF can archive in Gmail", "type": "main", "index": 0}]]
         },
-        "Get Gmail labels (error)": {
-            "main": [[{"node": "Resolve Gmail label IDs (error)", "type": "main", "index": 0}]]
+        "IF can archive in Gmail": {
+            "main": [[{"node": "Archive Gmail message", "type": "main", "index": 0}], []]
         },
-        "Resolve Gmail label IDs (error)": {
-            "main": [[{"node": "IF zu bearbeiten label found", "type": "main", "index": 0}]]
-        },
-        "IF zu bearbeiten label found": {
-            "main": [[{"node": "IF direct Gmail ID (error)", "type": "main", "index": 0}], []]
-        },
-        "IF direct Gmail ID (error)": {
-            "main": [
-                [{"node": "Add zu bearbeiten label", "type": "main", "index": 0}],
-                [{"node": "Find Gmail by RFC ID (error)", "type": "main", "index": 0}],
-            ]
-        },
-        "Find Gmail by RFC ID (error)": {"main": [[{"node": "Pick Gmail ID for error", "type": "main", "index": 0}]]},
-        "Pick Gmail ID for error": {"main": [[{"node": "Add zu bearbeiten label", "type": "main", "index": 0}]]},
     },
     "active": False,
-    "settings": {"executionOrder": "v1", "binaryMode": "separate", "availableInMCP": False},
+    "settings": {
+        "executionOrder": "v1",
+        "binaryMode": "separate",
+        "availableInMCP": False,
+    },
     "meta": {"templateCredsSetupCompleted": True},
     "tags": [],
 }
 
-def node_base_name(name: str) -> str:
-    return __import__("re").sub(r"\s*\d+$", "", str(name or "")).strip()
 
-
-def patch_existing_workflow(canonical: dict) -> dict | None:
-    """Merge logic/config fixes into the live export without dropping extra branches."""
+def preserve_live_ids(canonical: dict) -> dict:
     if not OUT.exists():
-        return None
+        return canonical
     live = json.loads(OUT.read_text(encoding="utf-8"))
-    if not isinstance(live.get("nodes"), list):
-        return None
-
-    canonical_by_base = {
-        node_base_name(node["name"]): node for node in canonical["nodes"]
-    }
-    updated = 0
-
-    for node in live["nodes"]:
-        base = node_base_name(node["name"])
-        src = canonical_by_base.get(base)
-        if not src or src.get("type") != node.get("type"):
+    by_base = {}
+    for node in live.get("nodes", []):
+        name = str(node.get("name") or "")
+        base = name.rstrip("0123456789 ").strip()
+        by_base[base] = node
+        by_base[name] = node
+    for node in canonical["nodes"]:
+        live_node = by_base.get(node["name"])
+        if not live_node:
             continue
-
-        src_params = src.get("parameters") or {}
-        node_params = node.setdefault("parameters", {})
-
-        if "jsCode" in src_params:
-            node_params["jsCode"] = src_params["jsCode"]
-            updated += 1
-        if "text" in src_params and "Parse ticket with AI" in base:
-            node_params["text"] = src_params["text"]
-            updated += 1
-        if base.startswith("Email Trigger (IMAP)"):
-            node_params["postProcessAction"] = "read"
-            options = node_params.setdefault("options", {})
-            options["customEmailConfig"] = '["UNSEEN"]'
-            options["forceReconnect"] = 15
-            updated += 1
-        if base.startswith("Schedule Trigger"):
-            node_params["rule"] = {"interval": [{"field": "minutes", "minutesInterval": 5}]}
-            updated += 1
-        if base.startswith("Fetch unread emails (Gmail)"):
-            node_params["resource"] = "message"
-            node_params["operation"] = "getAll"
-            node_params["returnAll"] = True
-            node_params["filters"] = {"readStatus": "unread", "labelIds": ["INBOX"]}
-            node_params.setdefault("options", {})["simplify"] = False
-            updated += 1
-        if "Find Gmail by RFC ID" in base:
-            node_params.setdefault("options", {})["simplify"] = False
-            updated += 1
-        if "notes" in src and not node.get("notes"):
-            node["notes"] = src["notes"]
-
-    # Ensure manual test entrypoint still exists and is wired.
-    has_manual = any(
-        node_base_name(n["name"]) == "When clicking 'Execute workflow'"
-        for n in live["nodes"]
-    )
-    sample = next(
-        (n for n in live["nodes"] if node_base_name(n["name"]) == "Sample stakeholder email"),
-        None,
-    )
-    if not has_manual and sample is not None:
-        live["nodes"].append(
-            {
-                "parameters": {},
-                "id": "n-manual-live",
-                "name": "When clicking 'Execute workflow'",
-                "type": "n8n-nodes-base.manualTrigger",
-                "typeVersion": 1,
-                "position": [sample["position"][0] - 240, sample["position"][1]],
-                "notes": "Manual test without real email.",
-            }
-        )
-        live.setdefault("connections", {})["When clicking 'Execute workflow'"] = {
-            "main": [[{"node": sample["name"], "type": "main", "index": 0}]]
-        }
-        updated += 1
-
-    live["active"] = True
-    print(f"Patched live workflow nodes/fields: {updated}")
-    return live
+        if live_node.get("id"):
+            node["id"] = live_node["id"]
+        if live_node.get("webhookId"):
+            node["webhookId"] = live_node["webhookId"]
+    return canonical
 
 
-patched = patch_existing_workflow(workflow)
-if patched is not None:
-    OUT.write_text(json.dumps(patched, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"Updated live {OUT} ({len(patched['nodes'])} nodes, preserved extra branches)")
-else:
-    OUT.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"Wrote {OUT} ({len(workflow['nodes'])} nodes)")
+workflow = preserve_live_ids(workflow)
+OUT.write_text(json.dumps(workflow, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+print(f"Wrote {OUT} ({len(workflow['nodes'])} nodes)")

@@ -94,19 +94,17 @@ Regenerierung:
 python n8n/scripts/build-email-workflow.py
 ```
 
-- **Aktive Workflows:** Fuer den E-Mail->Triage-Flow `Join-email-to-task-proposal` aktiv/published halten. Fuer Spaltenwechsel-Benachrichtigungen zusaetzlich einen separaten "Task moved"-Webhook-Workflow aktivieren.
-- **Trigger:** `Schedule Trigger (every 5 min)` ist der produktive Einstieg. Der IMAP-Zweig bleibt deaktiviert.
-- **E-Mail Abruf:** `Fetch unread emails (Gmail)` mit `Return All = true` und Search `in:inbox is:unread`.
-- **Automations-Caps:** `Apply auto email cap (max 10)` (Code-Node, Modus `Run Once for All Items`) nutzt zwei Tageslimits: **maximal 15 akzeptierte E-Mails** im Join Collector und davon **maximal 10** zur automatischen Ticket-Erstellung im Board.
-- **Cap-Verhalten:** Bei `AUTO_EMAIL_CAP_REACHED` (E-Mails 11-15) geht der Flow in den Nachbearbeitungszweig. Bei `TOTAL_EMAIL_CAP_REACHED` (ab E-Mail 16) wird der Gesamteingang für den Tag abgewiesen.
+- **Aktive Workflows:** Fuer den E-Mail->Triage-Flow `Join-email-to-task-proposal` aktiv/published halten (inkl. Task-moved-Webhook im gleichen Workflow).
+- **Trigger:** `Email Trigger (IMAP)` ist der produktive Einstieg (Realtime bei neuer Mail). Kein 5-Minuten-Polling mehr.
+- **Cap vor AI:** `Prepare email context` → `Apply auto email cap (max 10)` → `IF within auto cap`. Nur bei freiem Cap folgt der AI-Call.
+- **AI-Parsing:** `Parse ticket with AI` + `Structured Output Parser` → `Build Join payload` (Set/Expressions).
+- **Automations-Cap:** maximal **10** automatische Ticket-Erstellungen pro Tag.
+- **Gemeinsamer Abschluss:** Outcomes `success` / `error` / `cap` → einmal `IF not manual test` → `Send stakeholder feedback` (eine Mail-Node) + Label-Cache → optional `Archive Gmail message` (ein Modify-Call: Label + Inbox/Unread).
+- **Gmail-Labels:** `email done` (Erfolg) bzw. `needs review` (Cap/Fehler). Label-IDs werden in Workflow-Static-Data gecacht. Archiv nur bei vorhandener `gmailId` (kein RFC-Lookup).
 - **Task-API Auth:** `Create task in Triage` sendet Header `X-N8N-Secret` und muss exakt zum Firebase Functions Secret `N8N_API_SECRET` passen.
 - **401 Unauthorized (Troubleshooting):** In der n8n-Credential `Header Auth account` muss der gleiche Secret-Wert wie in Firebase `N8N_API_SECRET` stehen (ohne zusätzliche Leerzeichen/Zeilenumbruch). Alternativ funktioniert auch `Authorization: Bearer <secret>`.
 - **Erfolgsbewertung:** `Evaluate create result` behandelt als Erfolg: `201` oder `200` mit `duplicate=true` oder vorhandener `id`.
-- **Erfolgspfad:** Task wird in `triageColumn` erstellt, E-Mail wird in Gmail auf `Erledigt` gelabelt und aus `INBOX` entfernt.
-- **Fehlerpfad:** Bei API-/Validierungsfehlern wird die Mail mit `zu bearbeiten` gelabelt.
-- **Spaltenwechsel-Benachrichtigung (neu):** Die Firebase Function `notifyTaskCreatorOnColumnChange` reagiert auf Änderungen an `users/{uid}/tasks/{taskId}` und ruft bei echtem Spaltenwechsel (`before.column !== after.column`) einen n8n-Webhook auf.
-- **Webhook-Secret für Spaltenwechsel:** Der Call nutzt den gleichen Header `X-N8N-Secret` wie die Task-API (`N8N_API_SECRET`).
-- **Neues Secret in Firebase Functions:** `N8N_TASK_MOVED_WEBHOOK_URL` muss auf den produktiven n8n-Webhook für "Task moved" gesetzt werden.
+- **Spaltenwechsel-Benachrichtigung:** Die Firebase Function `notifyTaskCreatorOnColumnChange` ruft den Webhook `join-task-moved` auf (`N8N_TASK_MOVED_WEBHOOK_URL`, Auth wie Task-API via `X-N8N-Secret`).
 
 <a id="projektstruktur"></a>
 ## Projektstruktur
