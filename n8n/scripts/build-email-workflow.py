@@ -1,13 +1,11 @@
 """Regenerates n8n/workflows/Join-email-to-task-proposal.json.
 
-Condensed exercise layout (cost + maintainability):
-1. Shared Gmail archive branch (success/cap/error)
-2. Cached Gmail label IDs in workflow static data
-3. Archive only when a direct gmailId exists (no RFC lookup)
-4. Set/expression nodes instead of heavy Code where practical
-5. One stakeholder feedback Gmail send (subject/body by outcome)
-6. Single early IF not manual before feedback/archive
-7. One Gmail API modify call (add target label + remove INBOX/UNREAD)
+Reliable + cost-oriented layout for Join Issue Collector:
+- Gmail Trigger (every minute, unread INBOX) — near-realtime, runs only when mail exists
+- Cap max 10/day BEFORE AI
+- Structured Output Parser + slim Set nodes
+- Shared stakeholder feedback + cached labels + Gmail archive (direct id or RFC822 fallback)
+- Task-moved webhook unchanged
 """
 import json
 from pathlib import Path
@@ -15,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "workflows" / "Join-email-to-task-proposal.json"
 
-# IMAP/sample field mapping + UTF-8 / mojibake repair for German umlauts.
+# Gmail Trigger / Fetch / sample field mapping + UTF-8 / mojibake repair.
 PREPARE_EMAIL_JS = r"""const data = $input.item.json;
 
 function formatAddress(entry) {
@@ -112,7 +110,6 @@ function decodeQuotedPrintable(value) {
 
 function repairMojibake(value) {
   const input = String(value || '');
-  // UTF-8 misread as Latin-1/Windows-1252 (e.g. "Ã¼" → "ü", "Ã¤" → "ä").
   if (!/[ÃÂâ][\x80-\xBF]/.test(input)) return input;
   try {
     const repaired = Buffer.from(input, 'latin1').toString('utf8');
@@ -130,6 +127,31 @@ function normalizeEmailText(value) {
   return String(text || '').replace(/\r/g, '').trim();
 }
 
+function extractBodyFromGmailPayload(payload) {
+  if (!payload || typeof payload !== 'object') return '';
+  const chunks = [];
+  function walk(part) {
+    if (!part || typeof part !== 'object') return;
+    const mime = String(part.mimeType || '').toLowerCase();
+    const dataPart = part.body?.data;
+    if (typeof dataPart === 'string' && dataPart.trim()) {
+      try {
+        const decoded = Buffer.from(dataPart.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
+        if (mime.includes('text/plain')) chunks.unshift(decoded);
+        else chunks.push(decoded);
+      } catch (_) {}
+    }
+    if (Array.isArray(part.parts)) part.parts.forEach(walk);
+  }
+  walk(payload);
+  for (const chunk of chunks) {
+    const text = chunk.includes('<') ? stripHtml(chunk) : String(chunk || '').trim();
+    const normalized = normalizeEmailText(text);
+    if (normalized) return normalized;
+  }
+  return '';
+}
+
 function extractBody(item) {
   for (const candidate of [
     item.body, item.textPlain, item.text, item.textContent,
@@ -141,6 +163,8 @@ function extractBody(item) {
       if (normalized) return normalized;
     }
   }
+  const fromPayload = extractBodyFromGmailPayload(item.payload);
+  if (fromPayload) return fromPayload;
   return item.snippet ? normalizeEmailText(item.snippet) : '';
 }
 
@@ -149,29 +173,39 @@ function extractMessageId(item) {
   if (Array.isArray(header) && header[0]) return String(header[0]).trim();
   if (typeof header === 'string' && header.trim()) return header.trim();
   if (item.metadata?.['message-id']) return String(item.metadata['message-id']).trim();
-  const uid = item.attributes?.uid || item.uid;
-  return uid ? `imap-${uid}` : String(item.id || '').trim();
+  return '';
+}
+
+function extractGmailId(item) {
+  const direct = String(item.gmailId || item.id || '').trim();
+  // Gmail API ids are typically alphanumeric; avoid treating imap-uid placeholders as gmail ids.
+  if (direct && !direct.startsWith('imap-') && !direct.includes('@')) return direct;
+  return '';
 }
 
 const from = normalizeEmailText(extractFrom(data));
 const subject = normalizeEmailText(extractSubject(data));
 const body = extractBody(data);
+const messageId = extractMessageId(data);
+const gmailId = extractGmailId(data);
 const creatorEmail = from.match(/<([^>]+)>/)?.[1] || from.trim();
 const nameMatch = from.match(/^([^<]+)</);
 const creatorNameRaw = nameMatch
   ? nameMatch[1].trim().replace(/^["']|["']$/g, '')
   : '';
 const creatorName = normalizeEmailText(creatorNameRaw);
+const emailSource = String(data.emailSource || (gmailId ? 'gmail' : 'unknown')).trim() || 'gmail';
 
 return [{
   json: {
     from,
     subject,
     body,
-    messageId: extractMessageId(data),
-    sourceMessageId: extractMessageId(data),
-    gmailId: String(data.gmailId || '').trim(),
-    emailSource: String(data.emailSource || 'imap').trim() || 'imap',
+    messageId,
+    sourceMessageId: messageId,
+    searchRfcId: String(messageId || '').replace(/^<|>$/g, '').trim(),
+    gmailId,
+    emailSource,
     title: subject || 'Stakeholder request',
     creatorName: creatorName && !creatorName.includes('@') ? creatorName : '',
     creatorEmail,
@@ -315,8 +349,27 @@ return [{
   },
 }];"""
 
+PICK_GMAIL_ID_JS = r"""function readCtx() {
+  for (const name of ['Check label cache', 'Store label cache', 'IF label cache hit']) {
+    try {
+      const json = $(name).item.json;
+      if (json && (json.archiveLabelName || json.targetLabelId || json.creatorEmail)) return json;
+    } catch (_) {}
+  }
+  return {};
+}
+const ctx = readCtx();
+const found = $input.item.json;
+const gmailId = String(found.id || found.messageId || '').trim();
+return [{
+  json: {
+    ...ctx,
+    gmailId: gmailId || String(ctx.gmailId || '').trim(),
+    archiveResolvedViaRfc: Boolean(gmailId),
+  },
+}];"""
+
 GMAIL_CRED = {"gmailOAuth2": {"id": "15U509ehBEzJwEV9", "name": "Gmail account 3"}}
-IMAP_CRED = {"imap": {"id": "v6fJz0hh1XAMh9uB", "name": "IMAP account 3"}}
 OPENAI_CRED = {"openAiApi": {"id": "qXmdRSJivefpurUF", "name": "OpenAI account 2"}}
 HTTP_CRED = {"httpHeaderAuth": {"id": "HjH4uC7k7UHF6k0F", "name": "Header Auth account"}}
 GMAIL_NODE_VERSION = 2.1
@@ -529,6 +582,38 @@ IF_CAN_ARCHIVE = {
     },
     "options": {},
 }
+IF_NEEDS_RFC = {
+    "conditions": {
+        "options": {
+            "caseSensitive": True,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2,
+        },
+        "conditions": [
+            {
+                "id": "missing-gmail-id",
+                "leftValue": "={{ $json.gmailId }}",
+                "rightValue": "",
+                "operator": {"type": "string", "operation": "empty"},
+            },
+            {
+                "id": "has-rfc",
+                "leftValue": "={{ $json.searchRfcId }}",
+                "rightValue": "",
+                "operator": {"type": "string", "operation": "notEmpty"},
+            },
+            {
+                "id": "has-target-label-rfc",
+                "leftValue": "={{ $json.targetLabelId }}",
+                "rightValue": "",
+                "operator": {"type": "string", "operation": "notEmpty"},
+            },
+        ],
+        "combinator": "and",
+    },
+    "options": {},
+}
 IF_CREATOR_EMAIL = if_string_not_empty("={{ $json.creatorEmail }}", "creator-email-present")
 
 
@@ -640,19 +725,25 @@ workflow = {
             "credentials": GMAIL_CRED,
             "continueOnFail": True,
         },
-        # --- Email intake ---
+        # --- Email intake (Gmail Trigger = near-realtime, cost-friendly) ---
         {
             "parameters": {
-                "postProcessAction": "read",
-                "options": {"customEmailConfig": '["UNSEEN"]', "forceReconnect": 15},
+                "pollTimes": {"item": [{"mode": "everyMinute"}]},
+                "simple": False,
+                "filters": {
+                    "readStatus": "unread",
+                    "includeSpamTrash": False,
+                    "q": 'in:inbox -label:"email done" -label:"needs review"',
+                },
+                "options": {},
             },
-            "id": "n-imap-trigger",
-            "name": "Email Trigger (IMAP)",
-            "type": "n8n-nodes-base.emailReadImap",
-            "typeVersion": 2,
+            "id": "n-gmail-trigger",
+            "name": "Gmail Trigger",
+            "type": "n8n-nodes-base.gmailTrigger",
+            "typeVersion": 1.2,
             "position": [0, 240],
-            "credentials": IMAP_CRED,
-            "notes": "Realtime IMAP. No schedule polling.",
+            "credentials": GMAIL_CRED,
+            "notes": "Near-realtime: polls every minute for unread INBOX. Workflow runs only when matching mail exists.",
         },
         {
             "parameters": {},
@@ -661,6 +752,27 @@ workflow = {
             "type": "n8n-nodes-base.manualTrigger",
             "typeVersion": 1,
             "position": [0, 440],
+            "notes": "Manual backlog/test: fetches current unread inbox mails.",
+        },
+        {
+            "parameters": {
+                "resource": "message",
+                "operation": "getAll",
+                "returnAll": True,
+                "filters": {
+                    "readStatus": "unread",
+                    "labelIds": ["INBOX"],
+                    "q": 'in:inbox is:unread -label:"email done" -label:"needs review"',
+                },
+                "options": {"simplify": False},
+            },
+            "id": "n-fetch-unread",
+            "name": "Fetch unread emails",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": GMAIL_NODE_VERSION,
+            "position": [240, 440],
+            "credentials": GMAIL_CRED,
+            "notes": "Processes existing unread mails (e.g. after activate or for mentor demos).",
         },
         {
             "parameters": set_assignments(
@@ -683,7 +795,8 @@ workflow = {
             "name": "Sample stakeholder email",
             "type": "n8n-nodes-base.set",
             "typeVersion": 3.4,
-            "position": [240, 440],
+            "position": [240, 600],
+            "notes": "Optional dry-run sample. Execute this node alone for offline tests.",
         },
         {
             "parameters": {"jsCode": PREPARE_EMAIL_JS},
@@ -692,7 +805,7 @@ workflow = {
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
             "position": [480, 320],
-            "notes": "Maps IMAP/sample fields and repairs UTF-8 mojibake (Ã¼→ü) for German umlauts.",
+            "notes": "Maps Gmail fields, sets gmailId, repairs UTF-8 mojibake for German umlauts.",
         },
         {
             "parameters": {"mode": "runOnceForAllItems", "jsCode": AUTO_CAP_JS},
@@ -767,6 +880,11 @@ workflow = {
                     (
                         "sourceMessageId",
                         "={{ $('Prepare email context').item.json.sourceMessageId }}",
+                        "string",
+                    ),
+                    (
+                        "searchRfcId",
+                        "={{ $('Prepare email context').item.json.searchRfcId }}",
                         "string",
                     ),
                     (
@@ -848,6 +966,11 @@ workflow = {
                         "={{ $('Build Join payload').item.json.sourceMessageId }}",
                         "string",
                     ),
+                    (
+                        "searchRfcId",
+                        "={{ $('Build Join payload').item.json.searchRfcId }}",
+                        "string",
+                    ),
                 ]
             ),
             "id": "n-eval",
@@ -875,6 +998,7 @@ workflow = {
                     ("gmailId", "={{ $json.gmailId }}", "string"),
                     ("emailSource", "={{ $json.emailSource }}", "string"),
                     ("sourceMessageId", "={{ $json.sourceMessageId }}", "string"),
+                    ("searchRfcId", "={{ $json.searchRfcId }}", "string"),
                 ]
             ),
             "id": "n-outcome-success",
@@ -894,6 +1018,7 @@ workflow = {
                     ("gmailId", "={{ $json.gmailId }}", "string"),
                     ("emailSource", "={{ $json.emailSource }}", "string"),
                     ("sourceMessageId", "={{ $json.sourceMessageId }}", "string"),
+                    ("searchRfcId", "={{ $json.searchRfcId }}", "string"),
                 ]
             ),
             "id": "n-outcome-error",
@@ -914,6 +1039,7 @@ workflow = {
                     ("gmailId", "={{ $json.gmailId }}", "string"),
                     ("emailSource", "={{ $json.emailSource }}", "string"),
                     ("sourceMessageId", "={{ $json.sourceMessageId }}", "string"),
+                    ("searchRfcId", "={{ $json.searchRfcId }}", "string"),
                 ]
             ),
             "id": "n-outcome-cap",
@@ -992,7 +1118,43 @@ workflow = {
             "type": "n8n-nodes-base.if",
             "typeVersion": 2.2,
             "position": [4080, 220],
-            "notes": "Archives only when gmailId + target label ID exist (no RFC fallback).",
+            "notes": "Direct archive when gmailId + label ID exist.",
+        },
+        {
+            "parameters": IF_NEEDS_RFC,
+            "id": "n-if-needs-rfc",
+            "name": "IF needs RFC lookup",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [4080, 400],
+            "notes": "Fallback: resolve Gmail id via rfc822msgid when trigger had no id.",
+        },
+        {
+            "parameters": {
+                "resource": "message",
+                "operation": "getAll",
+                "returnAll": False,
+                "limit": 1,
+                "filters": {
+                    "q": "=rfc822msgid:{{ $json.searchRfcId }}",
+                },
+                "options": {"simplify": False},
+            },
+            "id": "n-find-rfc",
+            "name": "Find Gmail by RFC ID",
+            "type": "n8n-nodes-base.gmail",
+            "typeVersion": GMAIL_NODE_VERSION,
+            "position": [4320, 400],
+            "credentials": GMAIL_CRED,
+            "continueOnFail": True,
+        },
+        {
+            "parameters": {"jsCode": PICK_GMAIL_ID_JS},
+            "id": "n-pick-rfc",
+            "name": "Pick Gmail ID from RFC",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [4560, 400],
         },
         {
             "parameters": {
@@ -1009,7 +1171,7 @@ workflow = {
             "name": "Archive Gmail message",
             "type": "n8n-nodes-base.httpRequest",
             "typeVersion": 4.2,
-            "position": [4320, 200],
+            "position": [4560, 200],
             "credentials": GMAIL_CRED,
             "continueOnFail": True,
             "notes": "Single Gmail modify: add target label + remove INBOX/UNREAD.",
@@ -1026,11 +1188,14 @@ workflow = {
         "IF creator email available": {
             "main": [[{"node": "Send task moved response", "type": "main", "index": 0}], []]
         },
-        "Email Trigger (IMAP)": {
+        "Gmail Trigger": {
             "main": [[{"node": "Prepare email context", "type": "main", "index": 0}]]
         },
         "When clicking 'Execute workflow'": {
-            "main": [[{"node": "Sample stakeholder email", "type": "main", "index": 0}]]
+            "main": [[{"node": "Fetch unread emails", "type": "main", "index": 0}]]
+        },
+        "Fetch unread emails": {
+            "main": [[{"node": "Prepare email context", "type": "main", "index": 0}]]
         },
         "Sample stakeholder email": {
             "main": [[{"node": "Prepare email context", "type": "main", "index": 0}]]
@@ -1109,7 +1274,19 @@ workflow = {
             "main": [[{"node": "IF can archive in Gmail", "type": "main", "index": 0}]]
         },
         "IF can archive in Gmail": {
-            "main": [[{"node": "Archive Gmail message", "type": "main", "index": 0}], []]
+            "main": [
+                [{"node": "Archive Gmail message", "type": "main", "index": 0}],
+                [{"node": "IF needs RFC lookup", "type": "main", "index": 0}],
+            ]
+        },
+        "IF needs RFC lookup": {
+            "main": [[{"node": "Find Gmail by RFC ID", "type": "main", "index": 0}], []]
+        },
+        "Find Gmail by RFC ID": {
+            "main": [[{"node": "Pick Gmail ID from RFC", "type": "main", "index": 0}]]
+        },
+        "Pick Gmail ID from RFC": {
+            "main": [[{"node": "IF can archive in Gmail", "type": "main", "index": 0}]]
         },
     },
     "active": False,

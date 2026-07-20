@@ -3,569 +3,6 @@
   "nodes": [
     {
       "parameters": {
-        "httpMethod": "POST",
-        "path": "join-task-moved",
-        "options": {}
-      },
-      "id": "5102fcfd-33bc-40e3-8fb6-92a06ebc8a8b",
-      "name": "Webhook task moved1",
-      "type": "n8n-nodes-base.webhook",
-      "typeVersion": 2,
-      "position": [
-        -24128,
-        5392
-      ],
-      "webhookId": "1b7b72a6-4cdc-43ca-8f0b-7725c34835e0",
-      "notes": "Receives task column-change events from Firebase."
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "a-0",
-              "name": "title",
-              "value": "={{ String($json.body?.title || $json.title || 'Ticket').trim() }}",
-              "type": "string"
-            },
-            {
-              "id": "a-1",
-              "name": "creatorName",
-              "value": "={{ String($json.body?.creatorName || $json.creatorName || '').trim() }}",
-              "type": "string"
-            },
-            {
-              "id": "a-2",
-              "name": "creatorEmail",
-              "value": "={{ String($json.body?.creatorEmail || $json.creatorEmail || '').trim() }}",
-              "type": "string"
-            },
-            {
-              "id": "a-3",
-              "name": "previousColumnLabel",
-              "value": "={{ String($json.body?.previousColumnLabel || $json.body?.previousColumn || $json.previousColumnLabel || $json.previousColumn || 'Unbekannt').trim() }}",
-              "type": "string"
-            },
-            {
-              "id": "a-4",
-              "name": "newColumnLabel",
-              "value": "={{ String($json.body?.newColumnLabel || $json.body?.newColumn || $json.newColumnLabel || $json.newColumn || 'Unbekannt').trim() }}",
-              "type": "string"
-            },
-            {
-              "id": "a-5",
-              "name": "movedAtIso",
-              "value": "={{ (() => { const raw = Number($json.body?.movedAt || $json.movedAt || 0); return Number.isFinite(raw) && raw > 0 ? new Date(raw).toISOString() : ''; })() }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "40f29ffb-19a8-467c-87f4-5ad365867acc",
-      "name": "Set task moved fields1",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -23888,
-        5392
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "creator-email-present",
-              "leftValue": "={{ $json.creatorEmail }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notEmpty"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "c42698cc-a9ed-4906-aef1-679b9ae74988",
-      "name": "IF creator email available1",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        -23648,
-        5392
-      ]
-    },
-    {
-      "parameters": {
-        "sendTo": "={{ $json.creatorEmail }}",
-        "subject": "={{ 'Update zu Ihrem Ticket: ' + ($json.title || 'Ticket') }}",
-        "emailType": "text",
-        "message": "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n' + 'Ihr Ticket wurde im Join Task Board in eine neue Spalte verschoben.\\n\\n' + 'Ticket: ' + ($json.title || 'Ticket') + '\\n' + 'Von: ' + ($json.previousColumnLabel || 'Unbekannt') + '\\n' + 'Nach: ' + ($json.newColumnLabel || 'Unbekannt') + ($json.movedAtIso ? ('\\nZeitpunkt: ' + $json.movedAtIso) : '') + '\\n\\nViele Gruesse\\nJoin Team' }}",
-        "options": {
-          "appendAttribution": false
-        }
-      },
-      "id": "98997d68-8413-4855-9404-40c3451b2180",
-      "name": "Send task moved response1",
-      "type": "n8n-nodes-base.gmail",
-      "typeVersion": 2.1,
-      "position": [
-        -23408,
-        5376
-      ],
-      "webhookId": "390263f7-6157-4aa4-8d9f-20f638908ca8",
-      "credentials": {
-        "gmailOAuth2": {
-          "id": "15U509ehBEzJwEV9",
-          "name": "Gmail account 3"
-        }
-      },
-      "continueOnFail": true
-    },
-    {
-      "parameters": {
-        "options": {
-          "customEmailConfig": "[\"UNSEEN\"]",
-          "forceReconnect": 15
-        }
-      },
-      "id": "03d3ff6d-a4e5-4de3-a6dc-4443ea003df9",
-      "name": "Email Trigger (IMAP)1",
-      "type": "n8n-nodes-base.emailReadImap",
-      "typeVersion": 2,
-      "position": [
-        -24128,
-        4848
-      ],
-      "credentials": {
-        "imap": {
-          "id": "v6fJz0hh1XAMh9uB",
-          "name": "IMAP account 3"
-        }
-      },
-      "notes": "Realtime IMAP. No schedule polling."
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "a-0",
-              "name": "from",
-              "value": "Max Mustermann <test@example.com>",
-              "type": "string"
-            },
-            {
-              "id": "a-1",
-              "name": "subject",
-              "value": "Test Dark Mode",
-              "type": "string"
-            },
-            {
-              "id": "a-2",
-              "name": "body",
-              "value": "Bitte Dark Mode bis Ende August testen.\n\nSubtasks:\n- Kontrast prüfen\n- Mobile Ansicht testen\n\nMit freundlichen Grüßen\nMax Mustermann",
-              "type": "string"
-            },
-            {
-              "id": "a-3",
-              "name": "messageId",
-              "value": "<manual-test-001@join-collector.local>",
-              "type": "string"
-            },
-            {
-              "id": "a-4",
-              "name": "emailSource",
-              "value": "manual",
-              "type": "string"
-            },
-            {
-              "id": "a-5",
-              "name": "gmailId",
-              "value": "",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "86c8167e-b0c2-4d60-8646-c3e486d516d4",
-      "name": "Sample stakeholder email1",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -24128,
-        5088
-      ]
-    },
-    {
-      "parameters": {
-        "jsCode": "const data = $input.item.json;\n\nfunction formatAddress(entry) {\n  if (!entry) return '';\n  if (typeof entry === 'string') return entry;\n  if (entry.text) return entry.text;\n  if (entry.value) return entry.value;\n  if (entry.address) {\n    return entry.name ? `${entry.name} <${entry.address}>` : entry.address;\n  }\n  return '';\n}\n\nfunction extractFrom(item) {\n  if (typeof item.from === 'string' && item.from) return item.from;\n  if (item.from) return formatAddress(item.from);\n  if (item.From) return formatAddress(item.From);\n  const fromList = item.envelope?.from;\n  if (Array.isArray(fromList) && fromList.length) return formatAddress(fromList[0]);\n  if (item.headers?.from) {\n    return Array.isArray(item.headers.from) ? item.headers.from[0] : item.headers.from;\n  }\n  return '';\n}\n\nfunction extractSubject(item) {\n  return String(\n    item.subject || item.Subject || item.envelope?.subject ||\n    item.headers?.subject?.[0] || item.headers?.subject || ''\n  ).trim();\n}\n\nfunction stripHtml(value) {\n  return String(value || '')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<\\/(p|div|li|tr)>/gi, '\\n')\n    .replace(/<li[^>]*>/gi, '- ')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/\\u00a0/g, ' ')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .replace(/\\r/g, '')\n    .trim();\n}\n\nfunction decodeHtmlEntities(value) {\n  function fromCodePointOrRaw(raw, codePoint) {\n    if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff) return raw;\n    try { return String.fromCodePoint(codePoint); } catch (_) { return raw; }\n  }\n  const named = {\n    nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '\"', apos: \"'\",\n    Auml: 'Ä', Ouml: 'Ö', Uuml: 'Ü', auml: 'ä', ouml: 'ö', uuml: 'ü', szlig: 'ß',\n  };\n  return String(value || '')\n    .replace(/&#(\\d+);/g, (raw, dec) => fromCodePointOrRaw(raw, Number(dec)))\n    .replace(/&#x([0-9a-f]+);/gi, (raw, hex) => fromCodePointOrRaw(raw, parseInt(hex, 16)))\n    .replace(/&([a-zA-Z]+);/g, (match, key) => named[key] ?? match);\n}\n\nfunction decodeMimeWords(value) {\n  return String(value || '').replace(/=\\?([^?]+)\\?([bqBQ])\\?([^?]*)\\?=/g, (_, charset, encoding, content) => {\n    try {\n      let bytes;\n      if (String(encoding).toUpperCase() === 'B') {\n        bytes = Buffer.from(content, 'base64');\n      } else {\n        const qp = content\n          .replace(/_/g, ' ')\n          .replace(/=([0-9A-F]{2})/gi, (__unused, hex) => String.fromCharCode(parseInt(hex, 16)));\n        bytes = Buffer.from(qp, 'latin1');\n      }\n      const label = String(charset || 'utf-8').toLowerCase();\n      const latin = label.includes('iso-8859-1') || label.includes('latin1') || label.includes('windows-1252');\n      return bytes.toString(latin ? 'latin1' : 'utf8');\n    } catch (_) {\n      return content;\n    }\n  });\n}\n\nfunction looksQuotedPrintable(value) {\n  const text = String(value || '');\n  if (/=\\r?\\n/.test(text)) return true;\n  const matches = text.match(/=[0-9A-F]{2}/gi);\n  return Array.isArray(matches) && matches.length >= 2;\n}\n\nfunction decodeQuotedPrintable(value) {\n  const input = String(value || '');\n  if (!looksQuotedPrintable(input)) return input;\n  const unfolded = input.replace(/=\\r?\\n/g, '');\n  return unfolded.replace(/=([0-9A-F]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));\n}\n\nfunction repairMojibake(value) {\n  const input = String(value || '');\n  // UTF-8 misread as Latin-1/Windows-1252 (e.g. \"Ã¼\" → \"ü\", \"Ã¤\" → \"ä\").\n  if (!/[ÃÂâ][\\x80-\\xBF]/.test(input)) return input;\n  try {\n    const repaired = Buffer.from(input, 'latin1').toString('utf8');\n    return repaired.includes('\\uFFFD') ? input : repaired;\n  } catch (_) {\n    return input;\n  }\n}\n\nfunction normalizeEmailText(value) {\n  let text = decodeMimeWords(value);\n  text = decodeQuotedPrintable(text);\n  text = repairMojibake(text);\n  text = decodeHtmlEntities(text);\n  return String(text || '').replace(/\\r/g, '').trim();\n}\n\nfunction extractBody(item) {\n  for (const candidate of [\n    item.body, item.textPlain, item.text, item.textContent,\n    item.textAsHtml, item.textHtml, item.htmlContent, item.html,\n  ]) {\n    if (typeof candidate === 'string' && candidate.trim()) {\n      const raw = candidate.includes('<') ? stripHtml(candidate) : candidate.trim();\n      const normalized = normalizeEmailText(raw);\n      if (normalized) return normalized;\n    }\n  }\n  return item.snippet ? normalizeEmailText(item.snippet) : '';\n}\n\nfunction extractMessageId(item) {\n  const header = item.headers?.['message-id'] || item.messageId;\n  if (Array.isArray(header) && header[0]) return String(header[0]).trim();\n  if (typeof header === 'string' && header.trim()) return header.trim();\n  if (item.metadata?.['message-id']) return String(item.metadata['message-id']).trim();\n  const uid = item.attributes?.uid || item.uid;\n  return uid ? `imap-${uid}` : String(item.id || '').trim();\n}\n\nconst from = normalizeEmailText(extractFrom(data));\nconst subject = normalizeEmailText(extractSubject(data));\nconst body = extractBody(data);\nconst creatorEmail = from.match(/<([^>]+)>/)?.[1] || from.trim();\nconst nameMatch = from.match(/^([^<]+)</);\nconst creatorNameRaw = nameMatch\n  ? nameMatch[1].trim().replace(/^[\"']|[\"']$/g, '')\n  : '';\nconst creatorName = normalizeEmailText(creatorNameRaw);\n\nreturn [{\n  json: {\n    from,\n    subject,\n    body,\n    messageId: extractMessageId(data),\n    sourceMessageId: extractMessageId(data),\n    gmailId: String(data.gmailId || '').trim(),\n    emailSource: String(data.emailSource || 'imap').trim() || 'imap',\n    title: subject || 'Stakeholder request',\n    creatorName: creatorName && !creatorName.includes('@') ? creatorName : '',\n    creatorEmail,\n  },\n}];"
-      },
-      "id": "3532d910-55c2-4761-bd94-d17fd7c54d19",
-      "name": "Prepare email context1",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -23808,
-        4960
-      ],
-      "notes": "Maps IMAP/sample fields and repairs UTF-8 mojibake (Ã¼→ü) for German umlauts."
-    },
-    {
-      "parameters": {
-        "jsCode": "const AUTO_CAP = 10;\nconst items = $input.all();\nconst today = new Date().toISOString().slice(0, 10);\nconst hasStaticDataApi = typeof $getWorkflowStaticData === 'function';\nlet autoProcessedToday = 0;\nlet staticData = null;\nlet autoBatchProcessed = 0;\n\nif (hasStaticDataApi) {\n  staticData = $getWorkflowStaticData('global');\n  if (staticData.capDate !== today) {\n    staticData.capDate = today;\n    staticData.autoCapCount = 0;\n  }\n  if (!Number.isInteger(staticData.autoCapCount) || staticData.autoCapCount < 0) {\n    staticData.autoCapCount = 0;\n  }\n  autoProcessedToday = staticData.autoCapCount;\n}\n\nreturn items.map((item, index) => {\n  const source = String(item.json.emailSource || '').trim().toLowerCase();\n  const isManual = source === 'manual';\n  let skipTaskCreation = false;\n  let skipReason = '';\n\n  if (!isManual) {\n    if (hasStaticDataApi) {\n      if (autoProcessedToday >= AUTO_CAP) {\n        skipTaskCreation = true;\n        skipReason = 'AUTO_EMAIL_CAP_REACHED';\n      } else {\n        autoProcessedToday += 1;\n        staticData.autoCapCount = autoProcessedToday;\n      }\n    } else if (autoBatchProcessed >= AUTO_CAP) {\n      skipTaskCreation = true;\n      skipReason = 'AUTO_EMAIL_CAP_REACHED';\n    } else {\n      autoBatchProcessed += 1;\n      autoProcessedToday = autoBatchProcessed;\n    }\n  }\n\n  return {\n    json: {\n      ...item.json,\n      autoCap: AUTO_CAP,\n      autoCapDate: today,\n      autoProcessedToday,\n      batchIndex: index + 1,\n      batchCount: items.length,\n      skipTaskCreation,\n      skipReason,\n      capBypassedForManual: isManual,\n    },\n  };\n});"
-      },
-      "id": "5b40b6a3-4693-4e99-bd9f-bdf7bdd4f761",
-      "name": "Apply auto email cap (max 10)1",
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -23568,
-        4960
-      ],
-      "notes": "Daily cap max 10 BEFORE AI call."
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "within-cap",
-              "leftValue": "={{ $json.skipTaskCreation }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "false"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "be313071-810a-49fe-b07f-f9ed7cbd6ed8",
-      "name": "IF within auto cap1",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        -23312,
-        4960
-      ]
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=You parse stakeholder emails into Kanban ticket fields for Join-Issue Collector.\n\nTwo email styles are common:\n1) Create Request template with labels Description: / Subtask: / Enddate:\n2) Free-form email with optional Subtasks list and a deadline line like 'bis 27.7.26'.\n\nRules:\n- title: short summary, max 80 chars\n- description: request text without subtasks, deadlines, greeting/signature\n- subtasks: only explicit Subtask/Subtasks list items; else []\n- dueDate: YYYY-MM-DD or empty string\n- category: \"User Story\" or \"Technical Task\"\n- priority: \"HighPriority\", \"MidPriority\", or \"LowPriority\"\n- creatorName: person name from signature/display name; never an email\n- Ignore signatures and footers.\n\nEmail from: {{ $json.from }}\nSubject: {{ $json.subject }}\nBody:\n{{ $json.body }}",
-        "hasOutputParser": true
-      },
-      "id": "38c95a9a-b45e-4e3d-ab26-b1e901cba665",
-      "name": "Parse ticket with AI1",
-      "type": "@n8n/n8n-nodes-langchain.chainLlm",
-      "typeVersion": 1.5,
-      "position": [
-        -23072,
-        4768
-      ]
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-4o-mini"
-        },
-        "options": {
-          "temperature": 0.2
-        }
-      },
-      "id": "57a3a617-adf0-48a2-bdad-414bc99343a6",
-      "name": "OpenAI Chat Model1",
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        -23072,
-        4960
-      ],
-      "credentials": {
-        "openAiApi": {
-          "id": "qXmdRSJivefpurUF",
-          "name": "OpenAI account 2"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsonSchemaExample": "{\n  \"title\": \"Dark Mode testen\",\n  \"description\": \"Bitte Dark Mode bis Ende August testen.\",\n  \"category\": \"User Story\",\n  \"priority\": \"MidPriority\",\n  \"dueDate\": \"2026-08-31\",\n  \"subtasks\": [\n    \"Kontrast pruefen\",\n    \"Mobile Ansicht testen\"\n  ],\n  \"creatorName\": \"Max Mustermann\"\n}"
-      },
-      "id": "f072df65-f8eb-4f1b-afc8-525f357ddfae",
-      "name": "Structured Output Parser1",
-      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
-      "typeVersion": 1.2,
-      "position": [
-        -22880,
-        4960
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "a-0",
-              "name": "title",
-              "value": "={{ String($json.output?.title || $json.title || $('Prepare email context1').item.json.subject || 'Stakeholder request').trim() }}",
-              "type": "string"
-            },
-            {
-              "id": "a-1",
-              "name": "description",
-              "value": "={{ String($json.output?.description || $json.description || $('Prepare email context1').item.json.body || '').trim() }}",
-              "type": "string"
-            },
-            {
-              "id": "a-2",
-              "name": "category",
-              "value": "={{ ['User Story','Technical Task'].includes($json.output?.category) ? $json.output.category : 'User Story' }}",
-              "type": "string"
-            },
-            {
-              "id": "a-3",
-              "name": "priority",
-              "value": "={{ ['HighPriority','MidPriority','LowPriority'].includes($json.output?.priority) ? $json.output.priority : 'MidPriority' }}",
-              "type": "string"
-            },
-            {
-              "id": "a-4",
-              "name": "dueDate",
-              "value": "={{ String($json.output?.dueDate || '').trim() .replace(/^(undefined|null|n\\/a|na)$/i, '') }}",
-              "type": "string"
-            },
-            {
-              "id": "a-5",
-              "name": "column",
-              "value": "triageColumn",
-              "type": "string"
-            },
-            {
-              "id": "a-6",
-              "name": "creatorName",
-              "value": "={{ (() => { const ai = String($json.output?.creatorName || '').trim(); const fallback = String($('Prepare email context1').item.json.creatorName || '').trim(); const name = ai || fallback; return (!name || name.includes('@') || /^(stakeholder|unknown|guest)$/i.test(name)) ? '' : name; })() }}",
-              "type": "string"
-            },
-            {
-              "id": "a-7",
-              "name": "creatorEmail",
-              "value": "={{ $('Prepare email context1').item.json.creatorEmail }}",
-              "type": "string"
-            },
-            {
-              "id": "a-8",
-              "name": "creatorType",
-              "value": "external",
-              "type": "string"
-            },
-            {
-              "id": "a-9",
-              "name": "aiGenerated",
-              "value": true,
-              "type": "boolean"
-            },
-            {
-              "id": "a-10",
-              "name": "sourceMessageId",
-              "value": "={{ $('Prepare email context1').item.json.sourceMessageId }}",
-              "type": "string"
-            },
-            {
-              "id": "a-11",
-              "name": "emailSource",
-              "value": "={{ $('Prepare email context1').item.json.emailSource }}",
-              "type": "string"
-            },
-            {
-              "id": "a-12",
-              "name": "gmailId",
-              "value": "={{ $('Prepare email context1').item.json.gmailId }}",
-              "type": "string"
-            },
-            {
-              "id": "a-13",
-              "name": "subtasks",
-              "value": "={{ (() => { const raw = $json.output?.subtasks; if (!Array.isArray(raw)) return []; const seen = new Set(); const out = []; for (const entry of raw) { let value = typeof entry === 'string' ? entry : (entry?.value || ''); value = String(value).replace(/\\s+/g, ' ').trim(); if (value.length < 3) continue; const key = value.toLowerCase(); if (seen.has(key)) continue; seen.add(key); out.push({ value, checked: false }); } return out; })() }}",
-              "type": "array"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "65a6fde8-ebba-44a9-8cb1-39a1a7fffecc",
-      "name": "Build Join payload1",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -22688,
-        4768
-      ],
-      "notes": "Set/expressions merge structured AI output with email metadata."
-    },
-    {
-      "parameters": {
-        "method": "POST",
-        "url": "https://join-issue-collector-70cb7.web.app/internal/n8n/tasks",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendHeaders": true,
-        "headerParameters": {
-          "parameters": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        },
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={{ $json }}",
-        "options": {
-          "response": {
-            "response": {
-              "fullResponse": true,
-              "neverError": true
-            }
-          }
-        }
-      },
-      "id": "9c62d8e8-d704-44bc-a162-7083ec254991",
-      "name": "Create task in Triage1",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -22512,
-        4928
-      ],
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "HjH4uC7k7UHF6k0F",
-          "name": "Header Auth account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "a-0",
-              "name": "ok",
-              "value": "={{ Number($json.statusCode) === 201 || (Number($json.statusCode) === 200 && ($json.body?.duplicate === true || Boolean($json.body?.id))) }}",
-              "type": "boolean"
-            },
-            {
-              "id": "a-1",
-              "name": "statusCode",
-              "value": "={{ Number($json.statusCode || 0) }}",
-              "type": "number"
-            },
-            {
-              "id": "a-2",
-              "name": "title",
-              "value": "={{ $('Build Join payload1').item.json.title }}",
-              "type": "string"
-            },
-            {
-              "id": "a-3",
-              "name": "creatorName",
-              "value": "={{ $('Build Join payload1').item.json.creatorName }}",
-              "type": "string"
-            },
-            {
-              "id": "a-4",
-              "name": "creatorEmail",
-              "value": "={{ $('Build Join payload1').item.json.creatorEmail }}",
-              "type": "string"
-            },
-            {
-              "id": "a-5",
-              "name": "gmailId",
-              "value": "={{ $('Build Join payload1').item.json.gmailId }}",
-              "type": "string"
-            },
-            {
-              "id": "a-6",
-              "name": "emailSource",
-              "value": "={{ $('Build Join payload1').item.json.emailSource }}",
-              "type": "string"
-            },
-            {
-              "id": "a-7",
-              "name": "sourceMessageId",
-              "value": "={{ $('Build Join payload1').item.json.sourceMessageId }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "ed772e21-ff97-457b-9fee-8c7649399f65",
-      "name": "Evaluate create result1",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -22336,
-        4768
-      ]
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "ok-check",
-              "leftValue": "={{ $json.ok }}",
-              "rightValue": true,
-              "operator": {
-                "type": "boolean",
-                "operation": "true"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "id": "df4ed274-77dc-4b31-ba11-35e85de386ff",
-      "name": "IF task created1",
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        -22176,
-        4928
-      ]
-    },
-    {
-      "parameters": {
         "assignments": {
           "assignments": [
             {
@@ -692,77 +129,6 @@
       "position": [
         -21888,
         4992
-      ]
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "a-0",
-              "name": "outcome",
-              "value": "cap",
-              "type": "string"
-            },
-            {
-              "id": "a-1",
-              "name": "archiveLabelName",
-              "value": "needs review",
-              "type": "string"
-            },
-            {
-              "id": "a-2",
-              "name": "skipReason",
-              "value": "={{ $json.skipReason }}",
-              "type": "string"
-            },
-            {
-              "id": "a-3",
-              "name": "title",
-              "value": "={{ $json.title }}",
-              "type": "string"
-            },
-            {
-              "id": "a-4",
-              "name": "creatorName",
-              "value": "={{ $json.creatorName }}",
-              "type": "string"
-            },
-            {
-              "id": "a-5",
-              "name": "creatorEmail",
-              "value": "={{ $json.creatorEmail }}",
-              "type": "string"
-            },
-            {
-              "id": "a-6",
-              "name": "gmailId",
-              "value": "={{ $json.gmailId }}",
-              "type": "string"
-            },
-            {
-              "id": "a-7",
-              "name": "emailSource",
-              "value": "={{ $json.emailSource }}",
-              "type": "string"
-            },
-            {
-              "id": "a-8",
-              "name": "sourceMessageId",
-              "value": "={{ $json.sourceMessageId }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "id": "b39c8eed-fe9e-4694-b27a-11c5faa95304",
-      "name": "Set outcome cap1",
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -22720,
-        5104
       ]
     },
     {
@@ -978,189 +344,1160 @@
       },
       "continueOnFail": true,
       "notes": "Single Gmail modify: add target label + remove INBOX/UNREAD."
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "join-task-moved",
+        "options": {}
+      },
+      "id": "46f0942c-4f84-421d-a1ab-aae532d2051b",
+      "name": "Webhook task moved",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -24496,
+        6208
+      ],
+      "webhookId": "1b7b72a6-4cdc-43ca-8f0b-7725c34835e0",
+      "notes": "Receives task column-change events from Firebase."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a-0",
+              "name": "title",
+              "value": "={{ String($json.body?.title || $json.title || 'Ticket').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a-1",
+              "name": "creatorName",
+              "value": "={{ String($json.body?.creatorName || $json.creatorName || '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a-2",
+              "name": "creatorEmail",
+              "value": "={{ String($json.body?.creatorEmail || $json.creatorEmail || '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a-3",
+              "name": "previousColumnLabel",
+              "value": "={{ String($json.body?.previousColumnLabel || $json.body?.previousColumn || $json.previousColumnLabel || $json.previousColumn || 'Unbekannt').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a-4",
+              "name": "newColumnLabel",
+              "value": "={{ String($json.body?.newColumnLabel || $json.body?.newColumn || $json.newColumnLabel || $json.newColumn || 'Unbekannt').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a-5",
+              "name": "movedAtIso",
+              "value": "={{ (() => { const raw = Number($json.body?.movedAt || $json.movedAt || 0); return Number.isFinite(raw) && raw > 0 ? new Date(raw).toISOString() : ''; })() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "69fc0f64-a1cb-4a6d-80e2-f13d27b8822e",
+      "name": "Set task moved fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -24240,
+        6208
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "creator-email-present",
+              "leftValue": "={{ $json.creatorEmail }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "60fa41fe-c946-4326-abd7-c2d8c853bdd8",
+      "name": "IF creator email available",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -24000,
+        6208
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.creatorEmail }}",
+        "subject": "={{ 'Update zu Ihrem Ticket: ' + ($json.title || 'Ticket') }}",
+        "emailType": "text",
+        "message": "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n' + 'Ihr Ticket wurde im Join Task Board in eine neue Spalte verschoben.\\n\\n' + 'Ticket: ' + ($json.title || 'Ticket') + '\\n' + 'Von: ' + ($json.previousColumnLabel || 'Unbekannt') + '\\n' + 'Nach: ' + ($json.newColumnLabel || 'Unbekannt') + ($json.movedAtIso ? ('\\nZeitpunkt: ' + $json.movedAtIso) : '') + '\\n\\nViele Gruesse\\nJoin Team' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "e4ee6c2c-9d38-44d8-9798-1c4601906bc4",
+      "name": "Send task moved response",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -23728,
+        6192
+      ],
+      "webhookId": "390263f7-6157-4aa4-8d9f-20f638908ca8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "includeSpamTrash": false,
+          "q": "in:inbox -label:\"email done\" -label:\"needs review\"",
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "id": "e9b90d0a-5d47-4444-a1c3-ea74cc6bb8b7",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -24512,
+        5488
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
+        }
+      },
+      "notes": "Near-realtime: polls every minute for unread INBOX. Workflow runs only when matching mail exists."
+    },
+    {
+      "parameters": {},
+      "id": "0eaacd60-5530-45b0-9950-b4cc15921775",
+      "name": "When clicking 'Execute workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -24512,
+        5680
+      ],
+      "notes": "Manual backlog/test: fetches current unread inbox mails."
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "returnAll": true,
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ],
+          "q": "in:inbox is:unread -label:\"email done\" -label:\"needs review\"",
+          "readStatus": "unread"
+        }
+      },
+      "id": "a530b560-2295-4aca-9dae-6c440e182493",
+      "name": "Fetch unread emails",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -24272,
+        5680
+      ],
+      "webhookId": "3e4c7abd-5dbd-4da8-9044-8ba530dab7fe",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
+        }
+      },
+      "notes": "Processes existing unread mails (e.g. after activate or for mentor demos)."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a-0",
+              "name": "from",
+              "value": "Max Mustermann <test@example.com>",
+              "type": "string"
+            },
+            {
+              "id": "a-1",
+              "name": "subject",
+              "value": "Test Dark Mode",
+              "type": "string"
+            },
+            {
+              "id": "a-2",
+              "name": "body",
+              "value": "Bitte Dark Mode bis Ende August testen.\n\nSubtasks:\n- Kontrast prüfen\n- Mobile Ansicht testen\n\nMit freundlichen Grüßen\nMax Mustermann",
+              "type": "string"
+            },
+            {
+              "id": "a-3",
+              "name": "messageId",
+              "value": "<manual-test-001@join-collector.local>",
+              "type": "string"
+            },
+            {
+              "id": "a-4",
+              "name": "emailSource",
+              "value": "manual",
+              "type": "string"
+            },
+            {
+              "id": "a-5",
+              "name": "gmailId",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "058b6694-2f01-4eed-b034-4df7eda5fb85",
+      "name": "Sample stakeholder email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -24256,
+        5936
+      ],
+      "notes": "Optional dry-run sample. Execute this node alone for offline tests."
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.item.json;\n\nfunction formatAddress(entry) {\n  if (!entry) return '';\n  if (typeof entry === 'string') return entry;\n  if (entry.text) return entry.text;\n  if (entry.value) return entry.value;\n  if (entry.address) {\n    return entry.name ? `${entry.name} <${entry.address}>` : entry.address;\n  }\n  return '';\n}\n\nfunction extractFrom(item) {\n  if (typeof item.from === 'string' && item.from) return item.from;\n  if (item.from) return formatAddress(item.from);\n  if (item.From) return formatAddress(item.From);\n  const fromList = item.envelope?.from;\n  if (Array.isArray(fromList) && fromList.length) return formatAddress(fromList[0]);\n  if (item.headers?.from) {\n    return Array.isArray(item.headers.from) ? item.headers.from[0] : item.headers.from;\n  }\n  return '';\n}\n\nfunction extractSubject(item) {\n  return String(\n    item.subject || item.Subject || item.envelope?.subject ||\n    item.headers?.subject?.[0] || item.headers?.subject || ''\n  ).trim();\n}\n\nfunction stripHtml(value) {\n  return String(value || '')\n    .replace(/<br\\s*\\/?>/gi, '\\n')\n    .replace(/<\\/(p|div|li|tr)>/gi, '\\n')\n    .replace(/<li[^>]*>/gi, '- ')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/\\u00a0/g, ' ')\n    .replace(/\\n{3,}/g, '\\n\\n')\n    .replace(/\\r/g, '')\n    .trim();\n}\n\nfunction decodeHtmlEntities(value) {\n  function fromCodePointOrRaw(raw, codePoint) {\n    if (!Number.isFinite(codePoint) || codePoint < 0 || codePoint > 0x10ffff) return raw;\n    try { return String.fromCodePoint(codePoint); } catch (_) { return raw; }\n  }\n  const named = {\n    nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '\"', apos: \"'\",\n    Auml: 'Ä', Ouml: 'Ö', Uuml: 'Ü', auml: 'ä', ouml: 'ö', uuml: 'ü', szlig: 'ß',\n  };\n  return String(value || '')\n    .replace(/&#(\\d+);/g, (raw, dec) => fromCodePointOrRaw(raw, Number(dec)))\n    .replace(/&#x([0-9a-f]+);/gi, (raw, hex) => fromCodePointOrRaw(raw, parseInt(hex, 16)))\n    .replace(/&([a-zA-Z]+);/g, (match, key) => named[key] ?? match);\n}\n\nfunction decodeMimeWords(value) {\n  return String(value || '').replace(/=\\?([^?]+)\\?([bqBQ])\\?([^?]*)\\?=/g, (_, charset, encoding, content) => {\n    try {\n      let bytes;\n      if (String(encoding).toUpperCase() === 'B') {\n        bytes = Buffer.from(content, 'base64');\n      } else {\n        const qp = content\n          .replace(/_/g, ' ')\n          .replace(/=([0-9A-F]{2})/gi, (__unused, hex) => String.fromCharCode(parseInt(hex, 16)));\n        bytes = Buffer.from(qp, 'latin1');\n      }\n      const label = String(charset || 'utf-8').toLowerCase();\n      const latin = label.includes('iso-8859-1') || label.includes('latin1') || label.includes('windows-1252');\n      return bytes.toString(latin ? 'latin1' : 'utf8');\n    } catch (_) {\n      return content;\n    }\n  });\n}\n\nfunction looksQuotedPrintable(value) {\n  const text = String(value || '');\n  if (/=\\r?\\n/.test(text)) return true;\n  const matches = text.match(/=[0-9A-F]{2}/gi);\n  return Array.isArray(matches) && matches.length >= 2;\n}\n\nfunction decodeQuotedPrintable(value) {\n  const input = String(value || '');\n  if (!looksQuotedPrintable(input)) return input;\n  const unfolded = input.replace(/=\\r?\\n/g, '');\n  return unfolded.replace(/=([0-9A-F]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));\n}\n\nfunction repairMojibake(value) {\n  const input = String(value || '');\n  if (!/[ÃÂâ][\\x80-\\xBF]/.test(input)) return input;\n  try {\n    const repaired = Buffer.from(input, 'latin1').toString('utf8');\n    return repaired.includes('\\uFFFD') ? input : repaired;\n  } catch (_) {\n    return input;\n  }\n}\n\nfunction normalizeEmailText(value) {\n  let text = decodeMimeWords(value);\n  text = decodeQuotedPrintable(text);\n  text = repairMojibake(text);\n  text = decodeHtmlEntities(text);\n  return String(text || '').replace(/\\r/g, '').trim();\n}\n\nfunction extractBodyFromGmailPayload(payload) {\n  if (!payload || typeof payload !== 'object') return '';\n  const chunks = [];\n  function walk(part) {\n    if (!part || typeof part !== 'object') return;\n    const mime = String(part.mimeType || '').toLowerCase();\n    const dataPart = part.body?.data;\n    if (typeof dataPart === 'string' && dataPart.trim()) {\n      try {\n        const decoded = Buffer.from(dataPart.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');\n        if (mime.includes('text/plain')) chunks.unshift(decoded);\n        else chunks.push(decoded);\n      } catch (_) {}\n    }\n    if (Array.isArray(part.parts)) part.parts.forEach(walk);\n  }\n  walk(payload);\n  for (const chunk of chunks) {\n    const text = chunk.includes('<') ? stripHtml(chunk) : String(chunk || '').trim();\n    const normalized = normalizeEmailText(text);\n    if (normalized) return normalized;\n  }\n  return '';\n}\n\nfunction extractBody(item) {\n  for (const candidate of [\n    item.body, item.textPlain, item.text, item.textContent,\n    item.textAsHtml, item.textHtml, item.htmlContent, item.html,\n  ]) {\n    if (typeof candidate === 'string' && candidate.trim()) {\n      const raw = candidate.includes('<') ? stripHtml(candidate) : candidate.trim();\n      const normalized = normalizeEmailText(raw);\n      if (normalized) return normalized;\n    }\n  }\n  const fromPayload = extractBodyFromGmailPayload(item.payload);\n  if (fromPayload) return fromPayload;\n  return item.snippet ? normalizeEmailText(item.snippet) : '';\n}\n\nfunction extractMessageId(item) {\n  const header = item.headers?.['message-id'] || item.messageId;\n  if (Array.isArray(header) && header[0]) return String(header[0]).trim();\n  if (typeof header === 'string' && header.trim()) return header.trim();\n  if (item.metadata?.['message-id']) return String(item.metadata['message-id']).trim();\n  return '';\n}\n\nfunction extractGmailId(item) {\n  const direct = String(item.gmailId || item.id || '').trim();\n  // Gmail API ids are typically alphanumeric; avoid treating imap-uid placeholders as gmail ids.\n  if (direct && !direct.startsWith('imap-') && !direct.includes('@')) return direct;\n  return '';\n}\n\nconst from = normalizeEmailText(extractFrom(data));\nconst subject = normalizeEmailText(extractSubject(data));\nconst body = extractBody(data);\nconst messageId = extractMessageId(data);\nconst gmailId = extractGmailId(data);\nconst creatorEmail = from.match(/<([^>]+)>/)?.[1] || from.trim();\nconst nameMatch = from.match(/^([^<]+)</);\nconst creatorNameRaw = nameMatch\n  ? nameMatch[1].trim().replace(/^[\"']|[\"']$/g, '')\n  : '';\nconst creatorName = normalizeEmailText(creatorNameRaw);\nconst emailSource = String(data.emailSource || (gmailId ? 'gmail' : 'unknown')).trim() || 'gmail';\n\nreturn [{\n  json: {\n    from,\n    subject,\n    body,\n    messageId,\n    sourceMessageId: messageId,\n    searchRfcId: String(messageId || '').replace(/^<|>$/g, '').trim(),\n    gmailId,\n    emailSource,\n    title: subject || 'Stakeholder request',\n    creatorName: creatorName && !creatorName.includes('@') ? creatorName : '',\n    creatorEmail,\n  },\n}];"
+      },
+      "id": "eeb5dfe1-09ef-406e-9df8-fadc3fe4023f",
+      "name": "Prepare email context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -24032,
+        5568
+      ],
+      "notes": "Maps Gmail fields, sets gmailId, repairs UTF-8 mojibake for German umlauts."
+    },
+    {
+      "parameters": {
+        "jsCode": "const AUTO_CAP = 10;\nconst items = $input.all();\nconst today = new Date().toISOString().slice(0, 10);\nconst hasStaticDataApi = typeof $getWorkflowStaticData === 'function';\nlet autoProcessedToday = 0;\nlet staticData = null;\nlet autoBatchProcessed = 0;\n\nif (hasStaticDataApi) {\n  staticData = $getWorkflowStaticData('global');\n  if (staticData.capDate !== today) {\n    staticData.capDate = today;\n    staticData.autoCapCount = 0;\n  }\n  if (!Number.isInteger(staticData.autoCapCount) || staticData.autoCapCount < 0) {\n    staticData.autoCapCount = 0;\n  }\n  autoProcessedToday = staticData.autoCapCount;\n}\n\nreturn items.map((item, index) => {\n  const source = String(item.json.emailSource || '').trim().toLowerCase();\n  const isManual = source === 'manual';\n  let skipTaskCreation = false;\n  let skipReason = '';\n\n  if (!isManual) {\n    if (hasStaticDataApi) {\n      if (autoProcessedToday >= AUTO_CAP) {\n        skipTaskCreation = true;\n        skipReason = 'AUTO_EMAIL_CAP_REACHED';\n      } else {\n        autoProcessedToday += 1;\n        staticData.autoCapCount = autoProcessedToday;\n      }\n    } else if (autoBatchProcessed >= AUTO_CAP) {\n      skipTaskCreation = true;\n      skipReason = 'AUTO_EMAIL_CAP_REACHED';\n    } else {\n      autoBatchProcessed += 1;\n      autoProcessedToday = autoBatchProcessed;\n    }\n  }\n\n  return {\n    json: {\n      ...item.json,\n      autoCap: AUTO_CAP,\n      autoCapDate: today,\n      autoProcessedToday,\n      batchIndex: index + 1,\n      batchCount: items.length,\n      skipTaskCreation,\n      skipReason,\n      capBypassedForManual: isManual,\n    },\n  };\n});"
+      },
+      "id": "38015a89-7857-48a1-8dbb-14aecd8db950",
+      "name": "Apply auto email cap (max 10)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -23792,
+        5568
+      ],
+      "notes": "Daily cap max 10 BEFORE AI call."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "within-cap",
+              "leftValue": "={{ $json.skipTaskCreation }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "false"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "ed6fd2e5-4f3b-4e1c-960b-801abcd7e264",
+      "name": "IF within auto cap",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -23552,
+        5568
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You parse stakeholder emails into Kanban ticket fields for Join-Issue Collector.\n\nTwo email styles are common:\n1) Create Request template with labels Description: / Subtask: / Enddate:\n2) Free-form email with optional Subtasks list and a deadline line like 'bis 27.7.26'.\n\nRules:\n- title: short summary, max 80 chars\n- description: request text without subtasks, deadlines, greeting/signature\n- subtasks: only explicit Subtask/Subtasks list items; else []\n- dueDate: YYYY-MM-DD or empty string\n- category: \"User Story\" or \"Technical Task\"\n- priority: \"HighPriority\", \"MidPriority\", or \"LowPriority\"\n- creatorName: person name from signature/display name; never an email\n- Ignore signatures and footers.\n\nEmail from: {{ $json.from }}\nSubject: {{ $json.subject }}\nBody:\n{{ $json.body }}",
+        "hasOutputParser": true
+      },
+      "id": "334bc507-57cd-4c02-8521-98b2a36b6e12",
+      "name": "Parse ticket with AI",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -23312,
+        5552
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "id": "7e391b35-7a02-40e7-aaca-442f1a146f35",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -23312,
+        5776
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "qXmdRSJivefpurUF",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"title\": \"Dark Mode testen\",\n  \"description\": \"Bitte Dark Mode bis Ende August testen.\",\n  \"category\": \"User Story\",\n  \"priority\": \"MidPriority\",\n  \"dueDate\": \"2026-08-31\",\n  \"subtasks\": [\n    \"Kontrast pruefen\",\n    \"Mobile Ansicht testen\"\n  ],\n  \"creatorName\": \"Max Mustermann\"\n}"
+      },
+      "id": "ec236271-e5cf-4913-a47f-4248525f888e",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -23168,
+        5776
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a-0",
+              "name": "title",
+              "value": "={{ String($json.output?.title || $json.title || $('Prepare email context').item.json.subject || 'Stakeholder request').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a-1",
+              "name": "description",
+              "value": "={{ String($json.output?.description || $json.description || $('Prepare email context').item.json.body || '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "a-2",
+              "name": "category",
+              "value": "={{ ['User Story','Technical Task'].includes($json.output?.category) ? $json.output.category : 'User Story' }}",
+              "type": "string"
+            },
+            {
+              "id": "a-3",
+              "name": "priority",
+              "value": "={{ ['HighPriority','MidPriority','LowPriority'].includes($json.output?.priority) ? $json.output.priority : 'MidPriority' }}",
+              "type": "string"
+            },
+            {
+              "id": "a-4",
+              "name": "dueDate",
+              "value": "={{ String($json.output?.dueDate || '').trim() .replace(/^(undefined|null|n\\/a|na)$/i, '') }}",
+              "type": "string"
+            },
+            {
+              "id": "a-5",
+              "name": "column",
+              "value": "triageColumn",
+              "type": "string"
+            },
+            {
+              "id": "a-6",
+              "name": "creatorName",
+              "value": "={{ (() => { const ai = String($json.output?.creatorName || '').trim(); const fallback = String($('Prepare email context').item.json.creatorName || '').trim(); const name = ai || fallback; return (!name || name.includes('@') || /^(stakeholder|unknown|guest)$/i.test(name)) ? '' : name; })() }}",
+              "type": "string"
+            },
+            {
+              "id": "a-7",
+              "name": "creatorEmail",
+              "value": "={{ $('Prepare email context').item.json.creatorEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "a-8",
+              "name": "creatorType",
+              "value": "external",
+              "type": "string"
+            },
+            {
+              "id": "a-9",
+              "name": "aiGenerated",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "a-10",
+              "name": "sourceMessageId",
+              "value": "={{ $('Prepare email context').item.json.sourceMessageId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-11",
+              "name": "searchRfcId",
+              "value": "={{ $('Prepare email context').item.json.searchRfcId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-12",
+              "name": "emailSource",
+              "value": "={{ $('Prepare email context').item.json.emailSource }}",
+              "type": "string"
+            },
+            {
+              "id": "a-13",
+              "name": "gmailId",
+              "value": "={{ $('Prepare email context').item.json.gmailId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-14",
+              "name": "subtasks",
+              "value": "={{ (() => { const raw = $json.output?.subtasks; if (!Array.isArray(raw)) return []; const seen = new Set(); const out = []; for (const entry of raw) { let value = typeof entry === 'string' ? entry : (entry?.value || ''); value = String(value).replace(/\\s+/g, ' ').trim(); if (value.length < 3) continue; const key = value.toLowerCase(); if (seen.has(key)) continue; seen.add(key); out.push({ value, checked: false }); } return out; })() }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cdef49b5-05d7-4116-b438-ca850cd86651",
+      "name": "Build Join payload",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -23008,
+        5552
+      ],
+      "notes": "Set/expressions merge structured AI output with email metadata."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://join-issue-collector-70cb7.web.app/internal/n8n/tasks",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "3d7a3d69-8fe1-4a92-89b2-9bbb2036e0d2",
+      "name": "Create task in Triage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -22800,
+        5552
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "HjH4uC7k7UHF6k0F",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a-0",
+              "name": "ok",
+              "value": "={{ Number($json.statusCode) === 201 || (Number($json.statusCode) === 200 && ($json.body?.duplicate === true || Boolean($json.body?.id))) }}",
+              "type": "boolean"
+            },
+            {
+              "id": "a-1",
+              "name": "statusCode",
+              "value": "={{ Number($json.statusCode || 0) }}",
+              "type": "number"
+            },
+            {
+              "id": "a-2",
+              "name": "title",
+              "value": "={{ $('Build Join payload').item.json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "a-3",
+              "name": "creatorName",
+              "value": "={{ $('Build Join payload').item.json.creatorName }}",
+              "type": "string"
+            },
+            {
+              "id": "a-4",
+              "name": "creatorEmail",
+              "value": "={{ $('Build Join payload').item.json.creatorEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "a-5",
+              "name": "gmailId",
+              "value": "={{ $('Build Join payload').item.json.gmailId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-6",
+              "name": "emailSource",
+              "value": "={{ $('Build Join payload').item.json.emailSource }}",
+              "type": "string"
+            },
+            {
+              "id": "a-7",
+              "name": "sourceMessageId",
+              "value": "={{ $('Build Join payload').item.json.sourceMessageId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-8",
+              "name": "searchRfcId",
+              "value": "={{ $('Build Join payload').item.json.searchRfcId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "332c8c90-5972-45c1-b2dc-315734d15ec4",
+      "name": "Evaluate create result",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -22576,
+        5552
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ok-check",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4d2548d8-1510-4d50-ab2c-310b658542f9",
+      "name": "IF task created",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -22368,
+        5552
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a-0",
+              "name": "outcome",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "a-1",
+              "name": "archiveLabelName",
+              "value": "email done",
+              "type": "string"
+            },
+            {
+              "id": "a-2",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "a-3",
+              "name": "creatorName",
+              "value": "={{ $json.creatorName }}",
+              "type": "string"
+            },
+            {
+              "id": "a-4",
+              "name": "creatorEmail",
+              "value": "={{ $json.creatorEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "a-5",
+              "name": "gmailId",
+              "value": "={{ $json.gmailId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-6",
+              "name": "emailSource",
+              "value": "={{ $json.emailSource }}",
+              "type": "string"
+            },
+            {
+              "id": "a-7",
+              "name": "sourceMessageId",
+              "value": "={{ $json.sourceMessageId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-8",
+              "name": "searchRfcId",
+              "value": "={{ $json.searchRfcId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "201a5c86-38d3-48f1-b557-de71b186e4a7",
+      "name": "Set outcome success",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -22112,
+        5536
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a-0",
+              "name": "outcome",
+              "value": "error",
+              "type": "string"
+            },
+            {
+              "id": "a-1",
+              "name": "archiveLabelName",
+              "value": "needs review",
+              "type": "string"
+            },
+            {
+              "id": "a-2",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "a-3",
+              "name": "creatorName",
+              "value": "={{ $json.creatorName }}",
+              "type": "string"
+            },
+            {
+              "id": "a-4",
+              "name": "creatorEmail",
+              "value": "={{ $json.creatorEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "a-5",
+              "name": "gmailId",
+              "value": "={{ $json.gmailId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-6",
+              "name": "emailSource",
+              "value": "={{ $json.emailSource }}",
+              "type": "string"
+            },
+            {
+              "id": "a-7",
+              "name": "sourceMessageId",
+              "value": "={{ $json.sourceMessageId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-8",
+              "name": "searchRfcId",
+              "value": "={{ $json.searchRfcId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "57cda5a6-3f25-4a18-8160-ab7bc9f19b4d",
+      "name": "Set outcome error",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -22096,
+        5776
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a-0",
+              "name": "outcome",
+              "value": "cap",
+              "type": "string"
+            },
+            {
+              "id": "a-1",
+              "name": "archiveLabelName",
+              "value": "needs review",
+              "type": "string"
+            },
+            {
+              "id": "a-2",
+              "name": "skipReason",
+              "value": "={{ $json.skipReason }}",
+              "type": "string"
+            },
+            {
+              "id": "a-3",
+              "name": "title",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "a-4",
+              "name": "creatorName",
+              "value": "={{ $json.creatorName }}",
+              "type": "string"
+            },
+            {
+              "id": "a-5",
+              "name": "creatorEmail",
+              "value": "={{ $json.creatorEmail }}",
+              "type": "string"
+            },
+            {
+              "id": "a-6",
+              "name": "gmailId",
+              "value": "={{ $json.gmailId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-7",
+              "name": "emailSource",
+              "value": "={{ $json.emailSource }}",
+              "type": "string"
+            },
+            {
+              "id": "a-8",
+              "name": "sourceMessageId",
+              "value": "={{ $json.sourceMessageId }}",
+              "type": "string"
+            },
+            {
+              "id": "a-9",
+              "name": "searchRfcId",
+              "value": "={{ $json.searchRfcId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ac0ff680-790f-48ce-8688-6a7a3081d990",
+      "name": "Set outcome cap",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -23264,
+        5936
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "not-manual",
+              "leftValue": "={{ $json.emailSource }}",
+              "rightValue": "manual",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3a1269b4-838a-40eb-915d-86b8283423f8",
+      "name": "IF not manual test",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -21824,
+        5648
+      ],
+      "notes": "Single manual filter before feedback/archive."
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.creatorEmail }}",
+        "subject": "={{ $json.outcome === 'success' ? ('Bestaetigung: Ticket in Triage angelegt - ' + ($json.title || 'Anfrage')) : ($json.outcome === 'cap' ? 'Hinweis: Tageslimit fuer automatische Ticket-Erstellung erreicht' : 'Hinweis: E-Mail erhalten - manuelle Rueckmeldung folgt') }}",
+        "emailType": "text",
+        "message": "={{ 'Hallo ' + ($json.creatorName || 'Stakeholder') + ',\\n\\n' + ($json.outcome === 'success' ? ('vielen Dank fuer Ihre Nachricht. Ihr Ticket wurde erfolgreich im Join Task Board (Spalte Triage) angelegt.\\n\\nBetreff: ' + ($json.title || 'Anfrage') + '\\n\\n') : ($json.outcome === 'cap' ? 'wir haben Ihre E-Mail erhalten. Das Tageslimit fuer die automatische Ticket-Erstellung (max. 10) ist heute bereits erreicht.\\nIhr Anliegen wird vom Team manuell geprueft und ins Task Board uebertragen.\\n\\n' : 'wir haben Ihre E-Mail erhalten. Bei der automatischen Verarbeitung ist ein Fehler aufgetreten.\\nDas Team kuemmert sich zeitnah manuell um Ihr Anliegen.\\n\\n')) + 'Viele Gruesse\\nJoin Team' }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "4f9bf1c9-311c-4374-af20-3d39ad2b54ef",
+      "name": "Send stakeholder feedback",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -21568,
+        5456
+      ],
+      "webhookId": "38b82a0f-aaa9-47fd-8412-f58a52255125",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "One send node; subject/body depend on outcome success|cap|error."
+    },
+    {
+      "parameters": {
+        "jsCode": "function readOutcomeContext() {\n  const bases = [\n    'IF not manual test',\n    'Set outcome success',\n    'Set outcome error',\n    'Set outcome cap',\n  ];\n  for (const name of bases) {\n    try {\n      const json = $(name).item.json;\n      if (json && (json.outcome || json.archiveLabelName || json.gmailId || json.creatorEmail)) {\n        return json;\n      }\n    } catch (_) {}\n  }\n  return $input.item.json;\n}\n\nconst ctx = readOutcomeContext();\nconst hasStaticDataApi = typeof $getWorkflowStaticData === 'function';\nconst staticData = hasStaticDataApi ? $getWorkflowStaticData('global') : {};\nconst cache = staticData.labelCache && typeof staticData.labelCache === 'object'\n  ? staticData.labelCache\n  : {};\nconst emailDoneLabelId = String(cache['email done'] || '').trim();\nconst needsReviewLabelId = String(cache['needs review'] || '').trim();\nconst cacheHit = Boolean(emailDoneLabelId && needsReviewLabelId);\nconst archiveLabelName = String(ctx.archiveLabelName || 'needs review').trim().toLowerCase();\nconst targetLabelId = archiveLabelName === 'email done' ? emailDoneLabelId : needsReviewLabelId;\n\nreturn [{\n  json: {\n    ...ctx,\n    emailDoneLabelId,\n    needsReviewLabelId,\n    targetLabelId,\n    cacheHit,\n    archiveLabelName,\n  },\n}];"
+      },
+      "id": "95505c3b-b4f9-40a5-af91-bf50839ac170",
+      "name": "Check label cache",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -21392,
+        5632
+      ],
+      "notes": "Uses workflow static data for email done / needs review IDs."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cache-hit",
+              "leftValue": "={{ $json.cacheHit }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "88696a12-df32-43ce-b3c3-ebf8bf8d307e",
+      "name": "IF label cache hit",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -21152,
+        5632
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "label",
+        "returnAll": true
+      },
+      "id": "29d93f7b-80d7-467d-be20-a647ee5f9d12",
+      "name": "Get Gmail labels",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -20864,
+        5648
+      ],
+      "webhookId": "46d39102-eb78-400a-8bef-86738f287c9d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ctx = $('Check label cache').item.json;\nconst labels = $input.all().map((item) => item.json);\nconst hasStaticDataApi = typeof $getWorkflowStaticData === 'function';\nconst staticData = hasStaticDataApi ? $getWorkflowStaticData('global') : { labelCache: {} };\nif (!staticData.labelCache || typeof staticData.labelCache !== 'object') {\n  staticData.labelCache = {};\n}\n\nfunction findLabelId(...names) {\n  for (const wanted of names) {\n    const hit = labels.find(\n      (label) => String(label.name || '').trim().toLowerCase() === wanted.toLowerCase()\n    );\n    if (hit?.id) return String(hit.id);\n  }\n  return '';\n}\n\nconst emailDoneLabelId = findLabelId('email done', 'Email done', 'Email Done');\nconst needsReviewLabelId = findLabelId('needs review', 'Needs review', 'Needs Review');\nif (emailDoneLabelId) staticData.labelCache['email done'] = emailDoneLabelId;\nif (needsReviewLabelId) staticData.labelCache['needs review'] = needsReviewLabelId;\n\nconst archiveLabelName = String(ctx.archiveLabelName || 'needs review').trim().toLowerCase();\nconst targetLabelId = archiveLabelName === 'email done' ? emailDoneLabelId : needsReviewLabelId;\n\nreturn [{\n  json: {\n    ...ctx,\n    emailDoneLabelId,\n    needsReviewLabelId,\n    targetLabelId,\n    cacheHit: Boolean(emailDoneLabelId && needsReviewLabelId),\n    labelsFromCache: false,\n  },\n}];"
+      },
+      "id": "fa9b266c-9d75-4d9f-8f3c-0c187bef4c61",
+      "name": "Store label cache",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -20624,
+        5648
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-gmail-id",
+              "leftValue": "={{ $json.gmailId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "has-target-label",
+              "leftValue": "={{ $json.targetLabelId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8c408baf-c6b4-4c95-820f-2ceb1e185cd7",
+      "name": "IF can archive in Gmail",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -20416,
+        5360
+      ],
+      "notes": "Direct archive when gmailId + label ID exist."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "missing-gmail-id",
+              "leftValue": "={{ $json.gmailId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty"
+              }
+            },
+            {
+              "id": "has-rfc",
+              "leftValue": "={{ $json.searchRfcId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "has-target-label-rfc",
+              "leftValue": "={{ $json.targetLabelId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7137f60f-c6b0-4b8a-b021-c41f109c9641",
+      "name": "IF needs RFC lookup",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -20352,
+        5616
+      ],
+      "notes": "Fallback: resolve Gmail id via rfc822msgid when trigger had no id."
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "limit": 1,
+        "filters": {
+          "q": "=rfc822msgid:{{ $json.searchRfcId }}"
+        }
+      },
+      "id": "27bd3737-9f1e-4096-9d73-594aef714342",
+      "name": "Find Gmail by RFC ID",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -20144,
+        5648
+      ],
+      "webhookId": "7bdf3e70-e2f3-4c32-81ce-7da275cfa956",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "function readCtx() {\n  for (const name of ['Check label cache', 'Store label cache', 'IF label cache hit']) {\n    try {\n      const json = $(name).item.json;\n      if (json && (json.archiveLabelName || json.targetLabelId || json.creatorEmail)) return json;\n    } catch (_) {}\n  }\n  return {};\n}\nconst ctx = readCtx();\nconst found = $input.item.json;\nconst gmailId = String(found.id || found.messageId || '').trim();\nreturn [{\n  json: {\n    ...ctx,\n    gmailId: gmailId || String(ctx.gmailId || '').trim(),\n    archiveResolvedViaRfc: Boolean(gmailId),\n  },\n}];"
+      },
+      "id": "c3e37445-3e80-427d-8466-fa884f8e7b36",
+      "name": "Pick Gmail ID from RFC",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -19952,
+        5648
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages/{{ $json.gmailId }}/modify",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "gmailOAuth2",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ addLabelIds: [$json.targetLabelId], removeLabelIds: ['INBOX', 'UNREAD'] }) }}",
+        "options": {}
+      },
+      "id": "7edf4982-e830-4558-a588-e6786aa2518c",
+      "name": "Archive Gmail message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -20128,
+        5360
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "15U509ehBEzJwEV9",
+          "name": "Gmail account 3"
+        }
+      },
+      "continueOnFail": true,
+      "notes": "Single Gmail modify: add target label + remove INBOX/UNREAD."
     }
   ],
   "pinData": {},
   "connections": {
-    "Webhook task moved1": {
-      "main": [
-        [
-          {
-            "node": "Set task moved fields1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set task moved fields1": {
-      "main": [
-        [
-          {
-            "node": "IF creator email available1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF creator email available1": {
-      "main": [
-        [
-          {
-            "node": "Send task moved response1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Email Trigger (IMAP)1": {
-      "main": [
-        [
-          {
-            "node": "Prepare email context1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Sample stakeholder email1": {
-      "main": [
-        [
-          {
-            "node": "Prepare email context1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Prepare email context1": {
-      "main": [
-        [
-          {
-            "node": "Apply auto email cap (max 10)1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Apply auto email cap (max 10)1": {
-      "main": [
-        [
-          {
-            "node": "IF within auto cap1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF within auto cap1": {
-      "main": [
-        [
-          {
-            "node": "Parse ticket with AI1",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Set outcome cap1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Parse ticket with AI1": {
-      "main": [
-        [
-          {
-            "node": "Build Join payload1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model1": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Parse ticket with AI1",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Structured Output Parser1": {
-      "ai_outputParser": [
-        [
-          {
-            "node": "Parse ticket with AI1",
-            "type": "ai_outputParser",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build Join payload1": {
-      "main": [
-        [
-          {
-            "node": "Create task in Triage1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create task in Triage1": {
-      "main": [
-        [
-          {
-            "node": "Evaluate create result1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Evaluate create result1": {
-      "main": [
-        [
-          {
-            "node": "IF task created1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "IF task created1": {
-      "main": [
-        [
-          {
-            "node": "Set outcome success1",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Set outcome error1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Set outcome success1": {
       "main": [
         [
@@ -1173,17 +1510,6 @@
       ]
     },
     "Set outcome error1": {
-      "main": [
-        [
-          {
-            "node": "IF not manual test1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set outcome cap1": {
       "main": [
         [
           {
@@ -1271,6 +1597,358 @@
           }
         ]
       ]
+    },
+    "Webhook task moved": {
+      "main": [
+        [
+          {
+            "node": "Set task moved fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set task moved fields": {
+      "main": [
+        [
+          {
+            "node": "IF creator email available",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF creator email available": {
+      "main": [
+        [
+          {
+            "node": "Send task moved response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare email context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "Fetch unread emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch unread emails": {
+      "main": [
+        [
+          {
+            "node": "Prepare email context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample stakeholder email": {
+      "main": [
+        [
+          {
+            "node": "Prepare email context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare email context": {
+      "main": [
+        [
+          {
+            "node": "Apply auto email cap (max 10)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply auto email cap (max 10)": {
+      "main": [
+        [
+          {
+            "node": "IF within auto cap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF within auto cap": {
+      "main": [
+        [
+          {
+            "node": "Parse ticket with AI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set outcome cap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Parse ticket with AI",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Parse ticket with AI",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse ticket with AI": {
+      "main": [
+        [
+          {
+            "node": "Build Join payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Join payload": {
+      "main": [
+        [
+          {
+            "node": "Create task in Triage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create task in Triage": {
+      "main": [
+        [
+          {
+            "node": "Evaluate create result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate create result": {
+      "main": [
+        [
+          {
+            "node": "IF task created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF task created": {
+      "main": [
+        [
+          {
+            "node": "Set outcome success",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set outcome error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set outcome success": {
+      "main": [
+        [
+          {
+            "node": "IF not manual test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set outcome error": {
+      "main": [
+        [
+          {
+            "node": "IF not manual test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set outcome cap": {
+      "main": [
+        [
+          {
+            "node": "IF not manual test",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF not manual test": {
+      "main": [
+        [
+          {
+            "node": "Send stakeholder feedback",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Check label cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check label cache": {
+      "main": [
+        [
+          {
+            "node": "IF label cache hit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF label cache hit": {
+      "main": [
+        [
+          {
+            "node": "IF can archive in Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Gmail labels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Gmail labels": {
+      "main": [
+        [
+          {
+            "node": "Store label cache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store label cache": {
+      "main": [
+        [
+          {
+            "node": "IF can archive in Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF can archive in Gmail": {
+      "main": [
+        [
+          {
+            "node": "Archive Gmail message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "IF needs RFC lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF needs RFC lookup": {
+      "main": [
+        [
+          {
+            "node": "Find Gmail by RFC ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Gmail by RFC ID": {
+      "main": [
+        [
+          {
+            "node": "Pick Gmail ID from RFC",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Gmail ID from RFC": {
+      "main": [
+        [
+          {
+            "node": "IF can archive in Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -1281,7 +1959,7 @@
     "timeSavedMode": "fixed",
     "callerPolicy": "workflowsFromSameOwner"
   },
-  "versionId": "7bbfb185-480c-4efa-b2df-5dc913773d95",
+  "versionId": "f6987814-7bfb-4dbd-9823-52479528d3c9",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "178e2aea3414a8776196d1eaa659ed3e085989989f4a0edffb60f4038b9bcd3b"
